@@ -610,12 +610,17 @@ Flotr.Graph = Class.create({
    * Find every values of the x axes or when horizontal stacked bar chart is used also y axes
    */
   findAxesValues: function(){
-    var i, j, s;
+    var i, j, s, t;
+    t = this.getType(this.series);
     for(i = this.series.length-1; i > -1 ; --i){
       s = this.series[i];
-      this.findXAxesValues(s);
-      if(s.bars.show && s.bars.horizontal && s.bars.stacked)
-        this.findYAxesValues(s);
+      if(t.findAxesValues){
+        // Graph Type
+        t.findAxesValues(s);
+      }else{
+        // Default
+        this.findXAxesValues(s);
+      }
     }
   },
   /** 
