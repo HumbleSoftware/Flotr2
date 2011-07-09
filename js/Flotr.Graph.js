@@ -1744,7 +1744,6 @@ Flotr.Graph = Class.create({
       
     if(this.selectionInterval == null && (this.options.mouse.track || this.series.any(function(s){return s.mouse && s.mouse.track;})))
       this.hit(pos);
-      //this.newHit(pos);
     
     if (this.options.crosshair.mode)
       this.drawCrosshair(pos);
@@ -2075,30 +2074,6 @@ Flotr.Graph = Class.create({
       octx.restore();
     }
     this.prevHit = n;
-  },
-  newHit: function(mouse){
-    var series = this.series,
-      options = this.options,
-      decimals, label;
-
-    for(var i = series.length-1; i > -1; --i){
-      s = series[i];
-      if(!s.mouse.track) continue;
-
-      for(var type in Flotr.graphTypes){
-        if (!this[type].getHit) continue;
-        
-        var h = this[type].getHit(s, mouse);
-        if (h.index !== undefined) {
-          decimals = s.mouse.trackDecimals;
-          if(decimals == null || decimals < 0) decimals = 0;
-          
-          label = s.mouse.trackFormatter(h);
-          this.drawTooltip(label, h.x, h.y, s.mouse);
-          this.mouseTrack.fire('flotr:hit', [h, this]);
-        }
-      }
-    }
   },
   /**
    * Retrieves the nearest data point from the mouse cursor. If it's within
