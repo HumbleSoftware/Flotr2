@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<title>Flotr: Download Data Example</title>
+		<link rel="stylesheet" href="style.css" type="text/css" />
+
+		<script type="text/javascript" src="../../flotr/prototype/lib/prototype.js"></script>
+		<script type="text/javascript" src="examples.js"></script>
+		
+		<!--[if IE]>
+			<script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script>
+			<script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
+		<![endif]-->
+		<script type="text/javascript" src="../../flotr/prototype/lib/canvas2image.js"></script>
+		<script type="text/javascript" src="../../flotr/prototype/lib/canvastext.js"></script>
+		<script type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
+	</head>
+	<body>
+		
+		<!-- ad -->
+		
+		<div id="wrapper">
+			<h1></h1>
+			<div id="container" style="width:600px;height:300px;"></div>
+			<h2>Example</h2>
+      <p>This example shows how to download the image of a Flotr graph. 
+      This possibility isn't available with Internet Explorer though.</p>
+      <p>A graph can be downloaded or converted as PNG, JPEG or BMP.</p>
+      
+      <p>Finished? Go to the example <a href="index.html" title="Flotr Example Index Page">index page</a>, play with the <a href="../../playground/index.html" title="Flotr playground">playground</a> or read the <a href="http://www.solutoire.com/flotr/docs/" title="Flotr Documentation Pages">Flotr Documentation Pages</a>.</p>
+      <h2>The Code</h2>
+      <pre id="code-view"><code class="javascript"></code></pre>
+		<div id="footer">Copyright &copy; 2008 Bas Wenneker, <a href="http://www.solutoire.com">solutoire.com</a></div>
+		</div>
+		
+		<!-- ad -->
+		
+		<script type="text/javascript">
+		  var f;
+			/**
+			 * Wait till dom's finished loading.
+			 */
+			document.observe('dom:loaded', function(){
+        var d1 = [];
+        var d2 = [];
+        var d3 = [];
+        var d4 = [];
+        var d5 = [];
+        
+        for(var i = 0; i <= 10; i += 0.1){
+          d1.push([i, 4 + Math.pow(i,1.5)]);
+          d2.push([i, Math.pow(i,3)]);
+          d3.push([i, i*5+3*Math.sin(i*4)]);
+          d4.push([i, i]);
+          if( i.toFixed(1)%1 == 0 ){
+            d5.push([i, 2*i]);
+          }
+        }
+                
+        /**
+         * Draw the graph.
+         */
+        f = Flotr.draw(
+          $('container'),[ 
+            {data:d1, label:'y = 4 + x^(1.5)', lines:{fill:true}}, 
+            {data:d2, label:'y = x^3'}, 
+            {data:d3, label:'y = 5x + 3sin(4x)'}, 
+            {data:d4, label:'y = x'},
+            {data:d5, label:'y = 2x', lines: {show: true}, points: {show: true}}
+          ],{
+            xaxis:{
+              noTicks: 7, // Display 7 ticks.
+              tickFormatter: function(n){ return '('+n+')'; }, // => displays tick values between brackets.
+              min: 1,   // => part of the series is not displayed.
+              max: 7.5  // => part of the series is not displayed.
+            },
+            yaxis:{
+              ticks: [[ 0, "Lower"], 10, 20, 30, [40, "Upper"]],
+              max: 40
+            },
+            grid:{
+              verticalLines: false,
+              backgroundColor: 'white'
+            },
+            legend: {
+              position: 'nw'
+            },
+            spreadsheet: {
+              show: true,
+              tickFormatter: function(e){return e+''}
+            }
+        });
+			});
+		</script>
+		
+		<!-- analytics -->
+	</body>
+</html>

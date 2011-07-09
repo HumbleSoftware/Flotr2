@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<title>Flotr: Mouse Drag Example</title>
+		<link rel="stylesheet" href="style.css" type="text/css" />
+
+		<script type="text/javascript" src="../../flotr/prototype/lib/prototype.js"></script>
+		<script type="text/javascript" src="examples.js"></script>
+		
+		<!--[if IE]>
+			<script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script>
+			<script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
+		<![endif]-->
+		<script type="text/javascript" src="../../flotr/prototype/lib/canvas2image.js"></script>
+		<script type="text/javascript" src="../../flotr/prototype/lib/canvastext.js"></script>
+		<script type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
+	</head>
+	<body>
+		
+		<!-- ad -->
+		
+		<div id="wrapper">
+			<h1></h1>
+			<div id="container" style="width:600px;height:300px;"></div>
+			<h2>Example</h2>
+			<p>This example show how to implement a dragging functionnality to Flotr.</p>
+			<p>Finished? Go to the example <a href="index.html" title="Flotr Example Index Page">index page</a>, play with the <a href="../../playground/index.html" title="Flotr playground">playground</a> or read the <a href="http://www.solutoire.com/flotr/docs/" title="Flotr Documentation Pages">Flotr Documentation Pages</a>.</p>
+			<h2>The Code</h2>
+			<pre id="code-view"><code class="javascript"></code></pre>
+			<div id="footer">Copyright &copy; 2008 Bas Wenneker, <a href="http://www.solutoire.com">solutoire.com</a></div>
+		</div>
+		
+		<!-- ad -->
+		
+		<script type="text/javascript">
+			/**
+			 * Wait till dom's finished loading.
+			 */
+			document.observe('dom:loaded', function(){
+				/**
+				 * Fill series d1 and d2.
+				 */
+				var d1 = [];
+				var d2 = [];
+				var d3 = [];
+			    for(var i = -40; i < 40; i += 0.5){
+			        d1.push([i, Math.sin(i)+3*Math.cos(i)]);
+					d2.push([i, Math.pow(1.1, i)]);
+					d3.push([i, 40 - i+Math.random()*10]);
+				}
+			    
+				/**
+				 * Global options object.
+				 */
+				var options = {
+					xaxis: {min: 0, max: 20}
+				};
+				
+				/**
+				 * Function displays a graph in the 'container' element, extending
+				 * the global options object with the optionally passed options.
+				 */
+				function drawGraph(opts){
+					/**
+					 * Clone the options, so the 'options' variable always keeps intact.
+					 */
+					var o = Object.extend(Object.clone(options), opts || {});
+					/**
+					 * Return a new graph.
+					 */
+					return Flotr.draw(
+						$('container'), 
+						[ d1, d2, d3 ],
+						o
+					);
+				}	
+				
+				/**
+				 * Actually draw the graph.
+				 */
+				var f = drawGraph();			
+				var start;
+				
+				/** Fired on mouse down */
+				function drag(e){
+					start = f.getEventPosition(e);
+					document.observe('mousemove', move);
+					document.observe('mouseup', release);
+				}
+				
+				/** Fired on mouse move */
+				function move(e){
+					var end = f.getEventPosition(e),
+					    xaxis = f.axes.x,
+					    offset = start.x - end.x;
+				  f = drawGraph({
+					  xaxis: {min: xaxis.min + offset, max: xaxis.max + offset}
+					});
+					// @todo: refector initEvents in order not to remove other observed events
+					f.overlay.observe('mousedown', drag);
+				}
+				
+				/** Fired on mouse up */
+				function release(e){
+					document.stopObserving('mousemove', move);
+				}
+				
+				f.overlay.observe('mousedown', drag);
+			});			
+		</script>
+		
+		<!-- analytics -->
+		
+	</body>
+</html>

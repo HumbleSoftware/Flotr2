@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<title>Flotr: JSON on Real Data Example</title>
+		<link rel="stylesheet" href="style.css" type="text/css" />
+
+		<script type="text/javascript" src="../../flotr/prototype/lib/prototype.js"></script>
+		<script type="text/javascript" src="examples.js"></script>
+		
+		<!--[if IE]>
+			<script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script>
+			<script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
+		<![endif]-->
+		<script type="text/javascript" src="../../flotr/prototype/lib/canvas2image.js"></script>
+		<script type="text/javascript" src="../../flotr/prototype/lib/canvastext.js"></script>
+		<script type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
+	</head>
+	<body>
+		
+		<!-- ad -->
+		
+		<div id="wrapper">
+			<h1></h1>
+			<div id="container" style="width:600px;height:300px;"></div>
+			<h2>Example</h2>
+			<p>
+			This example shows you how to use JSON data with Flotr. The canvas container is hidden when the page is
+			loaded. By pressing the button a GET request is send to <a href="json.txt">json.txt</a>. 
+			This returns a JSON string with data for three series. When the returned json is a valid object, the
+			canvas container is shown and the graph is rendered with <code>Flotr.draw()</code>. Here's the requested json:
+			</p>
+			<p>
+			Let me give you one advise about JSON. To make sure you receive the data in the right format, use the Firefox extension <a href="http://www.getfirebug.com" title="Firebug Javascript Debug Extension">Firebug</a>
+			to <code>console.log</code> (print) the response. With Firebug you can examine the Ajax request and it's response.
+			Also, it's worth reading <a href="http://prototypejs.org/learn/json">Introduction to JSON</a> on PrototypeJS.org.					
+			</p>
+			<p>Finished? Go to the example <a href="index.html" title="Flotr Example Index Page">index page</a>, play with the <a href="../../playground/index.html" title="Flotr playground">playground</a> or read the <a href="http://www.solutoire.com/flotr/docs/" title="Flotr Documentation Pages">Flotr Documentation Pages</a>.</p>
+			<h2>The Code</h2>
+			<pre id="code-view"><code class="javascript"></code></pre>
+			<div id="footer">Copyright &copy; 2008 Bas Wenneker, <a href="http://www.solutoire.com">solutoire.com</a></div>
+		</div>
+		
+		<!-- ad -->
+		
+		<script type="text/javascript">
+			var f = null;		
+			document.observe('dom:loaded', function(){
+				/**
+				 * The ajax-financial-data.php retrieves data drom the Yahoo Ichart application.
+				 */
+				new Ajax.Request('ajax-financial-data.php', {
+					method:'get',
+					onSuccess: function(transport){
+						/**
+						 * Parse (eval) the JSON from the server.
+						 */
+						var json = transport.responseText.evalJSON();
+						
+						if(json.data && json.ticks){
+							var options = {
+								title: "Apple Inc. real time quotes",
+								xaxis: {ticks: json.ticks, labelsAngle: 45},
+								candles: {show: true, candleWidth: 0.6},
+								HtmlText: false
+							};
+							
+							/**
+							 * Draw the graph using the JSON data. Of course the
+							 * options are optional.
+							 */
+						    f = Flotr.draw($('container'), [json.data], options);
+						}
+						else {
+							$('container').update('The data could not be retrieved. Check if your server can access yahoo.com and has PHP and the php_json extension.')
+						}
+					}
+				});
+			});
+		</script>
+		
+		<!-- analytics -->
+		
+	</body>
+</html>

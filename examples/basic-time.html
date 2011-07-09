@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<title>Flotr: Basic Time Example</title>
+		<link rel="stylesheet" href="style.css" type="text/css" />
+
+		<script type="text/javascript" src="../../flotr/prototype/lib/prototype.js"></script>
+		<script type="text/javascript" src="examples.js"></script>
+		
+		<!--[if IE]>
+			<script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script>
+			<script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
+		<![endif]-->
+		<script type="text/javascript" src="../../flotr/prototype/lib/canvas2image.js"></script>
+		<script type="text/javascript" src="../../flotr/prototype/lib/canvastext.js"></script>
+		<script type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
+	</head>
+	<body>
+		
+		<!-- ad -->
+		
+		<div id="wrapper">
+			<h1></h1>
+			<div id="container" style="width:600px;height:300px;"></div>
+			<h2>Example</h2>
+			<p>This example show how to simply draw time charts. You can zoom to see the different time precision levels.</p>
+			<p>Finished? Go to the example <a href="index.html" title="Flotr Example Index Page">index page</a>, play with the <a href="../../playground/index.html" title="Flotr playground">playground</a> or read the <a href="http://www.solutoire.com/flotr/docs/" title="Flotr Documentation Pages">Flotr Documentation Pages</a>.</p>
+			<p><button id="reset-btn">Reset</button></p>
+			<h2>The Code</h2>
+			<pre id="code-view"><code class="javascript"></code></pre>
+			<div id="footer">Copyright &copy; 2008 Bas Wenneker, <a href="http://www.solutoire.com">solutoire.com</a></div>
+		</div>
+		
+		<!-- ad -->
+		
+		<script type="text/javascript">
+			/**
+			 * Wait till dom's finished loading.
+			 */
+			document.observe('dom:loaded', function(){
+				/**
+				 * Fill series d1.
+				 */
+				var d1 = [];
+				var start = new Date("2009/01/01 01:00").getTime();
+			  for(var i = 0; i < 100; i++){
+					var x = start+(i*1000*3600*24*36.5);
+					d1.push([x, i+Math.random()*30+Math.sin(i/20+Math.random()*2)*20+Math.sin(i/10+Math.random())*10]);
+				}
+				
+				/**
+				 * Global options object.
+				 */
+				var options = {
+					xaxis:{
+						mode:'time', 
+						labelsAngle:45
+					},
+					selection: {
+						mode: 'x'
+					},
+					HtmlText: false
+				};
+				
+				/**
+				 * Function displays a graph in the 'container' element, extending
+				 * the global options object with the optionally passed options.
+				 */
+				function drawGraph(opts){
+					/**
+					 * Clone the options, so the 'options' variable always keeps intact.
+					 */
+					var o = Object.extend(Object.clone(options), opts || {});
+					/**
+					 * Return a new graph.
+					 */
+					return Flotr.draw(
+						$('container'), 
+						[ d1 ],
+						o
+					);
+				}	
+				
+				/**
+				 * Actually draw the graph.
+				 */
+				var f = drawGraph();			
+				
+				/**
+				 * Hook into the 'flotr:select' event.
+				 */
+				$('container').observe('flotr:select', function(evt){
+					/**
+					 * Get the selected area coordinates passed as event memo.
+					 */
+					var area = evt.memo[0];
+					
+					/**
+					 * What happens: empty the container element, and draw a new 
+					 * graph with bounded axis. The axis correspond to the selection
+					 * you just made.
+					 */
+					f = drawGraph({
+						xaxis: {min:area.x1, max:area.x2, mode:'time', labelsAngle:45},
+						yaxis: {min:area.y1, max:area.y2}
+					});
+				});
+				
+				/**
+				 * Observe click event on the reset-btn. Reset the graph when clicked.
+				 * The drawGraph function wrapped in another function otherwise it get's 
+				 * an Event object passed as first argument, while it expects an options
+				 * object.
+				 */
+				$('reset-btn').observe('click', function(){drawGraph()});
+			});			
+		</script>
+		
+		<!-- analytics -->
+		
+	</body>
+</html>
