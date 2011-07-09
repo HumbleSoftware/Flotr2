@@ -170,6 +170,89 @@ Flotr.addType('pie', {
     ctx.lineTo(x, y);
     ctx.closePath();
   },
+  hit: function(mouse, n){
+    var series = this.series,
+      options = this.options,
+      radius = (Math.min(this.canvasWidth, this.canvasHeight) * options.pie.sizeRatio) / 2,
+      vScale = 1,//Math.cos(series.pie.viewAngle),
+      center = {
+        x: (this.plotWidth)/2,
+        y: (this.plotHeight)/2
+      },
+      
+      // Pie portions
+      portions = this.series.collect(function(hash, index){
+        if (hash.pie.show && hash.data[0][1] !== null)
+          return {
+            name: (hash.label || hash.data[0][1]),
+            value: [index, hash.data[0][1]],
+            options: hash.pie,
+            series: hash
+          };
+      }),
+      
+      // Sum of the portions' angles
+      sum = portions.pluck('value').pluck(1).inject(0, function(acc, n) { return acc + n; }),
+      fraction = 0.0,
+      angle = options.pie.startAngle,
+      value = 0.0;
+      
+      var slices = portions.collect(function(slice){
+        angle += fraction;
+        value = parseFloat(slice.value[1]); // @warning : won't support null values !!
+        fraction = value/sum;
+        return {
+          name:     slice.name,
+          fraction: fraction,
+          x:        slice.value[0],
+          y:        value,
+          value:    value,
+          options:  slice.options,
+          series:   slice.series,
+          startAngle: 2 * angle * Math.PI,
+          endAngle:   2 * (angle + fraction) * Math.PI
+        };
+      });
+      
+      for(i = 0; i < series.length; i++){
+        s = series[i];
+      
+      x = s.data[0][0];
+      y = s.data[0][1];
+
+      if (y === null) continue;
+      
+      var a = (mouse.relX-center.x),
+          b = (mouse.relY-center.y),
+          c = Math.sqrt(Math.pow(a, 2)+Math.pow(b, 2)),
+          sAngle = (slices[i].startAngle)%(2 * Math.PI),
+          eAngle = (slices[i].endAngle)%(2 * Math.PI),
+          sAngle = (sAngle> 0 )? sAngle : sAngle + (2 * Math.PI),
+          eAngle = (eAngle> 0 )? eAngle : eAngle + (2 * Math.PI),
+          xSin = b/c,
+          kat = Math.asin(xSin)%(2 * Math.PI),
+          kat = (kat>0) ? kat : kat + (2 * Math.PI),
+          kat2 = Math.asin(-xSin)+(Math.PI);
+      
+      //if (c<radius && (a>0 && sAngle < kat && eAngle > kat)) //I i IV quarter
+      //if (c<radius && (a<0 && sAngle < kat2 && eAngle > kat2)) //II i III quarter
+      //if(sAngle>aAngle && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2)))) //if a slice is crossing 0 angle
+      
+      if (c<radius+10 && ((((a>0 && sAngle < kat && eAngle > kat)) || (a<0 && sAngle < kat2 && eAngle > kat2)) || 
+          ( (sAngle>eAngle || slices[i].fraction==1) && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2))))))
+        { 
+        n.x = x;
+        n.y = y;
+        n.sAngle = sAngle;
+        n.eAngle = eAngle,
+        n.mouse = s.mouse;
+        n.series = s;
+        n.allSeries = series;
+        n.seriesIndex = i;
+        n.fraction = slices[i].fraction;
+      }
+    }
+  },
   drawHit: function(n){
     var octx = this.octx,
       s = n.series,
