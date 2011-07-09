@@ -2064,65 +2064,7 @@ Flotr.Graph = Class.create({
         octx.closePath();
       }
       else if (s.bars && s.bars.show){ 
-        octx.save();
-        octx.translate(this.plotOffset.left, this.plotOffset.top);
-        octx.beginPath();
-        
-        if (s.mouse.trackAll) {
-          octx.moveTo(xa.d2p(n.x), ya.d2p(0));
-          octx.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
-        }
-        else {
-          var bw = s.bars.barWidth,
-            y = ya.d2p(n.y), 
-            x = xa.d2p(n.x);
-            
-          if(!s.bars.horizontal){ //vertical bars (default)
-            var ly = ya.d2p(ya.min<0? 0 : ya.min); //lower vertex y value (in points)
-            
-            if(s.bars.centered){
-              var lx = xa.d2p(n.x-(bw/2)),
-                rx = xa.d2p(n.x+(bw/2));
-            
-              octx.moveTo(lx, ly);
-              octx.lineTo(lx, y);
-              octx.lineTo(rx, y);
-              octx.lineTo(rx, ly);
-            } else {
-              var rx = xa.d2p(n.x+bw); //right vertex x value (in points)
-              
-              octx.moveTo(x, ly);
-              octx.lineTo(x, y);
-              octx.lineTo(rx, y);
-              octx.lineTo(rx, ly);
-            }
-          } else { //horizontal bars
-            var lx = xa.d2p(xa.min<0? 0 : xa.min); //left vertex y value (in points)
-              
-            if(s.bars.centered){
-              var ly = ya.d2p(n.y-(bw/2)),
-                uy = ya.d2p(n.y+(bw/2));
-                           
-              octx.moveTo(lx, ly);
-              octx.lineTo(x, ly);
-              octx.lineTo(x, uy);
-              octx.lineTo(lx, uy);
-            } else {
-              var uy = ya.d2p(n.y+bw); //upper vertex y value (in points)
-            
-              octx.moveTo(lx, y);
-              octx.lineTo(x, y);
-              octx.lineTo(x, uy);
-              octx.lineTo(lx, uy);
-            }
-          }
-  
-          if(s.mouse.fillColor) octx.fill();
-        }
-
-        octx.stroke();
-        octx.closePath();
-        octx.restore();
+        this.bars.drawHit(n);
       }
       else if (s.bubbles && s.bubbles.show){
         this.bubbles.drawHit(n);
