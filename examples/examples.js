@@ -10,7 +10,7 @@ function getV(nl) {
 	return v;
 }
 
-document.observe('dom:loaded', function(){
+(function(){
 	var view = $('code-view');
 	if (view) {
 		var code = $$('body script')[0].innerHTML.gsub('\n\t\t\t', '\n');
@@ -21,4 +21,4 @@ document.observe('dom:loaded', function(){
 	}
 	
 	$$('#wrapper h1')[0].innerHTML = $$('head title')[0].innerHTML;
-});
+})();
