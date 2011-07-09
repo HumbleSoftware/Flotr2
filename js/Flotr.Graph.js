@@ -2139,76 +2139,70 @@ Flotr.Graph = Class.create({
         }
       }
     }
-    else {
-      if (!options.pie || !options.pie.show){
-        for(i = 0; i < series.length; i++){
-          s = series[i];
-          if(!s.mouse.track) continue;
+    else if(!this.executeOnType(series, 'hit', [mouse, n])) {
+      for(i = 0; i < series.length; i++){
+        s = series[i];
+        if(!s.mouse.track) continue;
+        
+        data = s.data;
+        xa = s.xaxis;
+        ya = s.yaxis;
+        sens = 2 * (options.points ? options.points.lineWidth : 1) * s.mouse.sensibility;
+        xsens = sens/xa.scale;
+        ysens = sens/ya.scale;
+        mx = xa.p2d(mouse.relX);
+        my = ya.p2d(mouse.relY);
+        
+        //if (s.points) {
+        //  var h = this.points.getHit(s, mouse);
+        //  if (h.index !== undefined) console.log(h);
+        //}
+                
+        for(var j = 0, xpow, ypow; j < data.length; j++){
+          x = data[j][0];
+          y = data[j][1];
           
-          data = s.data;
-          xa = s.xaxis;
-          ya = s.yaxis;
-          sens = 2 * (options.points ? options.points.lineWidth : 1) * s.mouse.sensibility;
-          xsens = sens/xa.scale;
-          ysens = sens/ya.scale;
-          mx = xa.p2d(mouse.relX);
-          my = ya.p2d(mouse.relY);
+          if (y === null || 
+              xa.min > x || xa.max < x || 
+              ya.min > y || ya.max < y) continue;
           
-          //if (s.points) {
-          //  var h = this.points.getHit(s, mouse);
-          //  if (h.index !== undefined) console.log(h);
-          //}
-                  
-          for(var j = 0, xpow, ypow; j < data.length; j++){
-            x = data[j][0];
-            y = data[j][1];
-            
-            if (y === null || 
-                xa.min > x || xa.max < x || 
-                ya.min > y || ya.max < y) continue;
-            
-            if(s.bars.show && s.bars.centered){
+          if(s.bars.show && s.bars.centered){
+            var xdiff = Math.abs(x - mx),
+              ydiff = Math.abs(y - my);
+          } else {
+            if (s.bars.horizontal){
               var xdiff = Math.abs(x - mx),
-                ydiff = Math.abs(y - my);
+                ydiff = Math.abs(y + s.bars.barWidth/2 - my);
             } else {
-              if (s.bars.horizontal){
-                var xdiff = Math.abs(x - mx),
-                  ydiff = Math.abs(y + s.bars.barWidth/2 - my);
-              } else {
-                var xdiff = Math.abs(x + s.bars.barWidth/2 - mx),
-                  ydiff = Math.abs(y - my);
-              }
-            }
-            
-            // we use a different set of criteria to determin if there has been a hit
-            // depending on what type of graph we have
-            if(((!s.bars.show) && xdiff < xsens && (!s.mouse.trackY || ydiff < ysens)) ||
-                // Bars check
-                (s.bars.show && (!s.bars.horizontal && xdiff < s.bars.barWidth/2 + 1/xa.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
-                && (!s.mouse.trackY || (y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y))) 
-                || (s.bars.horizontal && ydiff < s.bars.barWidth/2 + 1/ya.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
-                && ((x > 0 && mx > 0 && mx < x) || (x < 0 && mx < 0 && mx > x))))){ // for horizontal bars there is need to use y-axis tracking, so s.mouse.trackY is ignored
-              
-              var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
-              if(distance < n.dist){
-                n.dist = distance;
-                n.x = x;
-                n.y = y;
-                n.xaxis = xa;
-                n.yaxis = ya;
-                n.mouse = s.mouse;
-                n.series = s;
-                n.allSeries = series;
-                n.index = j;
-                n.seriesIndex = i;
-              }
+              var xdiff = Math.abs(x + s.bars.barWidth/2 - mx),
+                ydiff = Math.abs(y - my);
             }
           }
-        }       
-      }
-      else
-      {
-        this.pie.hit(mouse, n);
+          
+          // we use a different set of criteria to determin if there has been a hit
+          // depending on what type of graph we have
+          if(((!s.bars.show) && xdiff < xsens && (!s.mouse.trackY || ydiff < ysens)) ||
+              // Bars check
+              (s.bars.show && (!s.bars.horizontal && xdiff < s.bars.barWidth/2 + 1/xa.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
+              && (!s.mouse.trackY || (y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y))) 
+              || (s.bars.horizontal && ydiff < s.bars.barWidth/2 + 1/ya.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
+              && ((x > 0 && mx > 0 && mx < x) || (x < 0 && mx < 0 && mx > x))))){ // for horizontal bars there is need to use y-axis tracking, so s.mouse.trackY is ignored
+            
+            var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
+            if(distance < n.dist){
+              n.dist = distance;
+              n.x = x;
+              n.y = y;
+              n.xaxis = xa;
+              n.yaxis = ya;
+              n.mouse = s.mouse;
+              n.series = s;
+              n.allSeries = series;
+              n.index = j;
+              n.seriesIndex = i;
+            }
+          }
+        }
       }
     }
     
