@@ -177,6 +177,22 @@ Flotr.Graph = Class.create({
     var t = (series && series.type) ? series.type : this.options.defaultType;
     return this[t];
   },
+  /**
+   * Try a method on a graph type.  If the method exists, execute it.
+   * @param {Object} series
+   * @param {String} method  Method name.
+   * @param {Array} args  Arguments applied to method.
+   * @return executed successfully or failed.
+   */
+  executeOnType: function(s, method, args){
+    var t = this.getType(s);
+    try {
+      t[method].apply(t, args);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
   setupAxes: function(){
     /**
      * Translates data number to pixel number
@@ -610,15 +626,10 @@ Flotr.Graph = Class.create({
    * Find every values of the x axes or when horizontal stacked bar chart is used also y axes
    */
   findAxesValues: function(){
-    var i, j, s, t;
-    t = this.getType(this.series);
+    var i, j, s;
     for(i = this.series.length-1; i > -1 ; --i){
       s = this.series[i];
-      if(t.findAxesValues){
-        // Graph Type
-        t.findAxesValues(s);
-      }else{
-        // Default
+      if(!this.executeOnType(this.series, 'findAxesValues', [s])){
         this.findXAxesValues(s);
       }
     }
@@ -2042,8 +2053,7 @@ Flotr.Graph = Class.create({
    */
   drawHit: function(n){
     var octx = this.octx,
-      s = n.series,
-      t = this.getType(s);
+      s = n.series;
 
     if(s.mouse.lineColor != null){
       octx.save();
@@ -2051,9 +2061,7 @@ Flotr.Graph = Class.create({
       octx.strokeStyle = s.mouse.lineColor;
       octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
 
-      if (t.drawHit) {
-        t.drawHit(n);
-      } else {
+      if (!this.executeOnType(s, 'drawHit', [n])) {
         var xa = n.xaxis,
           ya = n.yaxis;
 
