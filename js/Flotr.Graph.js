@@ -2011,12 +2011,15 @@ Flotr.Graph = Class.create({
     var prevHit = this.prevHit,
         plotOffset = this.plotOffset,
         s = prevHit.series,
-        lw = s.bars.lineWidth,
-        lwPie = s.pie.lineWidth,
+        lw = (s.bars ? s.bars.lineWidth : 1),
+        lwPie = (s.pie ? s.pie.lineWidth : 1),
         xa = prevHit.xaxis,
         ya = prevHit.yaxis;
         
-    if(!s.bars.show && !s.pie.show && !s.bubbles.show){
+    if((!s.bars || !s.bars.show) && 
+       (!s.pie || !s.pie.show) &&
+       (!s.bubbles || !s.bubbles.show)){
+    //if(!s.bars.show && !s.pie.show && !s.bubbles.show){
       var offset = s.mouse.radius + lw;
       this.octx.clearRect(
         plotOffset.left + xa.d2p(prevHit.x) - offset,
@@ -2025,7 +2028,7 @@ Flotr.Graph = Class.create({
         offset*2
       );
     }
-    else if (s.bars.show){
+    else if (s.bars && s.bars.show){
       var bw = s.bars.barWidth;
       if(!s.bars.horizontal){ // vertical bars (default)
         var lastY = ya.d2p(prevHit.y >= 0 ? prevHit.y : 0);
@@ -2063,10 +2066,10 @@ Flotr.Graph = Class.create({
         }
       }
     }
-    else if (s.bubbles.show){
+    else if (s.bubbles && s.bubbles.show){
       this.bubbles.clearHit();
     }
-    else if (s.pie.show){
+    else if (s.pie && s.pie.show){
       this.pie.clearHit();
     }
   },
@@ -2081,11 +2084,13 @@ Flotr.Graph = Class.create({
 
     if(s.mouse.lineColor != null){
       octx.save();
-      octx.lineWidth = s.points.lineWidth;
+      octx.lineWidth = (s.points ? s.points.lineWidth : 1);
       octx.strokeStyle = s.mouse.lineColor;
       octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
       
-      if(!s.bars.show && !s.pie.show && !s.bubbles.show){
+      if((!s.bars || !s.bars.show) && 
+         (!s.pie || !s.pie.show) &&
+         (!s.bubbles || !s.bubbles.show)){
         octx.translate(this.plotOffset.left, this.plotOffset.top);
         octx.beginPath();
           octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.mouse.radius, 0, 2 * Math.PI, true);
@@ -2093,7 +2098,7 @@ Flotr.Graph = Class.create({
           octx.stroke();
         octx.closePath();
       }
-      else if (s.bars.show){ 
+      else if (s.bars && s.bars.show){ 
         octx.save();
         octx.translate(this.plotOffset.left, this.plotOffset.top);
         octx.beginPath();
@@ -2154,7 +2159,7 @@ Flotr.Graph = Class.create({
         octx.closePath();
         octx.restore();
       }
-      else if (s.bubbles.show){
+      else if (s.bubbles && s.bubbles.show){
         this.bubbles.drawHit(n);
       }
       else if (s.pie.show){
@@ -2276,7 +2281,7 @@ Flotr.Graph = Class.create({
           data = s.data;
           xa = s.xaxis;
           ya = s.yaxis;
-          sens = 2 * options.points.lineWidth * s.mouse.sensibility;
+          sens = 2 * (option.points ? options.points.lineWidth : 1) * s.mouse.sensibility;
           xsens = sens/xa.scale;
           ysens = sens/ya.scale;
           mx = xa.p2d(mouse.relX);
