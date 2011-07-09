@@ -338,6 +338,51 @@ Flotr.addType('bars', {
       axis.min = newmin;
     }
   },
+  clearHit: function(s) {
+    var prevHit = this.prevHit,
+      plotOffset = this.plotOffset,
+      s = prevHit.series,
+      xa = prevHit.xaxis,
+      ya = prevHit.yaxis,
+      lw = s.bars.lineWidth,
+      bw = s.bars.barWidth;
+        
+    if(!s.bars.horizontal){ // vertical bars (default)
+      var lastY = ya.d2p(prevHit.y >= 0 ? prevHit.y : 0);
+      if(s.bars.centered) {
+        this.octx.clearRect(
+            xa.d2p(prevHit.x - bw/2) + plotOffset.left - lw, 
+            lastY + plotOffset.top - lw, 
+            xa.d2p(bw + xa.min) + lw * 2, 
+            ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + lw * 2
+        );
+      } else {
+        this.octx.clearRect(
+            xa.d2p(prevHit.x) + plotOffset.left - lw, 
+            lastY + plotOffset.top - lw, 
+            xa.d2p(bw + xa.min) + lw * 2, 
+            ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + lw * 2
+        ); 
+      }
+    } else { // horizontal bars
+      var lastX = xa.d2p(prevHit.x >= 0 ? prevHit.x : 0);
+      if(s.bars.centered) {
+        this.octx.clearRect(
+            lastX + plotOffset.left + lw, 
+            ya.d2p(prevHit.y + bw/2) + plotOffset.top - lw, 
+            xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - lw*2,
+            ya.d2p(bw + ya.min) + lw * 2
+        );
+      } else {
+        this.octx.clearRect(
+            lastX + plotOffset.left + lw, 
+            ya.d2p(prevHit.y + bw) + plotOffset.top - lw, 
+            xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - lw*2,
+            ya.d2p(bw + ya.min) + lw * 2
+        );
+      }
+    }
+  },
   findAxesValues: function(s){
     this.findXAxesValues(s);
     if(s.bars.show && s.bars.horizontal && s.bars.stacked)

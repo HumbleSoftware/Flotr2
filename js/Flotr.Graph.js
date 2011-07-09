@@ -2029,42 +2029,7 @@ Flotr.Graph = Class.create({
       );
     }
     else if (s.bars && s.bars.show){
-      var bw = s.bars.barWidth;
-      if(!s.bars.horizontal){ // vertical bars (default)
-        var lastY = ya.d2p(prevHit.y >= 0 ? prevHit.y : 0);
-        if(s.bars.centered) {
-          this.octx.clearRect(
-              xa.d2p(prevHit.x - bw/2) + plotOffset.left - lw, 
-              lastY + plotOffset.top - lw, 
-              xa.d2p(bw + xa.min) + lw * 2, 
-              ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + lw * 2
-          );
-        } else {
-          this.octx.clearRect(
-              xa.d2p(prevHit.x) + plotOffset.left - lw, 
-              lastY + plotOffset.top - lw, 
-              xa.d2p(bw + xa.min) + lw * 2, 
-              ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + lw * 2
-          ); 
-        }
-      } else { // horizontal bars
-        var lastX = xa.d2p(prevHit.x >= 0 ? prevHit.x : 0);
-        if(s.bars.centered) {
-          this.octx.clearRect(
-              lastX + plotOffset.left + lw, 
-              ya.d2p(prevHit.y + bw/2) + plotOffset.top - lw, 
-              xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - lw*2,
-              ya.d2p(bw + ya.min) + lw * 2
-          );
-        } else {
-          this.octx.clearRect(
-              lastX + plotOffset.left + lw, 
-              ya.d2p(prevHit.y + bw) + plotOffset.top - lw, 
-              xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - lw*2,
-              ya.d2p(bw + ya.min) + lw * 2
-          );
-        }
-      }
+      this.bars.clearHit(s);
     }
     else if (s.bubbles && s.bubbles.show){
       this.bubbles.clearHit();
@@ -2273,7 +2238,7 @@ Flotr.Graph = Class.create({
       }
     }
     else {
-      if (!options.pie.show){
+      if (!options.pie || !options.pie.show){
         for(i = 0; i < series.length; i++){
           s = series[i];
           if(!s.mouse.track) continue;
@@ -2281,7 +2246,7 @@ Flotr.Graph = Class.create({
           data = s.data;
           xa = s.xaxis;
           ya = s.yaxis;
-          sens = 2 * (option.points ? options.points.lineWidth : 1) * s.mouse.sensibility;
+          sens = 2 * (options.points ? options.points.lineWidth : 1) * s.mouse.sensibility;
           xsens = sens/xa.scale;
           ysens = sens/ya.scale;
           mx = xa.p2d(mouse.relX);
@@ -2341,7 +2306,7 @@ Flotr.Graph = Class.create({
       }
       else
       {
-        var radius = (Math.min(this.canvasWidth, this.canvasHeight) * options.pie.sizeRatio) / 2,
+        var radius = (options.pie ? (Math.min(this.canvasWidth, this.canvasHeight) * options.pie.sizeRatio) / 2 : 0),
         vScale = 1,//Math.cos(series.pie.viewAngle),
           center = {
             x: (this.plotWidth)/2,
@@ -2350,7 +2315,7 @@ Flotr.Graph = Class.create({
           
           // Pie portions
           portions = this.series.collect(function(hash, index){
-            if (hash.pie.show && hash.data[0][1] !== null)
+            if (hash.pie && hash.pie.show && hash.data[0][1] !== null)
               return {
                 name: (hash.label || hash.data[0][1]),
                 value: [index, hash.data[0][1]],
