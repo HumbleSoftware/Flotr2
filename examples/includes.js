@@ -23,5 +23,13 @@ yepnope([
   '../js/Flotr.Graph.js',
   '../js/types/lines.js',
   '../js/types/bars.js',
+  '../js/types/points.js',
+  '../js/types/pie.js',
+  '../js/types/candles.js',
+  '../js/types/markers.js',
+  '../js/types/radar.js',
+  '../js/types/bubbles.js',
+  '../js/types/spreadsheet.js',
+  '../js/types/gantt.js',
   { complete : example }
 ]);
