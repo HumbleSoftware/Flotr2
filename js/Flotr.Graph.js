@@ -2042,34 +2042,27 @@ Flotr.Graph = Class.create({
    */
   drawHit: function(n){
     var octx = this.octx,
-        s = n.series,
-        xa = n.xaxis,
-        ya = n.yaxis;
+      s = n.series,
+      t = this.getType(s);
 
     if(s.mouse.lineColor != null){
       octx.save();
       octx.lineWidth = (s.points ? s.points.lineWidth : 1);
       octx.strokeStyle = s.mouse.lineColor;
       octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
-      
-      if((!s.bars || !s.bars.show) && 
-         (!s.pie || !s.pie.show) &&
-         (!s.bubbles || !s.bubbles.show)){
+
+      if (t.drawHit) {
+        t.drawHit(n);
+      } else {
+        var xa = n.xaxis,
+          ya = n.yaxis;
+
         octx.translate(this.plotOffset.left, this.plotOffset.top);
         octx.beginPath();
           octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.mouse.radius, 0, 2 * Math.PI, true);
           octx.fill();
           octx.stroke();
         octx.closePath();
-      }
-      else if (s.bars && s.bars.show){ 
-        this.bars.drawHit(n);
-      }
-      else if (s.bubbles && s.bubbles.show){
-        this.bubbles.drawHit(n);
-      }
-      else if (s.pie.show){
-        this.pie.drawHit(n);
       }
       octx.restore();
     }
