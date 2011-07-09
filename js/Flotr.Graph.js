@@ -168,6 +168,15 @@ Flotr.Graph = Class.create({
       if(s.shadowSize == null) s.shadowSize = this.options.shadowSize;
     }
   },
+  /**
+   * Get graph type for a series
+   * @param {Object} series - the series
+   * @return {Object} the graph type
+   */
+  getType: function(series){
+    var t = (series && series.type) ? series.type : this.options.defaultType;
+    return this[t];
+  },
   setupAxes: function(){
     /**
      * Translates data number to pixel number
