@@ -1573,7 +1573,7 @@ Flotr.Graph = Class.create({
     var noLegendItems = series.findAll(function(s) {return (s.label && !s.hide)}).length;
 
     if (noLegendItems) {
-        if (!options.HtmlText && this.textEnabled && !$(legend.container)) {
+      if (!options.HtmlText && this.textEnabled && !$(legend.container)) {
         var style = {
           size: options.fontSize*1.1,
           color: options.grid.color
@@ -1628,23 +1628,23 @@ Flotr.Graph = Class.create({
           
           y += lbh + lbm;
         }
-        }
-        else {
-          for(i = 0; i < series.length; ++i){
-            if(!series[i].label || series[i].hide) continue;
-            
-            if(i % options.legend.noColumns == 0){
-              fragments.push(rowStarted ? '</tr><tr>' : '<tr>');
-              rowStarted = true;
-            }
-      
-            var s = series[i],
-                label = legend.labelFormatter(s.label),
-                boxWidth = legend.labelBoxWidth,
-                boxHeight = legend.labelBoxHeight,
-                opacity = 'opacity:' + s.bars.fillOpacity + ';filter:alpha(opacity=' + s.bars.fillOpacity*100 + ');',
-                color = 'background-color:' + ((s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
-            
+      }
+      else {
+        for(i = 0; i < series.length; ++i){
+          if(!series[i].label || series[i].hide) continue;
+          
+          if(i % options.legend.noColumns == 0){
+            fragments.push(rowStarted ? '</tr><tr>' : '<tr>');
+            rowStarted = true;
+          }
+           
+          var s = series[i],
+            label = legend.labelFormatter(s.label),
+            boxWidth = legend.labelBoxWidth,
+            boxHeight = legend.labelBoxHeight,
+            opacity = 'opacity:' + s.bars.fillOpacity + ';filter:alpha(opacity=' + s.bars.fillOpacity*100 + ');',
+            color = 'background-color:' + ((s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
+          
           fragments.push(
             '<td class="flotr-legend-color-box">',
               '<div style="border:1px solid ', legend.labelBoxBorderColor, ';padding:1px">',
@@ -1655,44 +1655,44 @@ Flotr.Graph = Class.create({
             '</td>',
             '<td class="flotr-legend-label">', label, '</td>'
           );
-          }
-          if(rowStarted) fragments.push('</tr>');
+        }
+        if(rowStarted) fragments.push('</tr>');
           
-          if(fragments.length > 0){
-            var table = '<table style="font-size:smaller;color:' + options.grid.color + '">' + fragments.join('') + '</table>';
-            if(options.legend.container != null){
-              $(options.legend.container).innerHTML = table;
-            }
-            else {
-              var pos = '', p = options.legend.position, m = options.legend.margin;
-              
-                   if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;bottom:auto;';
-              else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;top:auto;';          
-                   if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;left:auto;';
-              else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;right:auto;';
-                   
-              var div = this.el.insert('<div class="flotr-legend" style="position:absolute;z-index:2;' + pos +'">' + table + '</div>').select('div.flotr-legend')[0];
-              
-              if(options.legend.backgroundOpacity != 0.0){
-                /**
-                 * Put in the transparent background separately to avoid blended labels and
-                 * label boxes.
-                 */
-                var c = options.legend.backgroundColor;
-                if(c == null){
-                  var tmp = (options.grid.backgroundColor != null) ? options.grid.backgroundColor : Flotr.Color.extract(div);
-                  c = this.processColor(tmp, null, {opacity: 1});
-                }
-                this.el.insert(
-                  '<div class="flotr-legend-bg" style="position:absolute;width:' + div.getWidth() + 
-                  'px;height:' + div.getHeight() + 'px;' + pos +'background-color:' + c + ';"> </div>'
-                )
-                .select('div.flotr-legend-bg')[0].setOpacity(options.legend.backgroundOpacity);
+        if(fragments.length > 0){
+          var table = '<table style="font-size:smaller;color:' + options.grid.color + '">' + fragments.join('') + '</table>';
+          if(options.legend.container != null){
+            $(options.legend.container).innerHTML = table;
+          }
+          else {
+            var pos = '', p = options.legend.position, m = options.legend.margin;
+            
+                 if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;bottom:auto;';
+            else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;top:auto;';          
+                 if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;left:auto;';
+            else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;right:auto;';
+                 
+            var div = this.el.insert('<div class="flotr-legend" style="position:absolute;z-index:2;' + pos +'">' + table + '</div>').select('div.flotr-legend')[0];
+            
+            if(options.legend.backgroundOpacity != 0.0){
+              /**
+               * Put in the transparent background separately to avoid blended labels and
+               * label boxes.
+               */
+              var c = options.legend.backgroundColor;
+              if(c == null){
+                var tmp = (options.grid.backgroundColor != null) ? options.grid.backgroundColor : Flotr.Color.extract(div);
+                c = this.processColor(tmp, null, {opacity: 1});
               }
+              this.el.insert(
+                '<div class="flotr-legend-bg" style="position:absolute;width:' + div.getWidth() + 
+                'px;height:' + div.getHeight() + 'px;' + pos +'background-color:' + c + ';"> </div>'
+              )
+              .select('div.flotr-legend-bg')[0].setOpacity(options.legend.backgroundOpacity);
             }
           }
         }
       }
+    }
   },
   /**
    * Calculates the coordinates from a mouse event object.
