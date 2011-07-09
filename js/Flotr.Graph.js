@@ -1638,18 +1638,20 @@ Flotr.Graph = Class.create({
             rowStarted = true;
           }
            
+          // @TODO remove requirement on bars
           var s = series[i],
             label = legend.labelFormatter(s.label),
             boxWidth = legend.labelBoxWidth,
             boxHeight = legend.labelBoxHeight,
-            opacity = 'opacity:' + s.bars.fillOpacity + ';filter:alpha(opacity=' + s.bars.fillOpacity*100 + ');',
-            color = 'background-color:' + ((s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
+            opacityValue = (s.bars ? s.bars.fillOpacity : legend.labelBoxOpacity),
+            opacity = 'opacity:' + opacityValue + ';filter:alpha(opacity=' + opacityValue*100 + ');',
+            color = 'background-color:' + ((s.bars && s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
           
           fragments.push(
             '<td class="flotr-legend-color-box">',
               '<div style="border:1px solid ', legend.labelBoxBorderColor, ';padding:1px">',
                 '<div style="width:', (boxWidth-1), 'px;height:', (boxHeight-1), 'px;border:1px solid ', series[i].color, '">', // Border
-                  '<div style="width:', boxWidth, 'px;height:', boxHeight, 'px;', opacity, color, '"></div>', // Background
+                  '<div style="width:', boxWidth, 'px;height:', boxHeight, 'px;', 'opacity:.4;', color, '"></div>', // Background
                 '</div>',
               '</div>',
             '</td>',

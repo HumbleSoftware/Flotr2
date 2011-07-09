@@ -18,6 +18,7 @@ Flotr.defaultOptions = {
     labelBoxWidth: 14,
     labelBoxHeight: 10,
     labelBoxMargin: 5,
+    labelBoxOpacity: 0.4,
     container: null,       // => container (as jQuery object) to put legend in, null means default on top of graph
     position: 'nw',        // => position of default legend container within plot
     margin: 5,             // => distance from grid edge to default legend container within plot
