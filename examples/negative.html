@@ -10,17 +10,7 @@
 				border: 2px solid #B6D9FF;
 			}			
 		</style>
-		
-		<script type="text/javascript" src="../../flotr/prototype/lib/prototype.js"></script>
-		<script type="text/javascript" src="examples.js"></script>
-		
-		<!--[if IE]>
-			<script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script>
-			<script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
-		<![endif]-->
-		<script type="text/javascript" src="../../flotr/prototype/lib/canvas2image.js"></script>
-		<script type="text/javascript" src="../../flotr/prototype/lib/canvastext.js"></script>
-		<script type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
+		<script type="text/javascript" src="../lib/yepnope.js"></script>
 	</head>
 	<body>
 		
@@ -49,10 +39,7 @@
 		<!-- ad -->
 		
 		<script type="text/javascript">
-		/**
-		 * Wait till dom's finished loading.
-		 */
-		document.observe('dom:loaded', function(){
+		function example(){
 			/**
 			 * Fill series d0, d1 and d2. 
 			 * 
@@ -107,10 +94,11 @@
 					legend:{position:'se',backgroundColor: '#D2E8FF'}
 				}
 			);
-		});
+		};
 		</script>
 		
 		<!-- analytics -->
 		
 	</body>
+	<script type="text/javascript" src="includes.js"></script>
 </html>

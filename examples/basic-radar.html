@@ -5,17 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<title>Flotr: Basic Radar Example</title>
 		<link rel="stylesheet" href="style.css" type="text/css" />
-
-		<script type="text/javascript" src="../../flotr/prototype/lib/prototype.js"></script>
-		<script type="text/javascript" src="examples.js"></script>
-		
-		<!--[if IE]>
-			<script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script>
-			<script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
-		<![endif]-->
-		<script type="text/javascript" src="../../flotr/prototype/lib/canvas2image.js"></script>
-		<script type="text/javascript" src="../../flotr/prototype/lib/canvastext.js"></script>
-		<script type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
+		<script type="text/javascript" src="../lib/yepnope.js"></script>
 	</head>
 	<body>
 		
@@ -35,10 +25,7 @@
 		<!-- ad -->
 		
 		<script type="text/javascript">
-			/**
-			 * Wait till dom's finished loading.
-			 */
-			document.observe('dom:loaded', function(){
+			function example(){
 				/**
 				 * Fill series s1 and s2.
 				 */
@@ -54,9 +41,10 @@
 					yaxis: {min: 0, max: 10, minorTickFreq: 2}, 
 					xaxis: {ticks: [[0, "Statutory"], [1,"External"], [2, "Videos"], [3, "Yippy"], [4, "Management"], [5, "oops"]]}
 				});
-			});			
+			};			
 		</script>
 		
 		<!-- analytics -->
 	</body>
+	<script type="text/javascript" src="includes.js"></script>
 </html>

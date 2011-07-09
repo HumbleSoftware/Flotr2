@@ -5,16 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>Flotr: Color Gradients Example</title>
     <link rel="stylesheet" href="style.css" type="text/css" />
-
-    <script type="text/javascript" src="../../flotr/prototype/lib/prototype.js"></script>
-    <script type="text/javascript" src="examples.js"></script>
-    
-    <!--[if IE]><script type="text/javascript" src="../../flotr/prototype/lib/excanvas.js"></script><![endif]-->
-    <script type="text/javascript" src="../../flotr/prototype/lib/base64.js"></script>
-    
-    <script type="text/javascript" src="../../flotr/prototype/lib/canvas2image.js"></script>
-    <script type="text/javascript" src="../../flotr/prototype/lib/canvastext.js"></script>
-    <script type="text/javascript" src="../../flotr/prototype/flotr.js"></script>
+		<script type="text/javascript" src="../lib/yepnope.js"></script>
   </head>
   <body>
   	
@@ -43,7 +34,7 @@
       /**
        * Wait till dom's finished loading.
        */
-      document.observe('dom:loaded', function(){
+      function example(){
       	/**
       	 * Fill series with random values.
       	 */
@@ -103,10 +94,11 @@
       			backgroundColor: ['#fff', '#ccc']
       		}
       	});
-      });
+      };
     </script>
 		
     <!-- analytics -->
 		
   </body>
+	<script type="text/javascript" src="includes.js"></script>
 </html>
