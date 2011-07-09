@@ -338,7 +338,7 @@ Flotr.addType('bars', {
       axis.min = newmin;
     }
   },
-  clearHit: function(s) {
+  clearHit: function() {
     var prevHit = this.prevHit,
       plotOffset = this.plotOffset,
       s = prevHit.series,

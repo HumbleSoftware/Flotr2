@@ -2029,7 +2029,7 @@ Flotr.Graph = Class.create({
       );
     }
     else if (s.bars && s.bars.show){
-      this.bars.clearHit(s);
+      this.bars.clearHit();
     }
     else if (s.bubbles && s.bubbles.show){
       this.bubbles.clearHit();
