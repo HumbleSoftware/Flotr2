@@ -29,7 +29,7 @@ yepnope([
   '../js/types/markers.js',
   '../js/types/radar.js',
   '../js/types/bubbles.js',
-  '../js/types/spreadsheet.js',
+  '../js/plugins/spreadsheet.js',
   '../js/types/gantt.js',
   { complete : example }
 ]);
