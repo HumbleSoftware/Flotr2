@@ -337,5 +337,10 @@ Flotr.addType('bars', {
       axis.max = newmax;
       axis.min = newmin;
     }
+  },
+  findAxesValues: function(s){
+    this.findXAxesValues(s);
+    if(s.bars.show && s.bars.horizontal && s.bars.stacked)
+      this.findYAxesValues(s);
   }
 });
