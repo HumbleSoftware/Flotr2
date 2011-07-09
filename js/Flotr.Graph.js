@@ -2016,36 +2016,20 @@ Flotr.Graph = Class.create({
    * Removes the mouse tracking point from the overlay.
    */
   clearHit: function(){
-    if(!this.prevHit) return;
-    
-    var prevHit = this.prevHit,
+    if(this.prevHit && !this.executeOnType(s, 'clearHit')){
+      var prevHit = this.prevHit,
         plotOffset = this.plotOffset,
         s = prevHit.series,
         lw = (s.bars ? s.bars.lineWidth : 1),
-        lwPie = (s.pie ? s.pie.lineWidth : 1),
         xa = prevHit.xaxis,
-        ya = prevHit.yaxis;
-        
-    if((!s.bars || !s.bars.show) && 
-       (!s.pie || !s.pie.show) &&
-       (!s.bubbles || !s.bubbles.show)){
-    //if(!s.bars.show && !s.pie.show && !s.bubbles.show){
-      var offset = s.mouse.radius + lw;
+        ya = prevHit.yaxis,
+        offset = s.mouse.radius + lw;
       this.octx.clearRect(
         plotOffset.left + xa.d2p(prevHit.x) - offset,
         plotOffset.top  + ya.d2p(prevHit.y) - offset,
         offset*2,
         offset*2
       );
-    }
-    else if (s.bars && s.bars.show){
-      this.bars.clearHit();
-    }
-    else if (s.bubbles && s.bubbles.show){
-      this.bubbles.clearHit();
-    }
-    else if (s.pie && s.pie.show){
-      this.pie.clearHit();
     }
   },
   /**
