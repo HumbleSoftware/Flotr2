@@ -95,17 +95,19 @@ Flotr.addPlugin('spreadsheet', {
     t.update(colgroup.join('')+html.join(''));
     
     if (!Prototype.Browser.IE || Flotr.isIE9) {
+      function handleMouseout(){
+        t.select('colgroup col.hover, th.hover').invoke('removeClassName', 'hover');
+      }
+      function handleMouseover(e){
+        var td = e.element(),
+          siblings = td.previousSiblings();
+        t.select('th[scope=col]')[siblings.length-1].addClassName('hover');
+        t.select('colgroup col')[siblings.length].addClassName('hover');
+      }
       t.select('td').each(function(td) {
-        // @TODO don't declare functions in loops
-        Flotr.EventAdapter.observe(td, 'mouseover', function(e){
-          td = e.element();
-          var siblings = td.previousSiblings();
-          
-          t.select('th[scope=col]')[siblings.length-1].addClassName('hover');
-          t.select('colgroup col')[siblings.length].addClassName('hover');
-        }).observe(td, 'mouseout', function(){
-          t.select('colgroup col.hover, th.hover').invoke('removeClassName', 'hover');
-        });
+        Flotr.EventAdapter.
+          observe(td, 'mouseover', handleMouseover).
+          observe(td, 'mouseout', handleMouseout);
       });
     }
 
