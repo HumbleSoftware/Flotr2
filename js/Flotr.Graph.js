@@ -1,73 +1,76 @@
 /**
  * Flotr Graph class that plots a graph on creation.
  */
-Flotr.Graph = Class.create({
-  /**
-   * Flotr Graph constructor.
-   * @param {Element} el - element to insert the graph into
-   * @param {Object} data - an array or object of dataseries
-    * @param {Object} options - an object containing options
-   */
-  initialize: function(el, data, options){
-    try {
-    this.el = $(el);
-    
-    if (!this.el) throw 'The target container doesn\'t exist';
-    if (!this.el.clientWidth) throw 'The target container must be visible';
+(function () {
 
-    this.registerPlugins();
-    
-    Flotr.EventAdapter.fire(this.el, 'flotr:beforeinit', [this]);
-    
-    // Initialize some variables
-    this.el.graph = this;
-    this.data = data;
-    this.lastMousePos = { pageX: null, pageY: null };
-    this.selection = { first: { x: -1, y: -1}, second: { x: -1, y: -1} };
-    this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
-    this.prevSelection = null;
-    this.selectionInterval = null;
-    this.ignoreClick = false;   
-    this.prevHit = null;
-    this.series = Flotr.getSeries(data);
-    this.setOptions(options);
-    
-    var type, p;
-    for (type in Flotr.graphTypes) {
-      this[type] = Object.clone(Flotr.graphTypes[type]);
-      for (p in this[type]) {
-        if (Object.isFunction(this[type][p]))
-          this[type][p] = this[type][p].bind(this);
-      }
+/**
+ * Flotr Graph constructor.
+ * @param {Element} el - element to insert the graph into
+ * @param {Object} data - an array or object of dataseries
+ * @param {Object} options - an object containing options
+ */
+Flotr.Graph = function(el, data, options){
+  try {
+  this.el = $(el);
+  
+  if (!this.el) throw 'The target container doesn\'t exist';
+  if (!this.el.clientWidth) throw 'The target container must be visible';
+
+  this.registerPlugins();
+  
+  Flotr.EventAdapter.fire(this.el, 'flotr:beforeinit', [this]);
+  
+  // Initialize some variables
+  this.el.graph = this;
+  this.data = data;
+  this.lastMousePos = { pageX: null, pageY: null };
+  this.selection = { first: { x: -1, y: -1}, second: { x: -1, y: -1} };
+  this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
+  this.prevSelection = null;
+  this.selectionInterval = null;
+  this.ignoreClick = false;   
+  this.prevHit = null;
+  this.series = Flotr.getSeries(data);
+  this.setOptions(options);
+  
+  var type, p;
+  for (type in Flotr.graphTypes) {
+    this[type] = Object.clone(Flotr.graphTypes[type]);
+    for (p in this[type]) {
+      if (Object.isFunction(this[type][p]))
+        this[type][p] = this[type][p].bind(this);
     }
-    
-    // Create and prepare canvas.
-    this.constructCanvas();
-    
-    Flotr.EventAdapter.fire(this.el, 'flotr:afterconstruct', [this]);
-    
-    // Add event handlers for mouse tracking, clicking and selection
-    this.initEvents();
-    
-    this.findDataRanges();
-    this.calculateTicks(this.axes.x);
-    this.calculateTicks(this.axes.x2);
-    this.calculateTicks(this.axes.y);
-    this.calculateTicks(this.axes.y2);
-    
-    this.calculateSpacing();
-    this.setupAxes();
-    
-    this.draw(function() {
-      this.insertLegend();
-        Flotr.EventAdapter.fire(this.el, 'flotr:afterinit', [this]);
-    }.bind(this));
-    } catch (e) {
-      try {
-        console.error(e);
-      } catch (e) {}
-    }
-  },
+  }
+  
+  // Create and prepare canvas.
+  this.constructCanvas();
+  
+  Flotr.EventAdapter.fire(this.el, 'flotr:afterconstruct', [this]);
+  
+  // Add event handlers for mouse tracking, clicking and selection
+  this.initEvents();
+  
+  this.findDataRanges();
+  this.calculateTicks(this.axes.x);
+  this.calculateTicks(this.axes.x2);
+  this.calculateTicks(this.axes.y);
+  this.calculateTicks(this.axes.y2);
+  
+  this.calculateSpacing();
+  this.setupAxes();
+  
+  this.draw(function() {
+    this.insertLegend();
+      Flotr.EventAdapter.fire(this.el, 'flotr:afterinit', [this]);
+  }.bind(this));
+  } catch (e) {
+    try {
+      console.error(e);
+    } catch (e) {}
+  }
+};
+
+Flotr.Graph.prototype = {
   /**
    * Sets options and initializes some variables and color specific values, used by the constructor. 
    * @param {Object} opts - options object
@@ -2312,4 +2315,5 @@ Flotr.Graph = Class.create({
     this.overlay.show();
     this.el.select('img').invoke('remove');
   }
-});
+}
+})();
