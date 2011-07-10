@@ -67,7 +67,7 @@ var Flotr = {
    */
   getSeries: function(data){
     return data.collect(function(serie){
-      serie = (serie.data) ? Object.clone(serie) : {data: serie};
+      serie = (serie.data) ? _.clone(serie) : {data: serie};
       for (var i = serie.data.length-1; i > -1; --i) {
         serie.data[i][1] = (serie.data[i][1] === null ? null : parseFloat(serie.data[i][1])); 
       }
@@ -85,7 +85,7 @@ var Flotr = {
     var i, v, result = dest || {};
     for(i in src){
       v = src[i];
-      result[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !Object.isElement(v)) ? Flotr.merge(v, dest[i]) : result[i] = v;
+      result[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !_.isElement(v)) ? Flotr.merge(v, dest[i]) : result[i] = v;
     }
     return result;
   },
@@ -99,7 +99,7 @@ var Flotr = {
     var i, v, clone = {};
     for(i in object){
       v = object[i];
-      clone[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !Object.isElement(v)) ? Flotr.clone(v) : v;
+      clone[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !_.isElement(v)) ? Flotr.clone(v) : v;
     }
     return clone;
   },
@@ -195,7 +195,7 @@ var Flotr = {
       return;
     }
     
-    style = Object.extend({
+    style = _.extend({
       size: Flotr.defaultOptions.fontSize,
       color: '#000000',
       textAlign: 'left',
@@ -219,7 +219,7 @@ var Flotr = {
       return {width: ctx.measure(text, style)};
     }
     
-    style = Object.extend({
+    style = _.extend({
       size: Flotr.defaultOptions.fontSize,
       weight: 1,
       angle: 0
