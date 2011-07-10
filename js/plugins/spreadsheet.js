@@ -33,8 +33,9 @@ Flotr.addPlugin('spreadsheet', {
       this.plotOffset.bottom += offset;
       ss.tabsContainer.setStyle({top: this.canvasHeight-offset+'px'});
       
-      ss.tabs.graph.observe('click', function(){ss.showTab('graph')});
-      ss.tabs.data.observe('click', function(){ss.showTab('data')});
+      Flotr.EventAdapter.
+        observe(ss.tabs.graph, 'click',  function(){ss.showTab('graph')}).
+        observe(ss.tabs.data, 'click', function(){ss.showTab('data')});
     }
   },
   /**
@@ -50,7 +51,8 @@ Flotr.addPlugin('spreadsheet', {
         s = this.series,
         datagrid = this.loadDataGrid(),
         t = this.spreadsheet.datagrid = new Element('table').addClassName('flotr-datagrid'),
-        colgroup = ['<colgroup><col />'];
+        colgroup = ['<colgroup><col />'],
+        buttonDownload, buttonSelect;
     
     // First row : series' labels
     var html = ['<tr class="first-row">'];
@@ -94,31 +96,32 @@ Flotr.addPlugin('spreadsheet', {
     
     if (!Prototype.Browser.IE || Flotr.isIE9) {
       t.select('td').each(function(td) {
-        td.observe('mouseover', function(e){
+        // @TODO don't declare functions in loops
+        Flotr.EventAdapter.observe(td, 'mouseover', function(e){
           td = e.element();
           var siblings = td.previousSiblings();
           
           t.select('th[scope=col]')[siblings.length-1].addClassName('hover');
           t.select('colgroup col')[siblings.length].addClassName('hover');
-        }).observe('mouseout', function(){
+        }).observe(td, 'mouseout', function(){
           t.select('colgroup col.hover, th.hover').invoke('removeClassName', 'hover');
         });
       });
     }
-    
+
+    buttonDownload = new Element('button', {type:'button'})
+      .addClassName('flotr-datagrid-toolbar-button')
+      .update(this.options.spreadsheet.toolbarDownload);
+    buttonSelect = new Element('button', {type:'button'})
+      .addClassName('flotr-datagrid-toolbar-button')
+      .update(this.options.spreadsheet.toolbarSelectAll);
+
+    Flotr.EventAdapter.
+      observe(buttonDownload, 'click', _.bind(this.spreadsheet.downloadCSV, this)).
+      observe(buttonSelect, 'click', _.bind(this.spreadsheet.selectAllData, this));
+
     var toolbar = new Element('div').addClassName('flotr-datagrid-toolbar').
-      insert(
-        new Element('button', {type:'button'})
-            .addClassName('flotr-datagrid-toolbar-button')
-            .update(this.options.spreadsheet.toolbarDownload)
-            .observe('click', this.spreadsheet.downloadCSV.bindAsEventListener(this))
-      ).
-      insert(
-        new Element('button', {type:'button'})
-            .addClassName('flotr-datagrid-toolbar-button')
-            .update(this.options.spreadsheet.toolbarSelectAll)
-            .observe('click', this.spreadsheet.selectAllData.bindAsEventListener(this))
-      );
+      insert(buttonDownload).insert(buttonSelect);
     
     var container = new Element('div', {
       style: 'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+
