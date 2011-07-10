@@ -80,6 +80,7 @@ var Flotr = {
    * @param {Object} src - source object (likely the object with the least properties)
    * @param {Object} dest - destination object (optional, object with the most properties)
    * @return {Object} recursively merged Object
+   * @TODO See if we can't remove this.
    */
   merge: function(src, dest){
     var i, v, result = dest || {};
@@ -94,6 +95,7 @@ var Flotr = {
    * Recursively clones an object.
    * @param {Object} object - The object to clone
    * @return {Object} the clone
+   * @TODO See if we can't remove this.
    */
   clone: function(object){
     var i, v, clone = {};
