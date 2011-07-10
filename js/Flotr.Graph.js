@@ -420,38 +420,6 @@ Flotr.Graph = Class.create({
     }
   },
   /**
-   * Builds a matrix of the data to make the correspondance between the x values and the y values :
-   * X value => Y values from the axes
-   * @return {Array} The data grid
-   */
-  loadDataGrid: function(){
-    if (this.seriesData) return this.seriesData;
-
-    var s = this.series,
-        dg = [];
-
-    /* The data grid is a 2 dimensions array. There is a row for each X value.
-     * Each row contains the x value and the corresponding y value for each serie ('undefined' if there isn't one)
-    **/
-    for(i = 0; i < s.length; ++i){
-      s[i].data.each(function(v) {
-        var x = v[0],
-            y = v[1], 
-          r = dg.find(function(row) {return row[0] == x});
-        if (r) r[i+1] = y;
-        else {
-          var newRow = [];
-          newRow[0] = x;
-          newRow[i+1] = y;
-          dg.push(newRow);
-        }
-      });
-    }
-    
-    // The data grid is sorted by x value
-    return this.seriesData = dg.sortBy(function(v){return v[0]});
-  },
-  /**
    * Initializes event some handlers.
    */
   initEvents: function () {

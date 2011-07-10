@@ -39,6 +39,38 @@ Flotr.addPlugin('spreadsheet', {
     }
   },
   /**
+   * Builds a matrix of the data to make the correspondance between the x values and the y values :
+   * X value => Y values from the axes
+   * @return {Array} The data grid
+   */
+  loadDataGrid: function(){
+    if (this.seriesData) return this.seriesData;
+
+    var s = this.series,
+        dg = [];
+
+    /* The data grid is a 2 dimensions array. There is a row for each X value.
+     * Each row contains the x value and the corresponding y value for each serie ('undefined' if there isn't one)
+    **/
+    for(i = 0; i < s.length; ++i){
+      s[i].data.each(function(v) {
+        var x = v[0],
+            y = v[1], 
+          r = dg.find(function(row) {return row[0] == x});
+        if (r) r[i+1] = y;
+        else {
+          var newRow = [];
+          newRow[0] = x;
+          newRow[i+1] = y;
+          dg.push(newRow);
+        }
+      });
+    }
+    
+    // The data grid is sorted by x value
+    return this.seriesData = dg.sortBy(function(v){return v[0]});
+  },
+  /**
    * Constructs the data table for the spreadsheet
    * @todo make a spreadsheet manager (Flotr.Spreadsheet)
    * @return {Element} The resulting table element
@@ -49,7 +81,7 @@ Flotr.addPlugin('spreadsheet', {
     
     var i, j, 
         s = this.series,
-        datagrid = this.loadDataGrid(),
+        datagrid = this.spreadsheet.loadDataGrid(),
         t = this.spreadsheet.datagrid = new Element('table').addClassName('flotr-datagrid'),
         colgroup = ['<colgroup><col />'],
         buttonDownload, buttonSelect;
@@ -197,7 +229,7 @@ Flotr.addPlugin('spreadsheet', {
     var i, csv = '',
         series = this.series,
         options = this.options,
-        dg = this.loadDataGrid(),
+        dg = this.spreadsheet.loadDataGrid(),
         separator = encodeURIComponent(options.spreadsheet.csvFileSeparator);
     
     if (options.spreadsheet.decimalSeparator === options.spreadsheet.csvFileSeparator) {
