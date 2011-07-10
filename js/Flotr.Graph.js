@@ -767,7 +767,7 @@ Flotr.Graph = Class.create({
         i, j, l, dim;
     
     // Labels width and height
-    [x, x2, y, y2].each(function(axis) {
+    _.each([x, x2, y, y2], function(axis) {
       var maxLabel = '';
       
       if (axis.options.showLabels) {

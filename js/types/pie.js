@@ -88,7 +88,7 @@ Flotr.addType('pie', {
     ctx.save();
     
     if(sw > 0){
-      slices.each(function (slice) {
+      _.each(slices, function (slice) {
         if (slice.startAngle == slice.endAngle) return;
         
         var bisection = (slice.startAngle + slice.endAngle) / 2,
@@ -107,7 +107,7 @@ Flotr.addType('pie', {
     if (options.HtmlText || !this.textEnabled)
       html = ['<div style="color:' + this.options.grid.color + '" class="flotr-labels">'];
     
-    slices.each(function (slice, index) {
+    _.each(slices, function (slice, index) {
       if (slice.startAngle == slice.endAngle) return;
       
       var bisection = (slice.startAngle + slice.endAngle) / 2,

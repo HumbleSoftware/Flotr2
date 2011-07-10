@@ -53,12 +53,13 @@ Flotr.addPlugin('spreadsheet', {
      * Each row contains the x value and the corresponding y value for each serie ('undefined' if there isn't one)
     **/
     for(i = 0; i < s.length; ++i){
-      s[i].data.each(function(v) {
+      _.each(s[i].data, function(v) {
         var x = v[0],
             y = v[1], 
           r = dg.find(function(row) {return row[0] == x});
-        if (r) r[i+1] = y;
-        else {
+        if (r) {
+          r[i+1] = y;
+        } else {
           var newRow = [];
           newRow[0] = x;
           newRow[i+1] = y;
@@ -136,7 +137,7 @@ Flotr.addPlugin('spreadsheet', {
         t.select('th[scope=col]')[siblings.length-1].addClassName('hover');
         t.select('colgroup col')[siblings.length].addClassName('hover');
       }
-      t.select('td').each(function(td) {
+      _.each(t.select('td'), function(td) {
         Flotr.EventAdapter.
           observe(td, 'mouseover', handleMouseover).
           observe(td, 'mouseout', handleMouseout);
