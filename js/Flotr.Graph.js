@@ -384,9 +384,9 @@ Flotr.Graph = Class.create({
       plugin = Flotr.plugins[name];
       for (c in plugin.callbacks) {
         // Ensure no old handlers are still observing this element (prevent memory leaks)
-        this.el.
-          stopObserving(c).
-          observe(c, plugin.callbacks[c].bindAsEventListener(this));
+        Flotr.EventAdapter.
+          stopObserving(this.el, c).
+          observe(this.el, c, _.bind(plugin.callbacks[c], this));
       }
       this[name] = Object.clone(plugin);
       for (p in this[name]) {
@@ -455,12 +455,13 @@ Flotr.Graph = Class.create({
    * Initializes event some handlers.
    */
   initEvents: function () {
-    //@todo: maybe stopObserving with only flotr functions
-    this.overlay.stopObserving()
-        .observe('mousedown', this.mouseDownHandler.bindAsEventListener(this))
-        .observe('mousemove', this.mouseMoveHandler.bindAsEventListener(this))
-        .observe('mouseout', this.clearHit.bindAsEventListener(this))
-        .observe('click', this.clickHandler.bindAsEventListener(this));
+    //@TODO: maybe stopObserving with only flotr functions
+    Flotr.EventAdapter.
+      stopObserving(this.overlay).
+      observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
+      observe(this.overlay, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+      observe(this.overlay, 'mouseout', _.bind(this.clearHit, this)).
+      observe(this.overlay, 'click', _.bind(this.clickHandler, this));
   },
   /**
    * Function determines the min and max values for the xaxis and yaxis.
@@ -1774,9 +1775,9 @@ Flotr.Graph = Class.create({
       
       function cancelContextMenu () {
         overlay.show();
-        document.stopObserving('mousemove', cancelContextMenu);
+        Flotr.EventAdapter.stopObserving(document, 'mousemove', cancelContextMenu);
       }
-      document.observe('mousemove', cancelContextMenu);
+      Flotr.EventAdapter.observe(document, 'mousemove', cancelContextMenu);
       return;
     }
     
@@ -1790,7 +1791,7 @@ Flotr.Graph = Class.create({
     this.selectionInterval = setInterval(this.updateSelection.bindAsEventListener(this), 1000/this.options.selection.fps);
     
     this.mouseUpHandler = this.mouseUpHandler.bindAsEventListener(this);
-    document.observe('mouseup', this.mouseUpHandler);
+    Flotr.EventAdapter.observe(document, 'mouseup', this.mouseUpHandler);
   },
   /**
    * Fires the 'flotr:select' event when the user made a selection.
