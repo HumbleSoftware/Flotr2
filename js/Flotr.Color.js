@@ -1,15 +1,20 @@
 /**
  * Flotr Color
  */
-Flotr.Color = Class.create({
-  initialize: function(r, g, b, a){
-    this.rgba = ['r','g','b','a'];
-    var x = 4;
-    while(-1<--x){
-      this[this.rgba[x]] = arguments[x] || ((x==3) ? 1.0 : 0);
-    }
-    this.normalize();
-  },
+
+(function () {
+
+// Constructor
+Flotr.Color = function(r, g, b, a){
+  this.rgba = ['r','g','b','a'];
+  var x = 4;
+  while(-1<--x){
+    this[this.rgba[x]] = arguments[x] || ((x==3) ? 1.0 : 0);
+  }
+  this.normalize();
+}
+
+Flotr.Color.prototype = {
   adjust: function(rd, gd, bd, ad) {
     var x = 4;
     while(-1<--x){
@@ -52,9 +57,9 @@ Flotr.Color = Class.create({
   toString: function(){
     return (this.a >= 1.0) ? 'rgb('+[this.r,this.g,this.b].join(',')+')' : 'rgba('+[this.r,this.g,this.b,this.a].join(',')+')';
   }
-});
+};
 
-Object.extend(Flotr.Color, {
+_.extend(Flotr.Color, {
   /**
    * Parses a color string and returns a corresponding Color.
    * The different tests are in order of probability to improve speed.
@@ -128,3 +133,4 @@ Object.extend(Flotr.Color, {
     violet:[128,0,128],red:[255,0,0],silver:[192,192,192],white:[255,255,255],yellow:[255,255,0]
   }
 });
+})();
