@@ -223,13 +223,11 @@ Flotr.Graph.prototype = {
       return v;
     }
 
-
     var x = this.axes.x, 
         x2 = this.axes.x2, 
         y = this.axes.y, 
-        y2 = this.axes.y2;
-
-    var pw = this.plotWidth, 
+        y2 = this.axes.y2,
+        pw = this.plotWidth, 
         ph = this.plotHeight;
 
     x.scale  = pw / (d2p(x.max, x.options) - d2p(x.min, x.options));
