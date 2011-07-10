@@ -2,6 +2,7 @@ yepnope([
   // Libs
   '../lib/prototype.js',
   '../lib/bean.min.js',
+  '../lib/underscore-min.js',
   {
   test : (navigator.appVersion.indexOf("MSIE") != -1  && parseFloat(navigator.appVersion.split("MSIE")[1]) < 9),
     // Load for IE < 9
