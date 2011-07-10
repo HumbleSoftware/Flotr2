@@ -17,7 +17,7 @@ Flotr.Graph = Class.create({
 
     this.registerPlugins();
     
-    this.el.fire('flotr:beforeinit', [this]);
+    Flotr.EventAdapter.fire(this.el, 'flotr:beforeinit', [this]);
     
     // Initialize some variables
     this.el.graph = this;
@@ -44,7 +44,7 @@ Flotr.Graph = Class.create({
     // Create and prepare canvas.
     this.constructCanvas();
     
-    this.el.fire('flotr:afterconstruct', [this]);
+    Flotr.EventAdapter.fire(this.el, 'flotr:afterconstruct', [this]);
     
     // Add event handlers for mouse tracking, clicking and selection
     this.initEvents();
@@ -60,7 +60,7 @@ Flotr.Graph = Class.create({
     
     this.draw(function() {
       this.insertLegend();
-        this.el.fire('flotr:afterinit', [this]);
+        Flotr.EventAdapter.fire(this.el, 'flotr:afterinit', [this]);
     }.bind(this));
     } catch (e) {
       try {
@@ -869,7 +869,7 @@ Flotr.Graph = Class.create({
       this.drawTitles();
 
       if(this.series.length){
-        this.el.fire('flotr:beforedraw', [this.series, this]);
+        Flotr.EventAdapter.fire(this.el, 'flotr:beforedraw', [this.series, this]);
         
         for(var i = 0; i < this.series.length; i++){
           if (!this.series[i].hide)
@@ -878,7 +878,7 @@ Flotr.Graph = Class.create({
       }
     
       this.drawOutline();
-      this.el.fire('flotr:afterdraw', [this.series, this]);
+      Flotr.EventAdapter.fire(this.el, 'flotr:afterdraw', [this.series, this]);
       after();
     }.bind(this);
     
@@ -928,7 +928,7 @@ Flotr.Graph = Class.create({
         
     if(o.grid.verticalLines || o.grid.minorVerticalLines || 
            o.grid.horizontalLines || o.grid.minorHorizontalLines){
-      this.el.fire('flotr:beforegrid', [this.axes.x, this.axes.y, o, this]);
+      Flotr.EventAdapter.fire(this.el, 'flotr:beforegrid', [this.axes.x, this.axes.y, o, this]);
     }
     ctx.save();
     ctx.lineWidth = 1;
@@ -1051,7 +1051,7 @@ Flotr.Graph = Class.create({
     ctx.restore();
     if(o.grid.verticalLines || o.grid.minorVerticalLines ||
        o.grid.horizontalLines || o.grid.minorHorizontalLines){
-      this.el.fire('flotr:aftergrid', [this.axes.x, this.axes.y, o, this]);
+      Flotr.EventAdapter.fire(this.el, 'flotr:aftergrid', [this.axes.x, this.axes.y, o, this]);
     }
   }, 
   /**
@@ -1737,7 +1737,7 @@ Flotr.Graph = Class.create({
     if(this.ignoreClick){
       return this.ignoreClick = false;
     }
-    this.el.fire('flotr:click', [this.getEventPosition(event), this]);
+    Flotr.EventAdapter.fire(this.el, 'flotr:click', [this.getEventPosition(event), this]);
   },
   /**
    * Observes mouse movement over the graph area. Fires the 'flotr:mousemove' event.
@@ -1759,7 +1759,7 @@ Flotr.Graph = Class.create({
     if (this.options.crosshair.mode)
       this.drawCrosshair(pos);
     
-    this.el.fire('flotr:mousemove', [event, pos, this]);
+    Flotr.EventAdapter.fire(this.el, 'flotr:mousemove', [event, pos, this]);
   },
   /**
    * Observes the 'mousedown' event.
@@ -1804,7 +1804,7 @@ Flotr.Graph = Class.create({
     y1 = a.y.p2d(s.first.y);
     y2 = a.y.p2d(s.second.y);
 
-    this.el.fire('flotr:select', [{
+    Flotr.EventAdapter.fire(this.el, 'flotr:select', [{
       x1:Math.min(x1, x2), 
       y1:Math.min(y1, y2), 
       x2:Math.max(x1, x2), 
@@ -2272,7 +2272,7 @@ Flotr.Graph = Class.create({
           nearest: n,
           fraction: n.fraction
         });
-        mt.fire('flotr:hit', [n, this]);
+        Flotr.EventAdapter.fire(mt, 'flotr:hit', [n, this]);
       }
       else if(prevHit){
         mt.hide();
