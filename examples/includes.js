@@ -1,6 +1,7 @@
 yepnope([
   // Libs
   '../lib/prototype.js',
+  '../lib/bean.min.js',
   {
   test : (navigator.appVersion.indexOf("MSIE") != -1  && parseFloat(navigator.appVersion.split("MSIE")[1]) < 9),
     // Load for IE < 9
@@ -20,6 +21,7 @@ yepnope([
   '../js/Flotr.defaultOptions.js',
   '../js/Flotr.Color.js',
   '../js/Flotr.Date.js',
+  '../js/Flotr.EventAdapter.js',
   '../js/Flotr.Graph.js',
   '../js/types/lines.js',
   '../js/types/bars.js',
