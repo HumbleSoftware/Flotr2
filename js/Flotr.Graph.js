@@ -33,11 +33,12 @@ Flotr.Graph = function(el, data, options){
   this.series = Flotr.getSeries(data);
   this.setOptions(options);
   
+  // Init graph types
   var type, p;
   for (type in Flotr.graphTypes) {
-    this[type] = Object.clone(Flotr.graphTypes[type]);
+    this[type] = _.clone(Flotr.graphTypes[type]);
     for (p in this[type]) {
-      if (Object.isFunction(this[type][p]))
+      if (_.isFunction(this[type][p]))
         this[type][p] = this[type][p].bind(this);
     }
   }
@@ -77,8 +78,8 @@ Flotr.Graph.prototype = {
    */
   setOptions: function(opts){
     var options = Flotr.clone(Flotr.defaultOptions);
-    options.x2axis = Object.extend(Object.clone(options.xaxis), options.x2axis);
-    options.y2axis = Object.extend(Object.clone(options.yaxis), options.y2axis);
+    options.x2axis = _.extend(_.clone(options.xaxis), options.x2axis);
+    options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
     this.options = Flotr.merge(opts || {}, options);
     
     // The 4 axes of the plot
@@ -113,7 +114,7 @@ Flotr.Graph.prototype = {
       c = this.series[i].color;
       if(c){
         --neededColors;
-        if(Object.isNumber(c)) assignedColors.push(c);
+        if(_.isNumber(c)) assignedColors.push(c);
         else usedColors.push(Flotr.Color.parse(c));
       }
     }
@@ -149,7 +150,7 @@ Flotr.Graph.prototype = {
       // Assign the color.
       if(s.color == null){
         s.color = colors[j++].toString();
-      }else if(Object.isNumber(s.color)){
+      }else if(_.isNumber(s.color)){
         s.color = colors[s.color].toString();
       }
       
@@ -164,9 +165,9 @@ Flotr.Graph.prototype = {
       
       // Apply missing options to the series.
       for (var t in Flotr.graphTypes){
-        s[t] = Object.extend(Object.clone(this.options[t]), s[t]);
+        s[t] = _.extend(_.clone(this.options[t]), s[t]);
       }
-      s.mouse = Object.extend(Object.clone(this.options.mouse), s.mouse);
+      s.mouse = _.extend(_.clone(this.options.mouse), s.mouse);
       
       if(s.shadowSize == null) s.shadowSize = this.options.shadowSize;
     }
@@ -349,20 +350,20 @@ Flotr.Graph.prototype = {
   processColor: function(color, options){
     if (!color) return 'rgba(0, 0, 0, 0)';
     
-    options = Object.extend({
+    options = _.extend({
       x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx
     }, options);
     
     if (color instanceof Flotr.Color) return color.adjust(null, null, null, options.opacity).toString();
-    if (Object.isString(color)) return Flotr.Color.parse(color).scale(null, null, null, options.opacity).toString();
+    if (_.isString(color)) return Flotr.Color.parse(color).scale(null, null, null, options.opacity).toString();
     
     var grad = color.colors ? color : {colors: color};
     
     if (!options.ctx) {
-      if (!Object.isArray(grad.colors)) return 'rgba(0, 0, 0, 0)';
-      return Flotr.Color.parse(Object.isArray(grad.colors[0]) ? grad.colors[0][1] : grad.colors[0]).scale(null, null, null, options.opacity).toString();
+      if (!_.isArray(grad.colors)) return 'rgba(0, 0, 0, 0)';
+      return Flotr.Color.parse(_.isArray(grad.colors[0]) ? grad.colors[0][1] : grad.colors[0]).scale(null, null, null, options.opacity).toString();
     }
-    grad = Object.extend({start: 'top', end: 'bottom'}, grad); 
+    grad = _.extend({start: 'top', end: 'bottom'}, grad); 
     
     if (/top/i.test(grad.start))  options.x1 = 0;
     if (/left/i.test(grad.start)) options.y1 = 0;
@@ -372,7 +373,7 @@ Flotr.Graph.prototype = {
     var i, c, stop, gradient = options.ctx.createLinearGradient(options.x1, options.y1, options.x2, options.y2);
     for (i = 0; i < grad.colors.length; i++) {
       c = grad.colors[i];
-      if (Object.isArray(c)) {
+      if (_.isArray(c)) {
         stop = c[0];
         c = c[1];
       }
@@ -391,9 +392,9 @@ Flotr.Graph.prototype = {
           stopObserving(this.el, c).
           observe(this.el, c, _.bind(plugin.callbacks[c], this));
       }
-      this[name] = Object.clone(plugin);
+      this[name] = _.clone(plugin);
       for (p in this[name]) {
-        if (Object.isFunction(this[name][p]))
+        if (_.isFunction(this[name][p]))
           this[name][p] = this[name][p].bind(this);
       }
     }
@@ -641,11 +642,11 @@ Flotr.Graph.prototype = {
           minorTicks = o.minorTicks || [], 
           t, label;
 
-      if(Object.isFunction(ticks)){
+      if(_.isFunction(ticks)){
         ticks = ticks({min: axis.min, max: axis.max});
       }
       
-      if(Object.isFunction(minorTicks)){
+      if(_.isFunction(minorTicks)){
         minorTicks = minorTicks({min: axis.min, max: axis.max});
       }
       
@@ -857,10 +858,10 @@ Flotr.Graph.prototype = {
     var g = this.options.grid;
     
     if (g && g.backgroundImage) {
-      if (Object.isString(g.backgroundImage)){
+      if (_.isString(g.backgroundImage)){
         g.backgroundImage = {src: g.backgroundImage, left: 0, top: 0};
       }else{
-        g.backgroundImage = Object.extend({left: 0, top: 0}, g.backgroundImage);
+        g.backgroundImage = _.extend({left: 0, top: 0}, g.backgroundImage);
       }
       
       var img = new Image();
@@ -2303,7 +2304,7 @@ Flotr.Graph.prototype = {
       case 'png': image = Canvas2Image.saveAsPNG(this.canvas, replaceCanvas, width, height); break;
       case 'bmp': image = Canvas2Image.saveAsBMP(this.canvas, replaceCanvas, width, height); break;
     }
-    if (Object.isElement(image) && replaceCanvas) {
+    if (_.isElement(image) && replaceCanvas) {
       this.restoreCanvas();
       this.canvas.hide();
       this.overlay.hide();
