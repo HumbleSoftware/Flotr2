@@ -8,7 +8,7 @@ Flotr.EventAdapter = {
   },
   fire: function(object, name, args) {
     bean.fire(object, name, args);
-    if (Prototype)
+    if (typeof(Prototype) != 'undefined')
       Event.fire(object, name, args);
     // @TODO Someone who uses mootools, add mootools adapter for existing applciations.
     return this;
