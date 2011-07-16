@@ -1926,7 +1926,7 @@ Flotr.Graph.prototype = {
     
     if (pos.relX < 0 || pos.relY < 0 || pos.relX > this.plotWidth || pos.relY > this.plotHeight) {
       this.el.style.cursor = null;
-      this.el.removeClassName('flotr-crosshair');
+      D.removeClass(this.el, 'flotr-crosshair');
       return; 
     }
     
@@ -1935,7 +1935,7 @@ Flotr.Graph.prototype = {
     
     if (options.crosshair.hideCursor) {
       this.el.style.cursor = Prototype.Browser.Gecko ? 'none' :'url(blank.cur),crosshair';
-      this.el.addClassName('flotr-crosshair');
+      D.addClass(this.el, 'flotr-crosshair');
     }
     
     octx.save();
