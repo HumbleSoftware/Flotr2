@@ -1515,7 +1515,7 @@ Flotr.Graph.prototype = {
       ctx = this.ctx,
       i;
       
-    var noLegendItems = series.findAll(function(s) {return (s.label && !s.hide)}).length;
+    var noLegendItems = _.filter(series, function(s) {return (s.label && !s.hide)}).length;
 
     if (noLegendItems) {
       if (!options.HtmlText && this.textEnabled && !$(legend.container)) {
