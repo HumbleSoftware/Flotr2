@@ -66,7 +66,7 @@ var Flotr = {
    * @return {Array} Array of Objects parsed into the right format ({(...,) data: [[x1,y1], [x2,y2], ...] (, ...)})
    */
   getSeries: function(data){
-    return data.collect(function(serie){
+    return _.map(data, function(serie){
       serie = (serie.data) ? _.clone(serie) : {data: serie};
       for (var i = serie.data.length-1; i > -1; --i) {
         serie.data[i][1] = (serie.data[i][1] === null ? null : parseFloat(serie.data[i][1])); 
