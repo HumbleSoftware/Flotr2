@@ -120,7 +120,6 @@ _.extend(Flotr.Color, {
    * Process color and options into color style.
    */
   processColor: function(color, options) {
-    console.log(color, options);
 
     if (!color) return 'rgba(0, 0, 0, 0)';
     if (color instanceof Flotr.Color) return color.adjust(null, null, null, options.opacity).toString();
