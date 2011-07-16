@@ -39,6 +39,9 @@
 			
 		<script type="text/javascript">
 			function example(){
+
+                var container = document.getElementById('container');
+
 				/**
 				 * Fill series d1 and d2.
 				 */
@@ -61,8 +64,7 @@
 				/**
 				 * Draw the graph.
 				 */
-			    var f = Flotr.draw(
-					$('container'), [ 
+			    var f = Flotr.draw(container, [ 
 						{data:d1, label:'x + sin(x+&pi;)'},
 						{data:d2, label:'x'},
 						{data:d3, label:'15 - cos(x)'}											

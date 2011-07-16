@@ -41,6 +41,9 @@
 		<script type="text/javascript">
 			var f;
 			function example(){
+
+                var container = document.getElementById('container');
+
 				var d1 = [];
 				var d2 = [];
 				var d3 = [];
@@ -61,7 +64,7 @@
 				 * Draw the graph.
 				 */
 				f = Flotr.draw(
-					$('container'),[ 
+					container,[ 
 						{data:d1, label:'y = 4 + x^(1.5)', lines:{fill:true}}, 
 						{data:d2, label:'y = x^3', yaxis:2}, 
 						{data:d3, label:'y = 5x + 3sin(4x)'}, 
@@ -94,10 +97,9 @@
 						}
 				});
 				
-				if (Prototype.Browser.IE && (!document.documentMode || document.documentMode < 9)) {
-					var form = $(document.forms['image-download']);
-					form.disable().insert({top: "Your browser doesn't allow you to get a bitmap image from the plot, "+
-					"you can only get a VML image that you can use in Microsoft Office.<br />"});
+                if (Flotr.isIE && Flotr.isIE < 9) {
+                    alert("Your browser doesn't allow you to get a bitmap image from the plot, "+
+					    "you can only get a VML image that you can use in Microsoft Office.<br />");
 				}
 			};
 		</script>

@@ -28,6 +28,9 @@
 		<script type="text/javascript">
 			var f;
 			function example(){
+
+                var container = document.getElementById('container');
+
 				var d1 = [];
 				var d2 = [];
 				var d3 = [];
@@ -48,7 +51,7 @@
 				 * Draw the graph.
 				 */
 				f = Flotr.draw(
-					$('container'),[ 
+					container,[ 
 						{data:d1, label:'y = 4 + x^(1.5)', lines:{fill:true}}, 
 						{data:d2, label:'y = x^3', yaxis:2}, 
 						{data:d3, label:'y = 5x + 3sin(4x)'}, 

@@ -27,6 +27,9 @@
 		
 		<script type="text/javascript">
 			function example () {
+
+                var container = document.getElementById('container');
+
 				/**
 				 * Fill series d1 and d2.
 				 */
@@ -39,7 +42,7 @@
 				/**
 				 * Draw the graph.
 				 */
-			    var f = Flotr.draw($('container'), [ d1, d2 ], {
+			    var f = Flotr.draw(container, [ d1, d2 ], {
 			      xaxis: {
 			        minorTickFreq: 4
 			      }, 

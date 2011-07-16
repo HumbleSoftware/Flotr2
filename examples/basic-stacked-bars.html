@@ -34,6 +34,9 @@
 			
 		<script type="text/javascript">
 			function example(){
+
+                var container = document.getElementById('container');
+
 				/**
 				 * Fill series.
 				 */
@@ -47,8 +50,7 @@
 				/**
 				 * Draw the graph.
 				 */
-			    var f = Flotr.draw(
-					$('container'), [
+			    var f = Flotr.draw(container,[
 						{data:d1, label:'Serie 1'},
 						{data:d2, label:'Serie 2'},
 						{data:d3, label:'Serie 3'}

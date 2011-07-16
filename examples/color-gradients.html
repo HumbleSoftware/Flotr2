@@ -31,6 +31,9 @@
     </div>
     <!-- ad -->
     <script type="text/javascript">
+
+      var container = document.getElementById('container');
+
       /**
        * Wait till dom's finished loading.
        */
@@ -80,7 +83,7 @@
       	/**
       	 * Draw the graph in the first container.
       	 */
-      	Flotr.draw($('container'), [lines, bars, markers], {
+      	Flotr.draw(container, [lines, bars, markers], {
       		yaxis: {
       			min: 0,
 						max: 11

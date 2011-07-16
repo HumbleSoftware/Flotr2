@@ -26,6 +26,9 @@
 		
 		<script type="text/javascript">
 			function example(){
+
+                var container = document.getElementById('container');
+
 				/**
 				 * Fill series d1 and d2 width random values.
 				 */
@@ -43,9 +46,8 @@
 				/**
 				 * Draw the graph in the first container.
 				 */
-				Flotr.draw(
-					$('container'),
-					[d1, d2],
+				Flotr.draw(container,
+                    [d1, d2],
 					{
             bubbles: {show:true, baseRadius: 5},
             xaxis: {min: -4, max: 14},

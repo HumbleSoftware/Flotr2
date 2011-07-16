@@ -27,6 +27,7 @@
 		
 		<script type="text/javascript">
 			function example(){
+                var container = document.getElementById('container');
 				/**
 				 * Fill series d1 and d2.
 				 */
@@ -52,8 +53,7 @@
 				/**
 				 * Draw the graph.
 				 */
-				var f = Flotr.draw(
-					$('container'),[ 
+				var f = Flotr.draw(container,[ 
 						{data:d1, label:'y = 4 + x^(1.5)', lines:{fill:true}}, 
 						{data:d2, label:'y = x^3'}, 
 						{data:d3, label:'y = 5x + 3sin(4x)'}, 

@@ -25,6 +25,9 @@
 		<!-- ad -->
 		
 		<script type="text/javascript">
+
+        var container = document.getElementById('container');
+
 			function example(){
 				/**
 				 * Fill series d1
@@ -43,7 +46,7 @@
 				/**
 				 * Draw the graph.
 				 */
-		    var f = Flotr.draw($('container'), [ d1 ], { 
+		    var f = Flotr.draw(container, [ d1 ], { 
 			    candles: { show: true, candleWidth: 0.6 },
 			    xaxis: {noTicks: 10}
 		    });

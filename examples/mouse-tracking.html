@@ -33,6 +33,9 @@
 		
 		<script type="text/javascript">
 			function example(){
+
+                var container = document.getElementById('container');
+
 				/**
 				 * Fill series d1 and d2.
 				 */
@@ -50,7 +53,7 @@
 				 * and configures mousetracking for series d2 and d3.
 				 */
 				var f = Flotr.draw(
-					$('container'), 
+                    container, 
 					[{data:d1,mouse:{track:false}}, d2, d3 ],
 					{
 						mouse:{

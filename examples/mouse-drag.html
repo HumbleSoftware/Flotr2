@@ -26,6 +26,9 @@
 		
 		<script type="text/javascript">
 			function example(){
+
+                var container = document.getElementById('container');
+
 				/**
 				 * Fill series d1 and d2.
 				 */
@@ -53,12 +56,12 @@
 					/**
 					 * Clone the options, so the 'options' variable always keeps intact.
 					 */
-					var o = Object.extend(Object.clone(options), opts || {});
+					var o = _.extend(_.clone(options), opts || {});
 					/**
 					 * Return a new graph.
 					 */
 					return Flotr.draw(
-						$('container'), 
+						container, 
 						[ d1, d2, d3 ],
 						o
 					);
@@ -73,8 +76,8 @@
 				/** Fired on mouse down */
 				function drag(e){
 					start = f.getEventPosition(e);
-					document.observe('mousemove', move);
-					document.observe('mouseup', release);
+                    Flotr.EventAdapter.observe(document, 'mousemove', move);
+                    Flotr.EventAdapter.observe(document, 'mouseup', release);
 				}
 				
 				/** Fired on mouse move */
@@ -86,15 +89,15 @@
 					  xaxis: {min: xaxis.min + offset, max: xaxis.max + offset}
 					});
 					// @todo: refector initEvents in order not to remove other observed events
-					f.overlay.observe('mousedown', drag);
+                    Flotr.EventAdapter.observe(f.overlay, 'mousedown', drag);
 				}
 				
 				/** Fired on mouse up */
 				function release(e){
-					document.stopObserving('mousemove', move);
+                    Flotr.EventAdapter.stopObserving(document, 'mousemove', move);
 				}
 				
-				f.overlay.observe('mousedown', drag);
+                Flotr.EventAdapter.observe(f.overlay, 'mousedown', drag);
 			};			
 		</script>
 		

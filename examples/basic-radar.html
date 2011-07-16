@@ -26,6 +26,9 @@
 		
 		<script type="text/javascript">
 			function example(){
+
+                var container = document.getElementById('container');
+
 				/**
 				 * Fill series s1 and s2.
 				 */
@@ -35,7 +38,7 @@
 				/**
 				 * Draw the graph.
 				 */
-			  var f = Flotr.draw($('container'), [ s1, s2 ], {
+			  var f = Flotr.draw(container, [ s1, s2 ], {
 					radar: {show: true}, 
 					grid: {circular: true, minorHorizontalLines: true}, 
 					yaxis: {min: 0, max: 10, minorTickFreq: 2}, 

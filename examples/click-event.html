@@ -28,6 +28,9 @@
 		
 		<script type="text/javascript">
 			function example(){			
+
+                var container = document.getElementById('container');
+
 				/**
 				 * Default options.
 				 */
@@ -47,16 +50,13 @@
 				/**
 				 * Draw an empty graph and configure the axis.
 				 */
-				var f = Flotr.draw($('container'), [d1], options);
+				var f = Flotr.draw(container, [d1], options);
 				
 				/**
 				 * Observe the 'flotr:click' event. When the graph is clicked, add the click
 				 * position to the d1 series and redraw the graph.
 				 */
-				$('container').observe('flotr:click', function(event){
-					// Retrieve where the user clicked.
-					var position = event.memo[0];
-					
+                Flotr.EventAdapter.observe(container, 'flotr:click', function(position){
 					// Store the click position in the d1 series.
 					d1.push([position.x, position.y]);
 					
@@ -64,7 +64,7 @@
 					d1 = d1.sort(function(a, b){ return a[0] - b[0]; });
 					
 					// Redraw the graph, with the new series.
-					f = Flotr.draw($('container'), [d1], options);
+					f = Flotr.draw(container, [d1], options);
 				});
 			};			
 		</script>

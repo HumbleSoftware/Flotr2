@@ -40,6 +40,9 @@
 		
 		<script type="text/javascript">
 		function example(){
+
+            var container = document.getElementById('container');
+
 			/**
 			 * Fill series d0, d1 and d2. 
 			 * 
@@ -85,7 +88,7 @@
 			 * Draw the graph.
 			 */
 		    var f = Flotr.draw(
-				$('container'), [ 
+				container, [ 
 					{data:d0, shadowSize:0, color:'#545454'}, // => Horizontal line through y = 0
 					{data:d1, label:'y = x + (Math.random() * 8) - 15', points:{ show:true } },	// => Scatterplot
 					{data:d2, label:'y = '+alpha.toFixed(2)+' + ' + beta.toFixed(2) + '*x'}	// => Regression line																
