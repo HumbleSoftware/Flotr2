@@ -1768,9 +1768,10 @@ Flotr.Graph.prototype = {
       clearInterval(this.selectionInterval);
     }
     this.lastMousePos.pageX = null;
-    this.selectionInterval = setInterval(this.updateSelection.bindAsEventListener(this), 1000/this.options.selection.fps);
+    this.selectionInterval = 
+      setInterval(_.bind(this.updateSelection, this), 1000/this.options.selection.fps);
     
-    this.mouseUpHandler = this.mouseUpHandler.bindAsEventListener(this);
+    this.mouseUpHandler = _.bind(this.mouseUpHandler, this);
     Flotr.EventAdapter.observe(document, 'mouseup', this.mouseUpHandler);
   },
   /**
@@ -1798,8 +1799,9 @@ Flotr.Graph.prototype = {
    * @param {Event} event - 'mouseup' Event object.
    */
   mouseUpHandler: function(event){
-    document.stopObserving('mouseup', this.mouseUpHandler);
-    event.stop();
+    Flotr.EventAdapter.stopObserving(document, 'mouseup', this.mouseUpHandler);
+    // @TODO why?
+    //event.stop();
     
     if(this.selectionInterval != null){
       clearInterval(this.selectionInterval);
@@ -1822,7 +1824,7 @@ Flotr.Graph.prototype = {
    */
   setSelectionPos: function(pos, event) {
     var options = this.options,
-        offset = this.overlay.cumulativeOffset();
+        offset = D.position(this.overlay);
     
     if(options.selection.mode.indexOf('x') == -1){
       pos.x = (pos == this.selection.first) ? 0 : this.plotWidth;         
