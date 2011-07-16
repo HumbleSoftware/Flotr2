@@ -2211,8 +2211,8 @@ Flotr.Graph.prototype = {
       elStyle += pos;
              
       if(!mt){
-        this.el.insert('<div class="flotr-mouse-value" style="'+elStyle+'"></div>');
-        mt = this.mouseTrack = this.el.select('.flotr-mouse-value')[0];
+        this.mouseTrack = mt = D.node('<div class="flotr-mouse-value" style="'+elStyle+'"></div>');
+        D.insert(this.el, mt);
       }
       else {
         mt.style.cssText = elStyle;
@@ -2220,7 +2220,7 @@ Flotr.Graph.prototype = {
       }
       
       if(n.x !== null && n.y !== null){
-        mt.show();
+        D.show(mt);
         
         this.clearHit();
         this.drawHit(n);
@@ -2239,7 +2239,7 @@ Flotr.Graph.prototype = {
         Flotr.EventAdapter.fire(mt, 'flotr:hit', [n, this]);
       }
       else if(prevHit){
-        mt.hide();
+        D.hide(mt);
         this.clearHit();
       }
     }
