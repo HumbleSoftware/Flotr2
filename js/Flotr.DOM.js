@@ -1,8 +1,8 @@
 Flotr.DOM = {
   addClass: function(element, name){
     var classList = (element.className ? element.className : '');
-    _.each(classList.split(/\s+/g), function (c) { if (c == name) return; });
-    element.className = classList + ' ' + name;
+      if (_.include(classList.split(/\s+/g), name)) return;
+    element.className = (classList ? classList + ' ' : '') + name;
   },
   /**
    * Create an element.
