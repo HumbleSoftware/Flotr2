@@ -14,11 +14,22 @@ Flotr.DOM = {
     _.each(element.childNodes, function (e) { element.removeChild(e); });
   },
   hide: function(element){
-    Flotr.DOM.setStyles({display:'none'});
+    Flotr.DOM.setStyles(element, {display:'none'});
   },
+  /**
+   * Insert a child.
+   * @param {Element} element
+   * @param {Element|String} Element or string to be appended.
+   */
   insert: function(element, child){
+    if(_.isString(child))
+      element.innerHTML += child;
+    else if (_.isElement(child))
+      element.appendChild(child);
   },
-  set: function(element, content){
+  // @TODO find xbrowser implementation
+  opacity: function(element, opacity) {
+    element.style.opacity = opacity;
   },
   setStyles: function(element, o) {
     _.each(o, function (value, key) {
@@ -26,7 +37,7 @@ Flotr.DOM = {
     });
   },
   show: function(element){
-    Flotr.DOM.setStyles({display:''});
+    Flotr.DOM.setStyles(element, {display:''});
   },
   /**
    * Return element size.
