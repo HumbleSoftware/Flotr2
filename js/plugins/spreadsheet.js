@@ -175,7 +175,7 @@ Flotr.addPlugin('spreadsheet', {
     D.insert(toolbar, buttonDownload);
     D.insert(toolbar, buttonSelect);
 
-    var containerHeight =this.canvasHeight-this.spreadsheet.tabsContainer.getHeight()-2,
+    var containerHeight =this.canvasHeight - D.size(this.spreadsheet.tabsContainer).height-2,
         container = D.node('<div class="flotr-datagrid-container" style="position:absolute;left:0px;top:0px;width:'+
           this.canvasWidth+'px;height:'+containerHeight+'px;overflow:auto;z-index:10"></div>');
 
