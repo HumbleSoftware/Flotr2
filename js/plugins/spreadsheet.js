@@ -1,4 +1,8 @@
 /** Spreadsheet **/
+(function() {
+
+  var D = Flotr.DOM;
+
 Flotr.addPlugin('spreadsheet', {
   options: {
     show: false,           // => show the data grid using two tabs
@@ -15,27 +19,34 @@ Flotr.addPlugin('spreadsheet', {
    */
   callbacks: {
     'flotr:afterconstruct': function(){
-      this.el.select('.flotr-tabs-group,.flotr-datagrid-container').invoke('remove');
+      // @TODO necessary?
+      //this.el.select('.flotr-tabs-group,.flotr-datagrid-container').invoke('remove');
       
       if (!this.options.spreadsheet.show) return;
       
-      var ss = this.spreadsheet;
-      ss.tabsContainer = new Element('div', {style:'position:absolute;left:0px;width:'+this.canvasWidth+'px'}).addClassName('flotr-tabs-group');
-      ss.tabs = {
-        graph: new Element('div', {style:'float:left'}).addClassName('flotr-tab selected').update(this.options.spreadsheet.tabGraphLabel),
-        data: new Element('div', {style:'float:left'}).addClassName('flotr-tab').update(this.options.spreadsheet.tabDataLabel)
-      };
-      ss.tabsContainer.insert(ss.tabs.graph).insert(ss.tabs.data);
-      
-      this.el.insert({bottom: ss.tabsContainer});
-      
-      var offset = ss.tabs.data.getHeight() + 2;
+      var ss = this.spreadsheet,
+        container = D.node('<div class="flotr-tabs-group" style="position:absolute;left:0px;width:'+this.canvasWidth+'px"></div>'),
+        graph = D.node('<div style="float:left" class="flotr-tab selected">'+this.options.spreadsheet.tabGraphLabel+'</div>'),
+        data = D.node('<div style="float:left" class="flotr-tab">'+this.options.spreadsheet.tabDataLabel+'</div>'),
+        offset;
+
+      ss.tabsContainer = container;
+      ss.tabs = { graph : graph, data : data };
+
+      D.insert(container, graph);
+      D.insert(container, data);
+      D.insert(this.el, container);
+
+      offset = D.size(data).height + 2;
       this.plotOffset.bottom += offset;
-      ss.tabsContainer.setStyle({top: this.canvasHeight-offset+'px'});
-      
+
+      D.setStyles(container, {top: this.canvasHeight-offset+'px'});
+
       Flotr.EventAdapter.
-        observe(ss.tabs.graph, 'click',  function(){ss.showTab('graph')}).
-        observe(ss.tabs.data, 'click', function(){ss.showTab('data')});
+        observe(graph, 'click',  function(){ss.showTab('graph')}).
+        observe(data, 'click', function(){ss.showTab('data')});
+
+      return;
     }
   },
   /**
@@ -56,7 +67,7 @@ Flotr.addPlugin('spreadsheet', {
       _.each(s[i].data, function(v) {
         var x = v[0],
             y = v[1], 
-          r = dg.find(function(row) {return row[0] == x});
+            r = _.detect(dg, function(row) {return row[0] == x});
         if (r) {
           r[i+1] = y;
         } else {
@@ -69,7 +80,7 @@ Flotr.addPlugin('spreadsheet', {
     }
     
     // The data grid is sorted by x value
-    return this.seriesData = dg.sortBy(function(v){return v[0]});
+    return this.seriesData = _.sortBy(dg, function(v){return v[0]});
   },
   /**
    * Constructs the data table for the spreadsheet
@@ -83,12 +94,11 @@ Flotr.addPlugin('spreadsheet', {
     var i, j, 
         s = this.series,
         datagrid = this.spreadsheet.loadDataGrid(),
-        t = this.spreadsheet.datagrid = new Element('table').addClassName('flotr-datagrid'),
         colgroup = ['<colgroup><col />'],
-        buttonDownload, buttonSelect;
+        buttonDownload, buttonSelect, t;
     
     // First row : series' labels
-    var html = ['<tr class="first-row">'];
+    var html = ['<table class="flotr-datagrid"><tr class="first-row">'];
     html.push('<th>&nbsp;</th>');
     for (i = 0; i < s.length; ++i) {
       html.push('<th scope="col">'+(s[i].label || String.fromCharCode(65+i))+'</th>');
@@ -125,8 +135,10 @@ Flotr.addPlugin('spreadsheet', {
       html.push('</tr>');
     }
     colgroup.push('</colgroup>');
-    t.update(colgroup.join('')+html.join(''));
-    
+    t = D.node(html.join(''));
+
+    /**
+     * @TODO disabled this
     if (!Flotr.isIE || Flotr.isIE == 9) {
       function handleMouseout(){
         t.select('colgroup col.hover, th.hover').invoke('removeClassName', 'hover');
@@ -143,30 +155,36 @@ Flotr.addPlugin('spreadsheet', {
           observe(td, 'mouseout', handleMouseout);
       });
     }
+    */
 
-    buttonDownload = new Element('button', {type:'button'})
-      .addClassName('flotr-datagrid-toolbar-button')
-      .update(this.options.spreadsheet.toolbarDownload);
-    buttonSelect = new Element('button', {type:'button'})
-      .addClassName('flotr-datagrid-toolbar-button')
-      .update(this.options.spreadsheet.toolbarSelectAll);
+    buttonDownload = D.node(
+      '<button type="button" class="flotr-datagrid-toolbar-button">' +
+      this.options.spreadsheet.toolbarDownload +
+      '</button>');
+
+    buttonSelect = D.node(
+      '<button type="button" class="flotr-datagrid-toolbar-button">' +
+      this.options.spreadsheet.toolbarSelectAll+
+      '</button>');
 
     Flotr.EventAdapter.
       observe(buttonDownload, 'click', _.bind(this.spreadsheet.downloadCSV, this)).
       observe(buttonSelect, 'click', _.bind(this.spreadsheet.selectAllData, this));
 
-    var toolbar = new Element('div').addClassName('flotr-datagrid-toolbar').
-      insert(buttonDownload).insert(buttonSelect);
-    
-    var container = new Element('div', {
-      style: 'left:0px;top:0px;width:'+this.canvasWidth+'px;height:'+
-             (this.canvasHeight-this.spreadsheet.tabsContainer.getHeight()-2)+'px;overflow:auto;'
-    }).addClassName('flotr-datagrid-container');
-    
-    container.insert(toolbar);
-    t.wrap(container.hide());
-    
-    this.el.insert(container);
+    var toolbar = D.node('<div class="flotr-datagrid-toolbar"></div>');
+    D.insert(toolbar, buttonDownload);
+    D.insert(toolbar, buttonSelect);
+
+    var containerHeight =this.canvasHeight-this.spreadsheet.tabsContainer.getHeight()-2,
+        container = D.node('<div class="flotr-datagrid-container" style="position:absolute;left:0px;top:0px;width:'+
+          this.canvasWidth+'px;height:'+containerHeight+'px;overflow:auto;z-index:10"></div>');
+
+    D.insert(container, toolbar);
+    D.insert(container, t);
+    D.insert(this.el, container);
+    this.spreadsheet.datagrid = t;
+    this.spreadsheet.container = container;
+
     return t;
   },  
   /**
@@ -178,18 +196,16 @@ Flotr.addPlugin('spreadsheet', {
     var selector = 'canvas, .flotr-labels, .flotr-legend, .flotr-legend-bg, .flotr-title, .flotr-subtitle';
     switch(tabName) {
       case 'graph':
-        if (this.spreadsheet.datagrid)
-          this.spreadsheet.datagrid.up().hide();
-        this.el.select(selector).invoke('show');
-        this.spreadsheet.tabs.data.removeClassName('selected');
-        this.spreadsheet.tabs.graph.addClassName('selected');
+        D.hide(this.spreadsheet.container);
+        D.removeClass(this.spreadsheet.tabs.data, 'selected');
+        D.addClass(this.spreadsheet.tabs.graph, 'selected');
       break;
       case 'data':
-        this.spreadsheet.constructDataGrid();
-        this.spreadsheet.datagrid.up().show();
-        this.el.select(selector).invoke('hide');
-        this.spreadsheet.tabs.data.addClassName('selected');
-        this.spreadsheet.tabs.graph.removeClassName('selected');
+        if (!this.spreadsheet.datagrid)
+          this.spreadsheet.constructDataGrid();
+        D.show(this.spreadsheet.container);
+        D.addClass(this.spreadsheet.tabs.data, 'selected');
+        D.removeClass(this.spreadsheet.tabs.graph, 'selected');
       break;
     }
   },
@@ -197,6 +213,7 @@ Flotr.addPlugin('spreadsheet', {
    * Selects the data table in the DOM for copy/paste
    */
   selectAllData: function(){
+    console.log('selectAllData');
     if (this.spreadsheet.tabs) {
       var selection, range, doc, win, node = this.spreadsheet.constructDataGrid();
 
@@ -227,6 +244,7 @@ Flotr.addPlugin('spreadsheet', {
    * Converts the data into CSV in order to download a file
    */
   downloadCSV: function(){
+    console.log('downloadCSV');
     var i, csv = '',
         series = this.series,
         options = this.options,
@@ -271,4 +289,4 @@ Flotr.addPlugin('spreadsheet', {
     else window.open('data:text/csv,'+csv);
   }
 });
-
+})();
