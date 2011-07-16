@@ -13,6 +13,9 @@ Flotr.DOM = {
   empty: function(element){
     _.each(element.childNodes, function (e) { element.removeChild(e); });
   },
+  hide: function(element){
+    Flotr.DOM.setStyles({display:'none'});
+  },
   insert: function(element, child){
   },
   set: function(element, content){
@@ -21,6 +24,9 @@ Flotr.DOM = {
     _.each(o, function (value, key) {
       element.style[key] = value;
     });
+  },
+  show: function(element){
+    Flotr.DOM.setStyles({display:''});
   },
   /**
    * Return element size.

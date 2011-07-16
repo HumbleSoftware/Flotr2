@@ -297,18 +297,10 @@ Flotr.Graph.prototype = {
     
     D.empty(el);
     D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
-
     size = D.size(el);
-    style = {
-      width: size.width+'px',
-      height: size.height+'px'
-    };
 
-    size.width *= o.resolution;
-    size.height *= o.resolution;
-
-    if(size.width <= 0 || size.height <= 0){
-      throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height;
+    if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
+      throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
     }
     
     // The old canvases are retrieved to avoid memory leaks ...
@@ -319,17 +311,21 @@ Flotr.Graph.prototype = {
     this.overlay = getCanvas(this.overlay, 'overlay'); // Overlay canvas for interactive features
     this.ctx = getContext(this.canvas);
     this.octx = getContext(this.overlay);
-    this.canvasHeight = size.height;
-    this.canvasWidth = size.width;
+    this.canvasHeight = size.height*o.resolution;
+    this.canvasWidth = size.width*o.resolution;
     this.textEnabled = !!this.ctx.drawText; // Enable text functions
 
     function getCanvas(canvas, name){
       if(!canvas){
-        canvas = $(D.create('canvas'));
+        canvas = D.create('canvas');
         canvas.className = 'flotr-'+name;
         canvas.style.cssText = 'position:absolute;left:0px;top:0px;';
       }
-      canvas = canvas.writeAttribute(size).show().setStyle(style);
+      _.each(size, function(size, attribute){
+        canvas.setAttribute(attribute, size*o.resolution);
+        canvas.style.key = attribute+'px';
+        canvas.show();
+      });
       canvas.context_ = null; // Reset the ExCanvas context
       el.insert(canvas);
       return canvas;
