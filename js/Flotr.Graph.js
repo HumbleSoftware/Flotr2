@@ -2294,15 +2294,20 @@ Flotr.Graph.prototype = {
     }
     if (_.isElement(image) && replaceCanvas) {
       this.restoreCanvas();
-      this.canvas.hide();
-      this.overlay.hide();
-      this.el.insert(image.setStyle({position: 'absolute'}));
+      D.hide(this.canvas);
+      D.hide(this.overlay);
+      D.setStyles({position: 'absolute'});
+      D.insert(this.el, image);
+      this.saveImageElement = image;
     }
   },
   restoreCanvas: function() {
+    D.show(this.canvas);
+    D.show(this.overlay);
     this.canvas.show();
     this.overlay.show();
-    this.el.select('img').invoke('remove');
+    if (this.saveImageElement) this.el.removeChild(this.saveImageElement);
+    this.saveImageElement = null;
   }
 }
 })();
