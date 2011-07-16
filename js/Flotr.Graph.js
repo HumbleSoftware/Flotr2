@@ -323,8 +323,8 @@ Flotr.Graph.prototype = {
       }
       _.each(size, function(size, attribute){
         canvas.setAttribute(attribute, size*o.resolution);
-        canvas.style.key = attribute+'px';
-        canvas.show();
+        canvas.style[attribute] = size+'px';
+        D.show(canvas);
       });
       canvas.context_ = null; // Reset the ExCanvas context
       el.insert(canvas);
