@@ -3,6 +3,9 @@
  */
 (function () {
 
+  var D = Flotr.DOM;
+
+
 /**
  * Flotr Graph constructor.
  * @param {Element} el - element to insert the graph into
@@ -289,70 +292,55 @@ Flotr.Graph.prototype = {
    */
   constructCanvas: function(){
     var el = this.el,
-      size, c, oc;
+      o = this.options,
+      size, style;
     
-    // The old canvases are retrieved to avoid memory leaks ...
-    this.canvas = el.select('.flotr-canvas')[0];
-    this.overlay = el.select('.flotr-overlay')[0];
-    
-    // ... and all the child elements are removed
-    el.descendants().invoke('remove');
+    D.empty(el);
+    D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
 
-    // For positioning labels and overlay.
-    el.style.position = 'relative';
-    el.style.cursor = el.style.cursor || 'default';
-
-    size = el.getDimensions();
-    this.canvasWidth = size.width;
-    this.canvasHeight = size.height;
-
-    var style = {
+    size = D.size(el);
+    style = {
       width: size.width+'px',
       height: size.height+'px'
     };
 
-    var o = this.options;
     size.width *= o.resolution;
     size.height *= o.resolution;
 
-    if(this.canvasWidth <= 0 || this.canvasHeight <= 0){
-      throw 'Invalid dimensions for plot, width = ' + this.canvasWidth + ', height = ' + this.canvasHeight;
+    if(size.width <= 0 || size.height <= 0){
+      throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height;
     }
     
-    // Insert main canvas.
-    if (!this.canvas) {
-      c = this.canvas = $(document.createElement('canvas')); // Do NOT use new Element()
-      c.className = 'flotr-canvas';
-      c.style.cssText = 'position:absolute;left:0px;top:0px;';
-    }
-    c = this.canvas.writeAttribute(size).show().setStyle(style);
-    c.context_ = null; // Reset the ExCanvas context
-    el.insert(c);
-    
-    // Insert overlay canvas for interactive features.
-    if (!this.overlay) {
-      oc = this.overlay = $(document.createElement('canvas')); // Do NOT use new Element()
-      oc.className = 'flotr-overlay';
-      oc.style.cssText = 'position:absolute;left:0px;top:0px;';
-    }
-    oc = this.overlay.writeAttribute(size).show().setStyle(style);
-    oc.context_ = null; // Reset the ExCanvas context
-    el.insert(oc);
-    
-    if(window.G_vmlCanvasManager){
-      window.G_vmlCanvasManager.initElement(c);
-      window.G_vmlCanvasManager.initElement(oc);
-    }
-    this.ctx = c.getContext('2d');
-    this.octx = oc.getContext('2d');
-    
-    if(!window.G_vmlCanvasManager){
-      this.ctx.scale(o.resolution, o.resolution);
-      this.octx.scale(o.resolution, o.resolution);
+    // The old canvases are retrieved to avoid memory leaks ...
+    // @TODO Confirm.
+    // this.canvas = el.select('.flotr-canvas')[0];
+    // this.overlay = el.select('.flotr-overlay')[0];
+    this.canvas = getCanvas(this.canvas, 'canvas'); // Main canvas for drawing graph types
+    this.overlay = getCanvas(this.overlay, 'overlay'); // Overlay canvas for interactive features
+    this.ctx = getContext(this.canvas);
+    this.octx = getContext(this.overlay);
+    this.canvasHeight = size.height;
+    this.canvasWidth = size.width;
+    this.textEnabled = !!this.ctx.drawText; // Enable text functions
+
+    function getCanvas(canvas, name){
+      if(!canvas){
+        canvas = $(D.create('canvas'));
+        canvas.className = 'flotr-'+name;
+        canvas.style.cssText = 'position:absolute;left:0px;top:0px;';
+      }
+      canvas = canvas.writeAttribute(size).show().setStyle(style);
+      canvas.context_ = null; // Reset the ExCanvas context
+      el.insert(canvas);
+      return canvas;
     }
 
-    // Enable text functions
-    this.textEnabled = !!this.ctx.drawText;
+    function getContext(canvas){
+      if(window.G_vmlCanvasManager) window.G_vmlCanvasManager.initElement(canvas); // For ExCanvas
+      var context = canvas.getContext('2d');
+      if(!window.G_vmlCanvasManager) context.scale(o.resolution, o.resolution);
+      return context;
+    }
   },
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
