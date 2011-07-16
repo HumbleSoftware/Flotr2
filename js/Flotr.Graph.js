@@ -2270,10 +2270,12 @@ Flotr.Graph.prototype = {
       }
   
       mt.style.cssText = style;
-      mt.update(content).show();
+      D.empty(mt);
+      D.insert(mt, content);
+      D.show(mt);
     }
     else {
-      mt.hide();
+      D.hide(mt);
     }
   },
   saveImage: function (type, width, height, replaceCanvas) {
