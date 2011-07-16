@@ -2171,7 +2171,7 @@ Flotr.Graph.prototype = {
     }
     
     if(n.series && (n.mouse && n.mouse.track && !prevHit || (prevHit /*&& (n.x != prevHit.x || n.y != prevHit.y)*/))){
-      var mt = this.mouseTrack,
+      var mt = this.getMouseTrack(),
           pos = '', 
           s = n.series,
           p = n.mouse.position, 
@@ -2209,16 +2209,9 @@ Flotr.Graph.prototype = {
         }
       }
       elStyle += pos;
-             
-      if(!mt){
-        this.mouseTrack = mt = D.node('<div class="flotr-mouse-value" style="'+elStyle+'"></div>');
-        D.insert(this.el, mt);
-      }
-      else {
-        mt.style.cssText = elStyle;
-        this.mouseTrack = mt;
-      }
-      
+
+      mt.style.cssText = elStyle;
+
       if(n.x !== null && n.y !== null){
         D.show(mt);
         
@@ -2244,21 +2237,23 @@ Flotr.Graph.prototype = {
       }
     }
     else if(this.prevHit) {
-      this.mouseTrack.hide();
+      D.hide(this.mouseTrack);
       this.clearHit();
     }
   },
+  getMouseTrack: function() {
+    if (!this.mouseTrack) {
+      this.mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
+      D.insert(this.el, this.mouseTrack);
+    }
+    return this.mouseTrack;
+  },
   drawTooltip: function(content, x, y, options) {
-    var mt = this.mouseTrack,
+    var mt = this.getMouseTrack(),
         style = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;', 
         p = options.position, 
         m = options.margin,
         plotOffset = this.plotOffset;
-
-    if (!mt) {
-      this.el.insert('<div class="flotr-mouse-value"></div>');
-      mt = this.mouseTrack = this.el.select('.flotr-mouse-value')[0];
-    }
 
     if(x !== null && y !== null){
       if (!options.relative) { // absolute to the canvas
