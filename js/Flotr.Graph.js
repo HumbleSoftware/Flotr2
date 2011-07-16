@@ -1533,7 +1533,7 @@ Flotr.Graph.prototype = {
     var noLegendItems = _.filter(series, function(s) {return (s.label && !s.hide)}).length;
 
     if (noLegendItems) {
-      if (!options.HtmlText && this.textEnabled && !$(legend.container)) {
+      if (!options.HtmlText && this.textEnabled && !legend.container) {
         var style = {
           size: options.fontSize*1.1,
           color: options.grid.color
