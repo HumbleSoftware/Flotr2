@@ -51,40 +51,9 @@ Flotr.addType('pie', {
       y: plotOffset.top + (this.plotHeight)/2
     },
     
-    // Pie portions
-    portions = this.series.collect(function(hash, index){
-      if (hash.pie.show && hash.data[0][1] !== null)
-        return {
-          name: (hash.label || hash.data[0][1]),
-          value: [index, hash.data[0][1]],
-          options: hash.pie,
-          series: hash
-        };
-    }),
-    
-    // Sum of the portions' angles
-    sum = portions.pluck('value').pluck(1).inject(0, function(acc, n) { return acc + n; }),
-    fraction = 0.0,
-    angle = series.pie.startAngle,
-    value = 0.0;
-    
-    var slices = portions.collect(function(slice){
-      angle += fraction;
-      value = parseFloat(slice.value[1]); // @warning : won't support null values !!
-      fraction = value/sum;
-      return {
-        name:     slice.name,
-        fraction: fraction,
-        x:        slice.value[0],
-        y:        value,
-        value:    value,
-        options:  slice.options,
-        series:   slice.series,
-        startAngle: 2 * angle * Math.PI,
-        endAngle:   2 * (angle + fraction) * Math.PI
-      };
-    });
-    
+    portions = this.pie._getPortions(),
+    slices = this.pie._getSlices(portions, series);
+
     ctx.save();
     
     if(sw > 0){
@@ -177,13 +146,8 @@ Flotr.addType('pie', {
       options = this.options,
       radius = (Math.min(this.canvasWidth, this.canvasHeight) * options.pie.sizeRatio) / 2,
       vScale = 1,//Math.cos(series.pie.viewAngle),
-      fraction = 0.0,
       angle = options.pie.startAngle,
-      value = 0.0,
-      sum, // Sum of the portions' angles
       center, // Center of the pie
-      portions, // Pie portions
-      slices, // Pie slices
       s, x, y;
 
     center = {
@@ -191,35 +155,9 @@ Flotr.addType('pie', {
       y: (this.plotHeight)/2
     };
 
-    portions = this.series.collect(function(hash, index){
-      if (hash.pie.show && hash.data[0][1] !== null)
-        return {
-          name: (hash.label || hash.data[0][1]),
-          value: [index, hash.data[0][1]],
-          options: hash.pie,
-          series: hash
-        };
-    });
+    portions = this.pie._getPortions();
+    slices = this.pie._getSlices(portions, series, angle);
 
-    sum = portions.pluck('value').pluck(1).inject(0, function(acc, n) { return acc + n; });
-
-    slices = portions.collect(function(slice){
-      angle += fraction;
-      value = parseFloat(slice.value[1]); // @warning : won't support null values !!
-      fraction = value/sum;
-      return {
-        name:     slice.name,
-        fraction: fraction,
-        x:        slice.value[0],
-        y:        value,
-        value:    value,
-        options:  slice.options,
-        series:   slice.series,
-        startAngle: 2 * angle * Math.PI,
-        endAngle:   2 * (angle + fraction) * Math.PI
-      };
-    });
-    
     for (i = 0; i < series.length; i++){
 
       s = series[i];
@@ -268,7 +206,7 @@ Flotr.addType('pie', {
     octx.save();
     octx.translate(this.plotOffset.left, this.plotOffset.top);
     octx.beginPath();
-  
+
     if (s.mouse.trackAll) {
       octx.moveTo(xa.d2p(n.x), ya.d2p(0));
       octx.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
@@ -313,5 +251,42 @@ Flotr.addType('pie', {
       2*(radius + margin), 
       2*(radius + margin)
     );
+  },
+  _getPortions: function(){
+    return _.map(this.series, function(hash, index){
+      if (hash.pie.show && hash.data[0][1] !== null)
+        return {
+          name: (hash.label || hash.data[0][1]),
+          value: [index, hash.data[0][1]],
+          options: hash.pie,
+          series: hash
+        };
+    });
+  },
+  _getSum: function(portions){
+    // Sum of the portions' angles
+    return _.inject(_.pluck(_.pluck(portions, 'value'), 1), function(acc, n) { return acc + n; }, 0);
+  },
+  _getSlices: function(portions, series, startAngle){
+    var sum = this.pie._getSum(portions),
+      fraction = 0.0,
+      angle = (!_.isUndefined(startAngle) ? startAngle : series.pie.startAngle),
+      value = 0.0;
+    return _.map(portions, function(slice){
+      angle += fraction;
+      value = parseFloat(slice.value[1]); // @warning : won't support null values !!
+      fraction = value/sum;
+      return {
+        name:     slice.name,
+        fraction: fraction,
+        x:        slice.value[0],
+        y:        value,
+        value:    value,
+        options:  slice.options,
+        series:   slice.series,
+        startAngle: 2 * angle * Math.PI,
+        endAngle:   2 * (angle + fraction) * Math.PI
+      };
+    });
   }
 });
