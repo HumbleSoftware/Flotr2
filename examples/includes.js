@@ -22,6 +22,7 @@ yepnope([
   '../js/Flotr.defaultOptions.js',
   '../js/Flotr.Color.js',
   '../js/Flotr.Date.js',
+  '../js/Flotr.DOM.js',
   '../js/Flotr.EventAdapter.js',
   '../js/Flotr.Graph.js',
   '../js/types/lines.js',
