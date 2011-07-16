@@ -21,7 +21,14 @@ Flotr.DOM = {
    * Remove all children.
    */
   empty: function(element){
-    _.each(element.childNodes, function (e) { element.removeChild(e); });
+    element.innerHTML = '';
+    /*
+    if (!element) return;
+    _.each(element.childNodes, function (e) {
+      Flotr.DOM.empty(e);
+      element.removeChild(e);
+    });
+    */
   },
   hide: function(element){
     Flotr.DOM.setStyles(element, {display:'none'});
