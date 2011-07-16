@@ -327,7 +327,7 @@ Flotr.Graph.prototype = {
         D.show(canvas);
       });
       canvas.context_ = null; // Reset the ExCanvas context
-      el.insert(canvas);
+      D.insert(el, canvas);
       return canvas;
     }
 
