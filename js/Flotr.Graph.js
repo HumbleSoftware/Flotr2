@@ -1430,7 +1430,7 @@ Flotr.Graph.prototype = {
       }
     } 
     else {
-      html = ['<div style="color:'+options.grid.color+';" class="flotr-titles">'];
+      html = [];
       
       // Add title
       if (options.title)
@@ -1484,9 +1484,15 @@ Flotr.Graph.prototype = {
           'px;right:0;text-align:right;" class="flotr-axis-title">', a.y2.options.title, '</div>'
         );
       
-      html.push('</div>');
-      
-      this.el.insert(html.join(''));
+      html = html.join('');
+
+      var div = D.create('div')
+      D.setStyles({
+        color: options.grid.color 
+      });
+      div.className = 'flotr-titles';
+      D.insert(this.el, div);
+      D.insert(div, html);
     }
   },
   /**
