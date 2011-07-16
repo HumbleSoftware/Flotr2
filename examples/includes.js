@@ -1,6 +1,5 @@
 yepnope([
   // Libs
-  '../lib/prototype.js',
   '../lib/bean-min.js',
   '../lib/underscore-min.js',
   {
