@@ -1739,10 +1739,13 @@ Flotr.Graph.prototype = {
    * @param {Event} event - 'mousedown' Event object.
    */
   mouseDownHandler: function (event){
+
+    /*
+    // @TODO Context menu?
     if(event.isRightClick()) {
       event.stop();
+
       var overlay = this.overlay;
-      
       overlay.hide();
       
       function cancelContextMenu () {
@@ -1752,8 +1755,13 @@ Flotr.Graph.prototype = {
       Flotr.EventAdapter.observe(document, 'mousemove', cancelContextMenu);
       return;
     }
-    
-    if(!this.options.selection.mode || !event.isLeftClick()) return;
+    */
+
+    function isLeftClick (e, type) {
+      return (e.which ? (e.which === 1) : (e.button === 0 || e.button === 1));
+    }
+
+    if(!this.options.selection.mode || !isLeftClick(event)) return;
     
     this.setSelectionPos(this.selection.first, event);
     if(this.selectionInterval != null){
