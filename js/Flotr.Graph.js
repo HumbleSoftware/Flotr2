@@ -1951,7 +1951,7 @@ Flotr.Graph.prototype = {
     this.lastMousePos.relY = null;
     
     if (options.crosshair.hideCursor) {
-      this.el.style.cursor = Prototype.Browser.Gecko ? 'none' :'url(blank.cur),crosshair';
+      this.el.style.cursor = 'none';
       D.addClass(this.el, 'flotr-crosshair');
     }
     
