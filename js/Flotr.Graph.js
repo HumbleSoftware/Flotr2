@@ -1231,7 +1231,7 @@ Flotr.Graph.prototype = {
       }
     } 
     else if (a.x.options.showLabels || a.x2.options.showLabels || a.y.options.showLabels || a.y2.options.showLabels) {
-      html = ['<div style="font-size:smaller;color:' + options.grid.color + ';" class="flotr-labels">'];
+      html = [];
       
       // Add x labels.
       axis = a.x;
@@ -1318,8 +1318,16 @@ Flotr.Graph.prototype = {
         ctx.restore();
       }
       
-      html.push('</div>');
-      this.el.insert(html.join(''));
+      html = html.join('');
+
+      var div = D.create('div')
+      D.setStyles(div, {
+        fontSize: 'smaller',
+        color: options.grid.color 
+      });
+      div.className = 'flotr-labels';
+      D.insert(this.el, div);
+      D.insert(div, html);
     }
   },
   /**
