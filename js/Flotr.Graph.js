@@ -189,13 +189,22 @@ Flotr.Graph.prototype = {
    * @return executed successfully or failed.
    */
   executeOnType: function(s, method, args){
-    var t = this.getType(s);
-    try {
-      t[method].apply(t, args);
-      return true;
-    } catch (e) {
-      return false;
+    var success = false;
+    if (!_.isArray(s)) s = [s];
+
+    function e(s) {
+      _.each(_.keys(Flotr.graphTypes), function (type) {
+        if (s[type] && s[type].show) {
+          try {
+            this[type][method].apply(this[type], args);
+            success = true;
+          } catch (e) {}
+        }
+      }, this);
     }
+    _.each(s, e, this);
+
+    return success;
   },
   setupAxes: function(){
     /**
