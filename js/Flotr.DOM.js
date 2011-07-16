@@ -1,5 +1,8 @@
 Flotr.DOM = {
-  addClass: function(element, s){
+  addClass: function(element, name){
+    var classList = (element.className ? element.className : '');
+    _.each(classList.split(/\s+/g), function (c) { if (c == name) return; });
+    element.className = classList + ' ' + name;
   },
   /**
    * Create an element.
@@ -30,6 +33,12 @@ Flotr.DOM = {
   // @TODO find xbrowser implementation
   opacity: function(element, opacity) {
     element.style.opacity = opacity;
+  },
+  removeClass: function(element, name) {
+    var classList = (element.className ? element.className : '');
+    element.className = _.filter(classList.split(/\s+/g), function (c) {
+      if (c != name) return true; }
+    ).join(' ');
   },
   setStyles: function(element, o) {
     _.each(o, function (value, key) {
