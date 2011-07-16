@@ -115,6 +115,42 @@ _.extend(Flotr.Color, {
     }
     return (result = COLOR_NAMES[name]) ? new Color(result[0], result[1], result[2]) : new Color(0, 0, 0, 0);
   },
+
+  /**
+   * Process color and options into color style.
+   */
+  processColor: function(color, options) {
+    console.log(color, options);
+
+    if (!color) return 'rgba(0, 0, 0, 0)';
+    if (color instanceof Flotr.Color) return color.adjust(null, null, null, options.opacity).toString();
+    if (_.isString(color)) return Flotr.Color.parse(color).scale(null, null, null, options.opacity).toString();
+    
+    var grad = color.colors ? color : {colors: color};
+    
+    if (!options.ctx) {
+      if (!_.isArray(grad.colors)) return 'rgba(0, 0, 0, 0)';
+      return Flotr.Color.parse(_.isArray(grad.colors[0]) ? grad.colors[0][1] : grad.colors[0]).scale(null, null, null, options.opacity).toString();
+    }
+    grad = _.extend({start: 'top', end: 'bottom'}, grad); 
+    
+    if (/top/i.test(grad.start))  options.x1 = 0;
+    if (/left/i.test(grad.start)) options.y1 = 0;
+    if (/bottom/i.test(grad.end)) options.x2 = 0;
+    if (/right/i.test(grad.end))  options.y2 = 0;
+
+    var i, c, stop, gradient = options.ctx.createLinearGradient(options.x1, options.y1, options.x2, options.y2);
+    for (i = 0; i < grad.colors.length; i++) {
+      c = grad.colors[i];
+      if (_.isArray(c)) {
+        stop = c[0];
+        c = c[1];
+      }
+      else stop = i / (grad.colors.length-1);
+      gradient.addColorStop(stop, Flotr.Color.parse(c).scale(null, null, null, options.opacity));
+    }
+    return gradient;
+  },
   
   /**
    * Extracts the background-color of the passed element.
