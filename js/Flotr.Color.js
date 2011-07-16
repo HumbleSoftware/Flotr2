@@ -109,7 +109,7 @@ _.extend(Flotr.Color, {
       return new Color(parseFloat(result[1])*2.55, parseFloat(result[2])*2.55, parseFloat(result[3])*2.55, parseFloat(result[4]));
 
     // Otherwise, we're most likely dealing with a named color.
-    var name = (color+'').strip().toLowerCase();
+    var name = (color+'').replace(/^\s*([\S\s]*?)\s*$/, '$1').toLowerCase();
     if(name == 'transparent'){
       return new Color(255, 255, 255, 0);
     }
