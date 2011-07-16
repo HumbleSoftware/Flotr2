@@ -1676,12 +1676,21 @@ Flotr.Graph.prototype = {
    * @param {Event} event - Mouse Event object.
    * @return {Object} Object with coordinates of the mouse.
    */
-  getEventPosition: function (event){
-    var offset = this.overlay.cumulativeOffset(),
-        pointer = Event.pointer(event),
+  getEventPosition: function (e){
+
+    function pointer(e) {
+      if (Flotr.IE && Flotr.IE < 9) {
+        return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop}
+      } else {
+        return {x: e.pageX, y: e.pageY}
+      }
+    }
+
+    var offset = D.position(this.overlay),
+        pointer = pointer(e),
         rx = (pointer.x - offset.left - this.plotOffset.left),
         ry = (pointer.y - offset.top - this.plotOffset.top);
-    
+
     return {
       x:  this.axes.x.p2d(rx),
       x2: this.axes.x2.p2d(rx),
@@ -1708,8 +1717,8 @@ Flotr.Graph.prototype = {
    * @param {Event} event - 'mousemove' Event object.
    */
   mouseMoveHandler: function(event){
-     var pos = this.getEventPosition(event);
-    
+    var pos = this.getEventPosition(event);
+
     this.lastMousePos.pageX = pos.absX;
     this.lastMousePos.pageY = pos.absY;  
       
@@ -1717,7 +1726,7 @@ Flotr.Graph.prototype = {
     if (this.options.crosshair.mode)
       this.clearCrosshair();
       
-    if(this.selectionInterval == null && (this.options.mouse.track || this.series.any(function(s){return s.mouse && s.mouse.track;})))
+    if(this.selectionInterval == null && (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;})))
       this.hit(pos);
     
     if (this.options.crosshair.mode)
