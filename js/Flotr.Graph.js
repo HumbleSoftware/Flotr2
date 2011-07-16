@@ -2280,7 +2280,7 @@ Flotr.Graph.prototype = {
   },
   saveImage: function (type, width, height, replaceCanvas) {
     var image = null;
-    if (Prototype.Browser.IE && !Flotr.isIE9) {
+    if (Flotr.isIE && Flotr.isIE < 9) {
       image = '<html><body>'+this.canvas.firstChild.innerHTML+'</body></html>';
       return window.open().document.write(image);
     }

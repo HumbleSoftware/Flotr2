@@ -11,7 +11,7 @@ var Flotr = {
   author: ['Bas Wenneker', 'Fabien Ménager'],
   website: 'http://www.solutoire.com',
   isIphone: /iphone/i.test(navigator.userAgent),
-  isIE9: document.documentMode == 9,
+  isIE: (navigator.appVersion.indexOf("MSIE") != -1 ? parseFloat(navigator.appVersion.split("MSIE")[1]) : false),
   
   /**
    * An object of the registered graph types. Use Flotr.addType(type, object)
