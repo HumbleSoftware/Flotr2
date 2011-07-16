@@ -1608,19 +1608,24 @@ Flotr.Graph.prototype = {
         if(fragments.length > 0){
           var table = '<table style="font-size:smaller;color:' + options.grid.color + '">' + fragments.join('') + '</table>';
           if(options.legend.container != null){
-            $(options.legend.container).innerHTML = table;
+            D.insert(options.legend.container, table);
           }
           else {
-            var pos = '', p = options.legend.position, m = options.legend.margin;
+            var styles = {position: 'absolute', 'z-index': 2}, p = options.legend.position, m = options.legend.margin;
             
-                 if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;bottom:auto;';
-            else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;top:auto;';          
-                 if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;left:auto;';
-            else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;right:auto;';
+                 if(p.charAt(0) == 'n') { styles['top'] = (m + plotOffset.top) + 'px'; styles.bottom = 'auto'; }
+            else if(p.charAt(0) == 's') { styles.bottom = (m + plotOffset.bottom) + 'px'; styles['top'] = 'auto'; }
+                 if(p.charAt(1) == 'e') { styles.right = (m + plotOffset.right) + 'px'; styles.left = 'auto'; }
+            else if(p.charAt(1) == 'w') { styles.left = (m + plotOffset.left) + 'px'; styles.right = 'auto'; }
                  
-            var div = this.el.insert('<div class="flotr-legend" style="position:absolute;z-index:2;' + pos +'">' + table + '</div>').select('div.flotr-legend')[0];
+            var div = D.create('div'), size;
+            div.className = 'flotr-legend';
+            D.setStyles(div, styles);
+            D.insert(div, table);
+            D.insert(this.el, div);
             
             if(options.legend.backgroundOpacity != 0.0){
+              return;
               /**
                * Put in the transparent background separately to avoid blended labels and
                * label boxes.
@@ -1630,11 +1635,21 @@ Flotr.Graph.prototype = {
                 var tmp = (options.grid.backgroundColor != null) ? options.grid.backgroundColor : Flotr.Color.extract(div);
                 c = this.processColor(tmp, null, {opacity: 1});
               }
-              this.el.insert(
-                '<div class="flotr-legend-bg" style="position:absolute;width:' + div.getWidth() + 
-                'px;height:' + div.getHeight() + 'px;' + pos +'background-color:' + c + ';"> </div>'
-              )
-              .select('div.flotr-legend-bg')[0].setOpacity(options.legend.backgroundOpacity);
+              c = '#ff00ff';
+
+              _.extend(styles, D.size(div), {
+                'backgroundColor': c,
+                'z-index': 1
+              });
+              styles.width += 'px';
+              styles.height += 'px';
+
+              div = D.create('div');
+              div.className = 'flotr-legend-bg';
+              D.setStyles(div, styles);
+              D.opacity(div, options.legend.backgroundOpacity);
+              D.insert(div, ' ');
+              D.insert(this.el, div);
             }
           }
         }
