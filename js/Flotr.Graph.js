@@ -14,7 +14,7 @@
  */
 Flotr.Graph = function(el, data, options){
   try {
-  this.el = $(el);
+  this.el = el;
   
   if (!this.el) throw 'The target container doesn\'t exist';
   if (!this.el.clientWidth) throw 'The target container must be visible';
