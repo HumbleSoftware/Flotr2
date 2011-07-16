@@ -41,6 +41,14 @@ Flotr.DOM = {
   opacity: function(element, opacity) {
     element.style.opacity = opacity;
   },
+  position: function(element, p){
+    if (!element.offsetParent)
+      return {left: (element.offsetLeft || 0), top: (element.offsetTop || 0)}
+    var p = this.position(element.offsetParent);
+    p.left += element.offsetLeft;
+    p.top += element.offsetTop;
+    return p;
+  },
   removeClass: function(element, name) {
     var classList = (element.className ? element.className : '');
     element.className = _.filter(classList.split(/\s+/g), function (c) {
