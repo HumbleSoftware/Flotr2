@@ -105,7 +105,7 @@ Flotr.addType('pie', {
     }
     
     if (options.HtmlText || !this.textEnabled)
-      html = ['<div style="color:' + this.options.grid.color + '" class="flotr-labels">'];
+      html = [];
     
     _.each(slices, function (slice, index) {
       if (slice.startAngle == slice.endAngle) return;
@@ -152,8 +152,9 @@ Flotr.addType('pie', {
     }, this);
     
     if (options.HtmlText || !this.textEnabled) {
-      html.push('</div>');    
-      this.el.insert(html.join(''));
+      var div = Flotr.DOM.node('<div style="color:' + this.options.grid.color + '" class="flotr-labels"></div>');
+      Flotr.DOM.insert(div, html.join(''));
+      Flotr.DOM.insert(this.el, div);
     }
     
     ctx.restore();
