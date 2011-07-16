@@ -1996,10 +1996,10 @@ Flotr.Graph.prototype = {
    * Removes the mouse tracking point from the overlay.
    */
   clearHit: function(){
-    if(this.prevHit && !this.executeOnType(s, 'clearHit')){
-      var prevHit = this.prevHit,
-        plotOffset = this.plotOffset,
-        s = prevHit.series,
+    var prevHit = this.prevHit;
+    if(this.prevHit && !this.executeOnType(prevHit.series, 'clearHit')){
+      var plotOffset = this.plotOffset,
+        s = prevHit.series;
         lw = (s.bars ? s.bars.lineWidth : 1),
         xa = prevHit.xaxis,
         ya = prevHit.yaxis,
