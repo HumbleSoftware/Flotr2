@@ -10,6 +10,13 @@ Flotr.DOM = {
   create: function(tag){
     return document.createElement(tag);
   },
+  node: function(html) {
+    var div = Flotr.DOM.create('div'), n;
+    div.innerHTML = html;
+    n = div.children[0];
+    div.innerHTML = '';
+    return n;
+  },
   /**
    * Remove all children.
    */
