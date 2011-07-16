@@ -378,10 +378,11 @@ Flotr.Graph.prototype = {
       };
     }
     else {
-      var dummyDiv = this.el.insert('<div style="position:absolute;top:-10000px;'+HtmlStyle+'" class="'+className+' flotr-dummy-div">' + text + '</div>').select(".flotr-dummy-div")[0],
-          dim = dummyDiv.getDimensions();
-      dummyDiv.remove();
-      return dim;
+      var dummyDiv = D.create('div');
+      D.setStyles(dummyDiv, {'position':'absolute', 'top':'-10000px'}),
+      D.insert(dummyDiv, '<div style="'+HtmlStyle+'" class="'+className+' flotr-dummy-div">' + text + '</div>');
+      D.insert(this.el, dummyDiv);
+      return D.size(dummyDiv);
     }
   },
   /**
