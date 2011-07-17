@@ -1,3 +1,7 @@
+(function () {
+
+var D = Flotr.DOM;
+
 Flotr.addPlugin('legend', {
   options: {
     show: true,            // => setting to true will show the legend, hide otherwise
@@ -177,3 +181,4 @@ Flotr.addPlugin('legend', {
     }
   }
 });
+})();
