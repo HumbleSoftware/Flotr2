@@ -1,0 +1,24 @@
+{
+  "JAVASCRIPT": {
+    "DIST_DIR": "./build",
+    "flotr2": [
+      "./js/Flotr.js",
+      "./js/Flotr.defaultOptions.js",
+      "./js/Flotr.DOM.js",
+      "./js/Flotr.EventAdapter.js",
+      "./js/Flotr.Color.js",
+      "./js/Flotr.Date.js",
+      "./js/Flotr.Graph.js",
+      "./js/types/lines.js",
+      "./js/types/bars.js",
+      "./js/types/bubbles.js",
+      "./js/types/candles.js",
+      "./js/types/gantt.js",
+      "./js/types/markers.js",
+      "./js/types/pie.js",
+      "./js/types/points.js",
+      "./js/types/radar.js",
+      "./js/plugins/spreadsheet.js"
+    ]
+  }
+}
