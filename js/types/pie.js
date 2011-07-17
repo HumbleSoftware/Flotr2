@@ -158,6 +158,12 @@ Flotr.addType('pie', {
     portions = this.pie._getPortions();
     slices = this.pie._getSlices(portions, series, angle);
 
+    // Add a circle
+    function circle (angle) {
+      return angle > 0 ? angle: angle + (2 * Math.PI);
+    }
+
+    //
     for (i = 0; i < series.length; i++){
 
       s = series[i];
@@ -169,15 +175,12 @@ Flotr.addType('pie', {
       var a = (mouse.relX-center.x),
         b = (mouse.relY-center.y),
         c = Math.sqrt(Math.pow(a, 2)+Math.pow(b, 2)),
-        sAngle = (slices[i].startAngle)%(2 * Math.PI),
-        eAngle = (slices[i].endAngle)%(2 * Math.PI),
-        sAngle = (sAngle> 0 )? sAngle : sAngle + (2 * Math.PI),
-        eAngle = (eAngle> 0 )? eAngle : eAngle + (2 * Math.PI),
+        sAngle = circle((slices[i].startAngle)%(2 * Math.PI)),
+        eAngle = circle((slices[i].endAngle)%(2 * Math.PI)),
         xSin = b/c,
-        kat = Math.asin(xSin)%(2 * Math.PI),
-        kat = (kat>0) ? kat : kat + (2 * Math.PI),
+        kat = circle(Math.asin(xSin)%(2 * Math.PI)),
         kat2 = Math.asin(-xSin)+(Math.PI);
-      
+
       //if (c<radius && (a>0 && sAngle < kat && eAngle > kat)) //I i IV quarter
       //if (c<radius && (a<0 && sAngle < kat2 && eAngle > kat2)) //II i III quarter
       //if(sAngle>aAngle && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2)))) //if a slice is crossing 0 angle
@@ -188,7 +191,7 @@ Flotr.addType('pie', {
         n.x = x;
         n.y = y;
         n.sAngle = sAngle;
-        n.eAngle = eAngle,
+        n.eAngle = eAngle;
         n.mouse = s.mouse;
         n.series = s;
         n.allSeries = series;
@@ -202,7 +205,7 @@ Flotr.addType('pie', {
       s = n.series,
       xa = n.xaxis,
       ya = n.yaxis;
-  	
+
     octx.save();
     octx.translate(this.plotOffset.left, this.plotOffset.top);
     octx.beginPath();

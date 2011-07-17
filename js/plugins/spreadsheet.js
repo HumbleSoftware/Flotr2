@@ -43,8 +43,8 @@ Flotr.addPlugin('spreadsheet', {
       D.setStyles(container, {top: this.canvasHeight-offset+'px'});
 
       Flotr.EventAdapter.
-        observe(graph, 'click',  function(){ss.showTab('graph')}).
-        observe(data, 'click', function(){ss.showTab('data')});
+        observe(graph, 'click',  function(){ss.showTab('graph');}).
+        observe(data, 'click', function(){ss.showTab('data');});
 
       return;
     }
@@ -67,7 +67,7 @@ Flotr.addPlugin('spreadsheet', {
       _.each(s[i].data, function(v) {
         var x = v[0],
             y = v[1], 
-            r = _.detect(dg, function(row) {return row[0] == x});
+            r = _.detect(dg, function(row) {return row[0] == x;});
         if (r) {
           r[i+1] = y;
         } else {
@@ -80,7 +80,8 @@ Flotr.addPlugin('spreadsheet', {
     }
     
     // The data grid is sorted by x value
-    return this.seriesData = _.sortBy(dg, function(v){return v[0]});
+    this.seriesData = _.sortBy(dg, function(v){return v[0]});
+    return this.seriesData;
   },
   /**
    * Constructs the data table for the spreadsheet

@@ -13,7 +13,7 @@ Flotr.defaultOptions = {
   legend: {
     show: true,            // => setting to true will show the legend, hide otherwise
     noColumns: 1,          // => number of colums in legend table // @todo: doesn't work for HtmlText = false
-    labelFormatter: function(v){return v}, // => fn: string -> string
+    labelFormatter: function(v){return v;}, // => fn: string -> string
     labelBoxBorderColor: '#CCCCCC', // => border color for the little label boxes
     labelBoxWidth: 14,
     labelBoxHeight: 10,

@@ -32,18 +32,20 @@ Flotr.addType('points', {
 
     ctx.lineWidth = series.points.lineWidth;
     ctx.strokeStyle = series.color;
-    ctx.fillStyle = series.points.fillColor != null ? series.points.fillColor : series.color;
+    ctx.fillStyle = series.points.fillColor ? series.points.fillColor : series.color;
     this.points.plot(series, series.points.radius, series.points.fill);
     ctx.restore();
   },
   plot: function (series, radius, fill) {
     var xa = series.xaxis,
         ya = series.yaxis,
-        ctx = this.ctx, i, x,
-        data = series.data;
+        ctx = this.ctx,
+        data = series.data,
+        i, x, y;
       
     for(i = data.length - 1; i > -1; --i){
-      x = data[i][0], y = data[i][1];
+      x = data[i][0];
+      y = data[i][1];
       // To allow empty values
       if(y === null || x < xa.min || x > xa.max || y < ya.min || y > ya.max)
         continue;
@@ -58,11 +60,13 @@ Flotr.addType('points', {
   plotShadows: function(series, offset, radius){
     var xa = series.xaxis,
         ya = series.yaxis,
-        ctx = this.ctx, i, x,
-        data = series.data;
+        ctx = this.ctx,
+        data = series.data,
+        i, x, y;
       
     for(i = data.length - 1; i > -1; --i){
-      x = data[i][0], y = data[i][1];
+      x = data[i][0];
+      y = data[i][1];
       if (y === null || x < xa.min || x > xa.max || y < ya.min || y > ya.max)
         continue;
       ctx.beginPath();

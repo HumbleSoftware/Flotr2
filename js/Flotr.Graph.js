@@ -70,7 +70,7 @@ Flotr.Graph = function(el, data, options){
   } catch (e) {
     try {
       console.error(e);
-    } catch (e) {}
+    } catch (e2) {}
   }
 };
 
@@ -379,7 +379,7 @@ Flotr.Graph.prototype = {
     }
     else {
       var dummyDiv = D.create('div');
-      D.setStyles(dummyDiv, {'position':'absolute', 'top':'-10000px'}),
+      D.setStyles(dummyDiv, {'position':'absolute', 'top':'-10000px'});
       D.insert(dummyDiv, '<div style="'+HtmlStyle+'" class="'+className+' flotr-dummy-div">' + text + '</div>');
       D.insert(this.el, dummyDiv);
       return D.size(dummyDiv);

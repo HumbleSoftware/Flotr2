@@ -50,8 +50,8 @@ Flotr.DOM = {
   },
   position: function(element, p){
     if (!element.offsetParent)
-      return {left: (element.offsetLeft || 0), top: (element.offsetTop || 0)}
-    var p = this.position(element.offsetParent);
+      return {left: (element.offsetLeft || 0), top: (element.offsetTop || 0)};
+    p = this.position(element.offsetParent);
     p.left += element.offsetLeft;
     p.top += element.offsetTop;
     return p;
@@ -76,6 +76,6 @@ Flotr.DOM = {
   size: function(element){
     return {
       height : element.scrollHeight,
-      width: element.scrollWidth }
+      width: element.scrollWidth };
   }
 };
