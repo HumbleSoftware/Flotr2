@@ -283,7 +283,7 @@ Flotr.addPlugin('spreadsheet', {
       }
       csv += rowLabel+separator+numbers+"%0D%0A"; // \t and \r\n
     }
-    if (Flotr.IE && Flotr.isIE < 9) {
+    if (Flotr.isIE && Flotr.isIE < 9) {
       csv = csv.replace(new RegExp(separator, 'g'), decodeURIComponent(separator)).replace(/%0A/g, '\n').replace(/%0D/g, '\r');
       window.open().document.write(csv);
     }

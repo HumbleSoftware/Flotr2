@@ -1521,7 +1521,7 @@ Flotr.Graph.prototype = {
   getEventPosition: function (e){
 
     function pointer(e) {
-      if (Flotr.IE && Flotr.IE < 9) {
+      if (Flotr.isIE && Flotr.isIE < 9) {
         return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
       } else {
         return {x: e.pageX, y: e.pageY};
