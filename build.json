@@ -18,6 +18,7 @@
       "./js/types/pie.js",
       "./js/types/points.js",
       "./js/types/radar.js",
+      "./js/plugins/legend.js",
       "./js/plugins/spreadsheet.js"
     ]
   }

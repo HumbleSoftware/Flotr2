@@ -10,21 +10,6 @@ Flotr.defaultOptions = {
   HtmlText: true,          // => wether to draw the text using HTML or on the canvas
   fontSize: 7.5,           // => canvas' text font size
   resolution: 1,           // => resolution of the graph, to have printer-friendly graphs !
-  legend: {
-    show: true,            // => setting to true will show the legend, hide otherwise
-    noColumns: 1,          // => number of colums in legend table // @todo: doesn't work for HtmlText = false
-    labelFormatter: function(v){return v;}, // => fn: string -> string
-    labelBoxBorderColor: '#CCCCCC', // => border color for the little label boxes
-    labelBoxWidth: 14,
-    labelBoxHeight: 10,
-    labelBoxMargin: 5,
-    labelBoxOpacity: 0.4,
-    container: null,       // => container (as jQuery object) to put legend in, null means default on top of graph
-    position: 'nw',        // => position of default legend container within plot
-    margin: 5,             // => distance from grid edge to default legend container within plot
-    backgroundColor: null, // => null means auto-detect
-    backgroundOpacity: 0.85// => set to 0 to avoid background, set to 1 for a solid background
-  },
   xaxis: {
     ticks: null,           // => format: either [1, 3] or [[1, 'a'], 3]
     minorTicks: null,      // => format: either [1, 3] or [[1, 'a'], 3]
