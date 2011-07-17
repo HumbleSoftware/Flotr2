@@ -411,8 +411,8 @@ Flotr.Graph.prototype = {
     
       // Get datamin, datamax start values 
       for(i = 0; i < s.length; ++i) {
-        data = s[i].data, 
-        xaxis = s[i].xaxis, 
+        data = s[i].data;
+        xaxis = s[i].xaxis;
         yaxis = s[i].yaxis;
         
         if (data.length > 0 && !s[i].hide) {
@@ -1319,7 +1319,7 @@ Flotr.Graph.prototype = {
       
       html = html.join('');
 
-      var div = D.create('div')
+      var div = D.create('div');
       D.setStyles(div, {
         fontSize: 'smaller',
         color: options.grid.color 
@@ -1485,7 +1485,7 @@ Flotr.Graph.prototype = {
       
       html = html.join('');
 
-      var div = D.create('div')
+      var div = D.create('div');
       D.setStyles({
         color: options.grid.color 
       });
@@ -1522,9 +1522,9 @@ Flotr.Graph.prototype = {
 
     function pointer(e) {
       if (Flotr.IE && Flotr.IE < 9) {
-        return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop}
+        return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
       } else {
-        return {x: e.pageX, y: e.pageY}
+        return {x: e.pageX, y: e.pageY};
       }
     }
 
@@ -1550,7 +1550,8 @@ Flotr.Graph.prototype = {
    */
   clickHandler: function(event){
     if(this.ignoreClick){
-      return this.ignoreClick = false;
+      this.ignoreClick = false;
+      return this.ignoreClick;
     }
     Flotr.EventAdapter.fire(this.el, 'flotr:click', [this.getEventPosition(event), this]);
   },
