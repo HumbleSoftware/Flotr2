@@ -5,6 +5,13 @@
 
   var D = Flotr.DOM;
 
+  function eventPointer(e) {
+    if (Flotr.isIE && Flotr.isIE < 9) {
+      return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
+    } else {
+      return {x: e.pageX, y: e.pageY};
+    }
+  }
 
 /**
  * Flotr Graph constructor.
@@ -1523,16 +1530,8 @@ Flotr.Graph.prototype = {
    */
   getEventPosition: function (e){
 
-    function pointer(e) {
-      if (Flotr.isIE && Flotr.isIE < 9) {
-        return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
-      } else {
-        return {x: e.pageX, y: e.pageY};
-      }
-    }
-
     var offset = D.position(this.overlay),
-        pointer = pointer(e),
+        pointer = eventPointer(e),
         rx = (pointer.x - offset.left - this.plotOffset.left),
         ry = (pointer.y - offset.top - this.plotOffset.top);
 
@@ -1608,8 +1607,9 @@ Flotr.Graph.prototype = {
     }
 
     if(!this.options.selection.mode || !isLeftClick(event)) return;
-    
-    this.setSelectionPos(this.selection.first, event);
+
+    var pointer = eventPointer(event);
+    this.setSelectionPos(this.selection.first, {pageX:pointer.x, pageY:pointer.y});
     if(this.selectionInterval != null){
       clearInterval(this.selectionInterval);
     }
@@ -1654,7 +1654,8 @@ Flotr.Graph.prototype = {
       this.selectionInterval = null;
     }
 
-    this.setSelectionPos(this.selection.second, event);
+    var pointer = eventPointer(event);
+    this.setSelectionPos(this.selection.second, {pageX:pointer.x, pageY:pointer.y});
     this.clearSelection();
     
     if(this.selectionIsSane()){
@@ -1668,21 +1669,21 @@ Flotr.Graph.prototype = {
    * @param {Object} pos - Position object.
    * @param {Event} event - Event object.
    */
-  setSelectionPos: function(pos, event) {
+  setSelectionPos: function(pos, pointer) {
     var options = this.options,
         offset = D.position(this.overlay);
-    
+
     if(options.selection.mode.indexOf('x') == -1){
       pos.x = (pos == this.selection.first) ? 0 : this.plotWidth;         
     }else{
-      pos.x = event.pageX - offset.left - this.plotOffset.left;
+      pos.x = pointer.pageX - offset.left - this.plotOffset.left;
       pos.x = Math.min(Math.max(0, pos.x), this.plotWidth);
     }
 
     if (options.selection.mode.indexOf('y') == -1){
       pos.y = (pos == this.selection.first) ? 0 : this.plotHeight;
     }else{
-      pos.y = event.pageY - offset.top - this.plotOffset.top;
+      pos.y = pointer.pageY - offset.top - this.plotOffset.top;
       pos.y = Math.min(Math.max(0, pos.y), this.plotHeight);
     }
   },
