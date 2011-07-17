@@ -198,7 +198,10 @@ Flotr.Graph.prototype = {
       _.each(_.keys(Flotr.graphTypes), function (type) {
         if (s[type] && s[type].show) {
           try {
-            this[type][method].apply(this[type], args);
+            if (!_.isUndefined(args))
+                this[type][method].apply(this[type], args);
+            else
+                this[type][method].apply(this[type]);
             success = true;
           } catch (e) {}
         }
