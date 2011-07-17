@@ -42,7 +42,7 @@ Flotr.Graph = function(el, data, options){
     this[type] = _.clone(Flotr.graphTypes[type]);
     for (p in this[type]) {
       if (_.isFunction(this[type][p]))
-        this[type][p] = this[type][p].bind(this);
+        this[type][p] = _.bind(this[type][p], this);
     }
   }
   
@@ -63,9 +63,9 @@ Flotr.Graph = function(el, data, options){
   this.calculateSpacing();
   this.setupAxes();
   
-  this.draw(function() {
+  this.draw(_.bind(function() {
     Flotr.EventAdapter.fire(this.el, 'flotr:afterinit', [this]);
-  }.bind(this));
+  }, this));
   } catch (e) {
     try {
       console.error(e);
@@ -355,7 +355,7 @@ Flotr.Graph.prototype = {
       this[name] = _.clone(plugin);
       for (p in this[name]) {
         if (_.isFunction(this[name][p]))
-          this[name][p] = this[name][p].bind(this);
+          this[name][p] = _.bind(this[name][p], this);
       }
     }
   },
@@ -797,7 +797,7 @@ Flotr.Graph.prototype = {
    * Draws grid, labels, series and outline.
    */
   draw: function(after) {
-    var afterImageLoad = function() {
+    var afterImageLoad = _.bind(function() {
       this.drawGrid();
       this.drawLabels();
       this.drawTitles();
@@ -814,7 +814,7 @@ Flotr.Graph.prototype = {
       this.drawOutline();
       Flotr.EventAdapter.fire(this.el, 'flotr:afterdraw', [this.series, this]);
       after();
-    }.bind(this);
+    }, this);
     
     var g = this.options.grid;
     
@@ -826,7 +826,7 @@ Flotr.Graph.prototype = {
       }
       
       var img = new Image();
-      img.onload = function() {
+      img.onload = _.bind(function() {
         var left = this.plotOffset.left + (parseInt(g.backgroundImage.left) || 0);
         var top = this.plotOffset.top + (parseInt(g.backgroundImage.top) || 0);
         
@@ -845,7 +845,7 @@ Flotr.Graph.prototype = {
         
         afterImageLoad();
         
-      }.bind(this);
+      }, this);
       
       img.onabort = img.onerror = afterImageLoad;
       img.src = g.backgroundImage.src;
