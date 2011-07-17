@@ -1,6 +1,16 @@
 {
   "JAVASCRIPT": {
     "DIST_DIR": "./build",
+    "ie": [
+      "./lib/excanvas.js",
+      "./lib/base64.js"
+    ],
+    "lib": [
+      "./lib/bean.js",
+      "./lib/underscore.js",
+      "./lib/canvas2image.js",
+      "./lib/canvastext.js"
+    ],
     "flotr2": [
       "./js/Flotr.js",
       "./js/Flotr.defaultOptions.js",
