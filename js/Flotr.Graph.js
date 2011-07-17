@@ -1842,17 +1842,15 @@ Flotr.Graph.prototype = {
    * Removes the mouse tracking point from the overlay.
    */
   clearHit: function(){
-    var prevHit = this.prevHit;
-    if(this.prevHit && !this.executeOnType(prevHit.series, 'clearHit')){
+    var prev = this.prevHit;
+    if(prev && !this.executeOnType(prev.series, 'clearHit')){
       var plotOffset = this.plotOffset,
-        s = prevHit.series;
+        s = prev.series,
         lw = (s.bars ? s.bars.lineWidth : 1),
-        xa = prevHit.xaxis,
-        ya = prevHit.yaxis,
         offset = s.mouse.radius + lw;
       this.octx.clearRect(
-        plotOffset.left + xa.d2p(prevHit.x) - offset,
-        plotOffset.top  + ya.d2p(prevHit.y) - offset,
+        plotOffset.left + prev.xaxis.d2p(prev.x) - offset,
+        plotOffset.top  + prev.yaxis.d2p(prev.y) - offset,
         offset*2,
         offset*2
       );
