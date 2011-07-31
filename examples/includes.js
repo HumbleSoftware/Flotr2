@@ -34,6 +34,7 @@ yepnope([
   '../js/types/bubbles.js',
   '../js/plugins/spreadsheet.js',
   '../js/plugins/legend.js',
+  '../js/plugins/titles.js',
   '../js/types/gantt.js',
   { complete : example }
 ]);

@@ -29,7 +29,8 @@
       "./js/types/points.js",
       "./js/types/radar.js",
       "./js/plugins/legend.js",
-      "./js/plugins/spreadsheet.js"
+      "./js/plugins/spreadsheet.js",
+      "./js/plugins/titles.js"
     ]
   }
 }
