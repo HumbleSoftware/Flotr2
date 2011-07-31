@@ -13,33 +13,36 @@ Flotr.addType('lines', {
    * @param {Object} series - Series with options.lines.show = true.
    */
   draw: function(series){
+
+    var ctx = this.ctx,
+      lineWidth = series.lines.lineWidth,
+      shadowSize = series.shadowSize,
+      offset;
+
     series = series || this.series;
-    var ctx = this.ctx;
+
     ctx.save();
     ctx.translate(this.plotOffset.left, this.plotOffset.top);
     ctx.lineJoin = 'round';
 
-    var lw = series.lines.lineWidth;
-    var sw = series.shadowSize;
+    if(shadowSize){
 
-    if(sw > 0){
-      ctx.lineWidth = sw / 2;
-
-      var offset = lw/2 + ctx.lineWidth/2;
+      ctx.lineWidth = shadowSize / 2;
+      offset = lineWidth/2 + ctx.lineWidth/2;
       
       ctx.strokeStyle = "rgba(0,0,0,0.1)";
-      this.lines.plot(series, offset + sw/2, false);
+      this.lines.plot(series, offset + shadowSize/2, false);
 
       ctx.strokeStyle = "rgba(0,0,0,0.2)";
       this.lines.plot(series, offset, false);
 
       if(series.lines.fill) {
         ctx.fillStyle = "rgba(0,0,0,0.05)";
-        this.lines.plotArea(series, offset + sw/2, false);
+        this.lines.plotArea(series, offset + shadowSize/2, false);
       }
     }
 
-    ctx.lineWidth = lw;
+    ctx.lineWidth = lineWidth;
     ctx.strokeStyle = series.color;
     if(series.lines.fill){
       ctx.fillStyle = this.processColor(series.lines.fillColor || series.color, {opacity: series.lines.fillOpacity});
@@ -48,46 +51,50 @@ Flotr.addType('lines', {
 
     this.lines.plot(series, 0, true);
     ctx.restore();
-  },  
+  },
+
   plot: function(series, offset, incStack){
+
     var ctx = this.ctx,
-        xa = series.xaxis,
-        ya = series.yaxis,
-        data = series.data, 
-        length = data.length - 1, i;
+      xa = series.xaxis,
+      ya = series.yaxis,
+      data = series.data, 
+      length = data.length - 1, i,
+      plotWidth = this.plotWidth, 
+      plotHeight = this.plotHeight,
+      prevx = null,
+      prevy = null,
+      x1, x2, y1, y2, stack1, stack2;
       
     if(data.length < 2) return;
 
-    var plotWidth = this.plotWidth, 
-        plotHeight = this.plotHeight,
-        prevx = null,
-        prevy = null;
-
     ctx.beginPath();
+
     for(i = 0; i < length; ++i){
+
       // To allow empty values
       if (data[i][1] === null || data[i+1][1] === null) continue;
-            
-            // Zero is infinity for log scales
-            if (xa.options.scaling === 'logarithmic' && (data[i][0] <= 0 || data[i+1][0] <= 0)) continue;
-            if (ya.options.scaling == 'logarithmic' && (data[i][1] <= 0 || data[i+1][1] <= 0)) continue;
+
+      // Zero is infinity for log scales
+      if (xa.options.scaling === 'logarithmic' && (data[i][0] <= 0 || data[i+1][0] <= 0)) continue;
+      if (ya.options.scaling == 'logarithmic' && (data[i][1] <= 0 || data[i+1][1] <= 0)) continue;
       
-      var x1 = xa.d2p(data[i][0]),   y1,
-          x2 = xa.d2p(data[i+1][0]), y2;
+      x1 = xa.d2p(data[i][0]);
+      x2 = xa.d2p(data[i+1][0]);
       
       if (series.lines.stacked) {
-        var stack1 = xa.values[data[i][0]].stack || 0,
-            stack2 = xa.values[data[i+1][0]].stack || xa.values[data[i][0]].stack || 0;
-        
+
+        stack1 = xa.values[data[i][0]].stack || 0;
+        stack2 = xa.values[data[i+1][0]].stack || xa.values[data[i][0]].stack || 0;
+
         y1 = ya.d2p(data[i][1] + stack1);
         y2 = ya.d2p(data[i+1][1] + stack2);
         
         if(incStack){
           xa.values[data[i][0]].stack = data[i][1]+stack1;
             
-          if(i == length-1){
+          if(i == length-1)
             xa.values[data[i+1][0]].stack = data[i+1][1]+stack2;
-          }
         }
       }
       else{
@@ -95,18 +102,12 @@ Flotr.addType('lines', {
         y2 = ya.d2p(data[i+1][1]);
       }
 
-      /**
-       * Clip against graph bottom edge.
-       */
+      // Clip against graph bottom edge.
       if(y1 >= y2 && y1 >= plotHeight){
-        /**
-         * Line segment is outside the drawing area.
-         */
+        // Line segment is outside the drawing area.
         if(y2 >= plotHeight) continue;
-        
-        /**
-         * Compute new intersection point.
-         */
+
+        // Compute new intersection point.
         x1 = x1 - (y1 - plotHeight - 1) / (y2 - y1) * (x2 - x1);
         y1 = plotHeight - 1;
       }
@@ -116,9 +117,7 @@ Flotr.addType('lines', {
         y2 = plotHeight - 1;
       }
 
-      /**
-       * Clip against graph top edge.
-       */ 
+      // Clip against graph top edge.
       if(y1 <= y2 && y1 < 0) {
         if(y2 < 0) continue;
         x1 = x1 - y1 / (y2 - y1) * (x2 - x1);
@@ -130,9 +129,7 @@ Flotr.addType('lines', {
         y2 = 0;
       }
 
-      /**
-       * Clip against graph left edge.
-       */
+      // Clip against graph left edge.
       if(x1 <= x2 && x1 < 0){
         if(x2 < 0) continue;
         y1 = y1 - x1 / (x2 - x1) * (y2 - y1);
@@ -144,9 +141,7 @@ Flotr.addType('lines', {
         x2 = 0;
       }
 
-      /**
-       * Clip against graph right edge.
-       */
+      // Clip against graph right edge.
       if(x1 >= x2 && x1 >= plotWidth){
         if (x2 >= plotWidth) continue;
         y1 = y1 + (plotWidth - x1) / (x2 - x1) * (y2 - y1);
@@ -175,20 +170,27 @@ Flotr.addType('lines', {
    * @param {Object} offset
    */
   plotArea: function(series, offset, saveStrokePath){
+
     var ctx = this.ctx,
-        xa = series.xaxis,
-        ya = series.yaxis,
-        data = series.data,
-        length = data.length - 1,
-        top, 
-        bottom = Math.min(Math.max(0, ya.min), ya.max),
-        lastX = 0,
-        first = true,
-        strokePath = [],
-        pathIdx = 0,
-        stack1 = 0,
-        stack2 = 0;
-    
+      xa = series.xaxis,
+      ya = series.yaxis,
+      data = series.data,
+      length = data.length - 1,
+      bottom = Math.min(Math.max(0, ya.min), ya.max),
+      lastX = 0,
+      first = true,
+      strokePath = [],
+      pathIdx = 0,
+      stack1 = 0,
+      stack2 = 0,
+      top, x1, x2, y1, y2, i, stack1, stack2,
+      x1old, x2old,
+      x1PointValue,
+      x2PointValue,
+      yaMaxPointValue,
+      yaMinPointValue,
+      path;
+
     function addStrokePath(xVal, yVal) {
       if (saveStrokePath) {
         strokePath[pathIdx] = [];
@@ -202,13 +204,14 @@ Flotr.addType('lines', {
     
     ctx.beginPath();
     
-    for(var i = 0; i < length; ++i){
-      var x1 = data[i][0],   y1,
-          x2 = data[i+1][0], y2;
+    for(i = 0; i < length; ++i){
+      x1 = data[i][0];
+      x2 = data[i+1][0];
       
       if (series.lines.stacked) {
-        var stack1 = xa.values[data[i][0]].stack || 0,
-            stack2 = xa.values[data[i+1][0]].stack || xa.values[data[i][0]].stack || 0;
+
+        stack1 = xa.values[data[i][0]].stack || 0,
+        stack2 = xa.values[data[i+1][0]].stack || xa.values[data[i][0]].stack || 0;
         
         y1 = data[i][1] + stack1;
         y2 = data[i+1][1] + stack2;
@@ -239,11 +242,7 @@ Flotr.addType('lines', {
         y2 = (xa.max - x1) / (x2 - x1) * (y2 - y1) + y1;
         x2 = xa.max;
       }
-      var x1PointValue = xa.d2p(x1), // Cache d2p values
-          x2PointValue = xa.d2p(x2),
-          yaMaxPointValue = ya.d2p(ya.max),
-          yaMinPointValue = ya.d2p(ya.min);
-      
+
       if(first){
         ctx.moveTo(x1PointValue, ya.d2p(bottom + stack1) + offset);
         addStrokePath(x1PointValue, ya.d2p(bottom + stack1) + offset);
@@ -251,9 +250,7 @@ Flotr.addType('lines', {
       }
       lastX = Math.max(x2, lastX);
       
-      /**
-       * Now check the case where both is outside.
-       */
+      // Now check the case where both is outside.
       if(y1 >= ya.max && y2 >= ya.max){
         ctx.lineTo(x1PointValue, yaMaxPointValue + offset);
         ctx.lineTo(x2PointValue, yaMaxPointValue + offset);
@@ -274,7 +271,8 @@ Flotr.addType('lines', {
        * be two rectangles and two triangles we need to fill
        * in; to find these keep track of the current x values.
        */
-      var x1old = x1, x2old = x2;
+      x1old = x1;
+      x2old = x2;
       
       /**
        * And clip the y values, without shortcutting.
@@ -289,9 +287,7 @@ Flotr.addType('lines', {
         y2 = ya.min;
       }
 
-      /**
-       * Clip with ymax.
-       */
+      // Clip with ymax.
       if(y1 >= y2 && y1 > ya.max && y2 <= ya.max){
         x1 = (ya.max - y1) / (y2 - y1) * (x2 - x1) + x1;
         y1 = ya.max;
@@ -301,14 +297,12 @@ Flotr.addType('lines', {
         y2 = ya.max;
       }
 
-      var x1NewPointValue = xa.d2p(x1), // Cache d2p values
-          x2NewPointValue = xa.d2p(x2),
-          y1PointValue = ya.d2p(y1), 
-          y2PointValue = ya.d2p(y2);
+      x1NewPointValue = xa.d2p(x1), // Cache d2p values
+      x2NewPointValue = xa.d2p(x2),
+      y1PointValue = ya.d2p(y1), 
+      y2PointValue = ya.d2p(y2);
       
-      /**
-       * If the x value was changed we got a rectangle to fill.
-       */
+      // If the x value was changed we got a rectangle to fill.
       if(x1 != x1old){
         top = (y1 <= ya.min) ? yaMinPointValue : yaMaxPointValue;
         ctx.lineTo(x1PointValue, top + offset);
@@ -317,17 +311,13 @@ Flotr.addType('lines', {
         addStrokePath(x1NewPointValue, top + offset);
       }
          
-      /**
-       * Fill the triangles.
-       */
+      // Fill the triangles.
       ctx.lineTo(x1NewPointValue, y1PointValue + offset);
       ctx.lineTo(x2NewPointValue, y2PointValue + offset);
       addStrokePath(x1NewPointValue, y1PointValue + offset);
       addStrokePath(x2NewPointValue, y2PointValue + offset);
 
-      /**
-       * Fill the other rectangle if it's there.
-       */
+      // Fill the other rectangle if it's there.
       if(x2 != x2old){
         top = (y2 <= ya.min) ? yaMinPointValue : yaMaxPointValue;
         ctx.lineTo(x2PointValue, top + offset);
@@ -341,7 +331,7 @@ Flotr.addType('lines', {
     addStrokePath(xa.d2p(lastX), ya.d2p(bottom) + offset);
     
     // go back along previous stroke path
-    var path = xa.lastStrokePath;
+    path = xa.lastStrokePath;
     
     if (series.lines.stacked) {
       if (path) {
@@ -358,6 +348,7 @@ Flotr.addType('lines', {
     ctx.closePath();
     ctx.fill();
   },
+
   extendYRange: function(axis){
     if(axis.options.max == null || axis.options.min == null){
       var newmax = axis.max,
