@@ -60,12 +60,12 @@ Flotr.addType('lines', {
       xa = series.xaxis,
       ya = series.yaxis,
       data = series.data, 
-      length = data.length - 1, i,
+      length = data.length - 1,
       plotWidth = this.plotWidth, 
       plotHeight = this.plotHeight,
       prevx = null,
       prevy = null,
-      x1, x2, y1, y2, stack1, stack2;
+      x1, x2, y1, y2, stack1, stack2, i;
       
     if(data.length < 2) return;
 
@@ -78,7 +78,7 @@ Flotr.addType('lines', {
 
       // Zero is infinity for log scales
       if (xa.options.scaling === 'logarithmic' && (data[i][0] <= 0 || data[i+1][0] <= 0)) continue;
-      if (ya.options.scaling == 'logarithmic' && (data[i][1] <= 0 || data[i+1][1] <= 0)) continue;
+      if (ya.options.scaling === 'logarithmic' && (data[i][1] <= 0 || data[i+1][1] <= 0)) continue;
       
       x1 = xa.d2p(data[i][0]);
       x2 = xa.d2p(data[i+1][0]);
@@ -146,7 +146,7 @@ Flotr.addType('lines', {
       pathIdx = 0,
       stack1 = 0,
       stack2 = 0,
-      top, x1, x2, y1, y2, i, stack1, stack2,
+      top, x1, x2, y1, y2, i,
       x1old, x2old,
       x1PointValue,
       x2PointValue,
@@ -173,7 +173,7 @@ Flotr.addType('lines', {
       
       if (series.lines.stacked) {
 
-        stack1 = xa.values[data[i][0]].stack || 0,
+        stack1 = xa.values[data[i][0]].stack || 0;
         stack2 = xa.values[data[i+1][0]].stack || xa.values[data[i][0]].stack || 0;
         
         y1 = data[i][1] + stack1;
@@ -237,9 +237,9 @@ Flotr.addType('lines', {
       x1old = x1;
       x2old = x2;
       
-      x1NewPointValue = xa.d2p(x1), // Cache d2p values
-      x2NewPointValue = xa.d2p(x2),
-      y1PointValue = ya.d2p(y1), 
+      x1NewPointValue = xa.d2p(x1); // Cache d2p values
+      x2NewPointValue = xa.d2p(x2);
+      y1PointValue = ya.d2p(y1);
       y2PointValue = ya.d2p(y2);
       
       // If the x value was changed we got a rectangle to fill.
@@ -275,7 +275,7 @@ Flotr.addType('lines', {
     
     if (series.lines.stacked) {
       if (path) {
-        for(var i = path.length-1; i >= 0; --i){
+        for(i = path.length-1; i >= 0; --i){
           ctx.lineTo(path[i][0], path[i][1] - offset/2);
         }
       }
@@ -290,7 +290,8 @@ Flotr.addType('lines', {
   },
 
   extendYRange: function(axis){
-    if(axis.options.max == null || axis.options.min == null){
+    var o = axis.options;
+    if((!o.max && o.max !== 0) || (!o.min && o.min !== 0)){
       var newmax = axis.max,
           newmin = axis.min,
           x, i, j, s, l,
