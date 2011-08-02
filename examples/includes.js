@@ -35,6 +35,7 @@ yepnope([
   '../js/plugins/spreadsheet.js',
   '../js/plugins/legend.js',
   '../js/plugins/titles.js',
+  '../js/plugins/hit.js',
   '../js/types/gantt.js',
   { complete : example }
 ]);
