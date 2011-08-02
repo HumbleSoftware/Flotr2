@@ -103,56 +103,10 @@ Flotr.addType('lines', {
         y2 = ya.d2p(data[i+1][1]);
       }
 
-      // Clip against graph bottom edge.
-      if(y1 >= y2 && y1 >= plotHeight){
-        // Line segment is outside the drawing area.
-        if(y2 >= plotHeight) continue;
-
-        // Compute new intersection point.
-        x1 = x1 - (y1 - plotHeight - 1) / (y2 - y1) * (x2 - x1);
-        y1 = plotHeight - 1;
-      }
-      else if(y2 >= y1 && y2 >= plotHeight){
-        if(y1 >= plotHeight) continue;
-        x2 = x1 - (y1 - plotHeight - 1) / (y2 - y1) * (x2 - x1);
-        y2 = plotHeight - 1;
-      }
-
-      // Clip against graph top edge.
-      if(y1 <= y2 && y1 < 0) {
-        if(y2 < 0) continue;
-        x1 = x1 - y1 / (y2 - y1) * (x2 - x1);
-        y1 = 0;
-      }
-      else if(y2 <= y1 && y2 < 0){
-        if(y1 < 0) continue;
-        x2 = x1 - y1 / (y2 - y1) * (x2 - x1);
-        y2 = 0;
-      }
-
-      // Clip against graph left edge.
-      if(x1 <= x2 && x1 < 0){
-        if(x2 < 0) continue;
-        y1 = y1 - x1 / (x2 - x1) * (y2 - y1);
-        x1 = 0;
-      }
-      else if(x2 <= x1 && x2 < 0){
-        if(x1 < 0) continue;
-        y2 = y1 - x1 / (x2 - x1) * (y2 - y1);
-        x2 = 0;
-      }
-
-      // Clip against graph right edge.
-      if(x1 >= x2 && x1 >= plotWidth){
-        if (x2 >= plotWidth) continue;
-        y1 = y1 + (plotWidth - x1) / (x2 - x1) * (y2 - y1);
-        x1 = plotWidth - 1;
-      }
-      else if(x2 >= x1 && x2 >= plotWidth){
-        if(x1 >= plotWidth) continue;
-        y2 = y1 + (plotWidth - x1) / (x2 - x1) * (y2 - y1);
-        x2 = plotWidth - 1;
-      }
+      if ((y1 >= plotHeight && y2 >= plotHeight) || 
+        (y1 <= 0 && y2 <= 0) ||
+        (x1 <= 0 && x2 <= 0) ||
+        (x1 >= plotWidth && x2 >= plotWidth)) continue;
 
       if((prevx != x1) || (prevy != y1 + offset))
         ctx.moveTo(x1, y1 + offset);
