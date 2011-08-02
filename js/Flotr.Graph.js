@@ -340,10 +340,12 @@ Flotr.Graph.prototype = {
     for (name in Flotr.plugins) {
       plugin = Flotr.plugins[name];
       for (c in plugin.callbacks) {
+        Flotr.EventAdapter.observe(this.el, c, _.bind(plugin.callbacks[c], this));
+        // TODO
         // Ensure no old handlers are still observing this element (prevent memory leaks)
-        Flotr.EventAdapter.
-          stopObserving(this.el, c).
-          observe(this.el, c, _.bind(plugin.callbacks[c], this));
+        // Make sure multiple plugins can listen to the same event.
+          //stopObserving(this.el, c).
+          
       }
       this[name] = _.clone(plugin);
       for (p in this[name]) {
