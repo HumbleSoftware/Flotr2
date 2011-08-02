@@ -24,6 +24,7 @@ Flotr.addType('lines', {
     ctx.save();
     ctx.translate(this.plotOffset.left, this.plotOffset.top);
     ctx.lineJoin = 'round';
+    this.lines.clip();
 
     if(shadowSize){
 
@@ -164,6 +165,14 @@ Flotr.addType('lines', {
     ctx.stroke();
     ctx.closePath();
   },
+
+  clip : function () {
+    var ctx = this.ctx;
+    ctx.beginPath();
+    ctx.rect(0, 0, this.plotWidth, this.plotHeight);
+    ctx.clip();
+  },
+
   /**
    * Function used to fill
    * @param {Object} series - The series to draw
