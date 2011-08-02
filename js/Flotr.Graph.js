@@ -22,10 +22,7 @@
  */
 Flotr.Graph = function(el, data, options){
 
-  /*
   try {
-  */
-
     this._setEl(el);
 
     this._initPlugins();
@@ -54,7 +51,6 @@ Flotr.Graph = function(el, data, options){
       Flotr.EventAdapter.fire(this.el, 'flotr:afterinit', [this]);
     }, this));
 
-  try {
   } catch (e) {
     try {
       console.error(e);
