@@ -391,55 +391,70 @@ Flotr.Graph.prototype = {
    */
   findDataRanges: function(){
     var s = this.series, 
-        a = this.axes;
+        a = this.axes,
+        yLogarithmic, yLogarithmic,
+        i, j, h, x, y, data, xaxis, yaxis, length, xmax, xmin, ymax, ymin, xused, yused;
     
     a.x.datamin = a.x2.datamin = a.y.datamin = a.y2.datamin = Number.MAX_VALUE;
     a.x.datamax = a.x2.datamax = a.y.datamax = a.y2.datamax = -Number.MAX_VALUE;
-    
+
     if(s.length > 0){
-      var i, j, h, x, y, data, xaxis, yaxis;
-    
+
       // Get datamin, datamax start values 
       for(i = 0; i < s.length; ++i) {
         data = s[i].data;
         xaxis = s[i].xaxis;
         yaxis = s[i].yaxis;
-        
+        xmin = xaxis.datamin;
+        xmax = xaxis.datamax;
+        ymin = yaxis.datamin;
+        ymax = yaxis.datamax;
+        xused = xaxis.used;
+        yused = yaxis.used;
+
+        xLogarithmic = (xaxis.options.scaling === 'logarithmic');
+        yLogarithmic = (yaxis.options.scaling === 'logarithmic');
+
         if (data.length > 0 && !s[i].hide) {
-          for(h = data.length - 1; h > -1; --h){
+          length = data.length;
+          for(h = 0; h < length; h++){
             x = data[h][0];
+            y = data[h][1];
             
             // Logarithm is only defined for values > 0
-            if ((x <= 0) && (xaxis.options.scaling === 'logarithmic')) continue;
+            if (xLogarithmic && (x <= 0)) continue;
 
-            if(x < xaxis.datamin) {
-              xaxis.datamin = x;
-              xaxis.used = true;
+            if(x < xmin) {
+              xmin = x;
+              xused = true;
             }
-            
-            if(x > xaxis.datamax) {
-              xaxis.datamax = x;
-              xaxis.used = true;
-            }
-                                          
-            for(j = 1; j < data[h].length; j++){
-              y = data[h][j];
-              
-              // Logarithm is only defined for values > 0
-              if ((y <= 0) && (yaxis.options.scaling === 'logarithmic')) continue;
 
-              if(y < yaxis.datamin) {
-                yaxis.datamin = y;
-                yaxis.used = true;
-              }
-              
-              if(y > yaxis.datamax) {
-                yaxis.datamax = y;
-                yaxis.used = true;
-              }
+            if(x > xmax) {
+              xmax = x;
+              xused = true;
+            }
+
+            // Logarithm is only defined for values > 0
+            if (yLogarithmic && (y <= 0)) continue;
+
+            if(y < ymin) {
+              ymin = y;
+              yused = true;
+            }
+
+            if(y > ymax) {
+              ymax = y;
+              yused = true;
             }
           }
         }
+
+        xaxis.datamin = xmin;
+        xaxis.datamax = xmax;
+        yaxis.datamin = ymin;
+        yaxis.datamax = ymax;
+        xaxis.used = xused;
+        yaxis.used = yused;
       }
     }
     
