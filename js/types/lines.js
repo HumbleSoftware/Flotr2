@@ -237,29 +237,6 @@ Flotr.addType('lines', {
       x1old = x1;
       x2old = x2;
       
-      /**
-       * And clip the y values, without shortcutting.
-       * Clip with ymin.
-       */
-      if(y1 <= y2 && y1 < ya.min && y2 >= ya.min){
-        x1 = (ya.min - y1) / (y2 - y1) * (x2 - x1) + x1;
-        y1 = ya.min;
-      }
-      else if(y2 <= y1 && y2 < ya.min && y1 >= ya.min){
-        x2 = (ya.min - y1) / (y2 - y1) * (x2 - x1) + x1;
-        y2 = ya.min;
-      }
-
-      // Clip with ymax.
-      if(y1 >= y2 && y1 > ya.max && y2 <= ya.max){
-        x1 = (ya.max - y1) / (y2 - y1) * (x2 - x1) + x1;
-        y1 = ya.max;
-      }
-      else if(y2 >= y1 && y2 > ya.max && y1 <= ya.max){
-        x2 = (ya.max - y1) / (y2 - y1) * (x2 - x1) + x1;
-        y2 = ya.max;
-      }
-
       x1NewPointValue = xa.d2p(x1), // Cache d2p values
       x2NewPointValue = xa.d2p(x2),
       y1PointValue = ya.d2p(y1), 
