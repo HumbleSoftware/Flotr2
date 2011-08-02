@@ -5,6 +5,7 @@
 
   var D = Flotr.DOM;
 
+  // TODO Find a home for this.
   function eventPointer(e) {
     if (Flotr.isIE && Flotr.isIE < 9) {
       return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
@@ -20,59 +21,40 @@
  * @param {Object} options - an object containing options
  */
 Flotr.Graph = function(el, data, options){
-  try {
-  this.el = el;
-  
-  if (!this.el) throw 'The target container doesn\'t exist';
-  if (!this.el.clientWidth) throw 'The target container must be visible';
 
-  this.registerPlugins();
+  /*
+  try {
+  */
+
+    this._setEl(el);
+
+    this._initPlugins();
+
+    Flotr.EventAdapter.fire(this.el, 'flotr:beforeinit', [this]);
+
+    this._initMembers();
+    this.data = data;
+    this.series = Flotr.getSeries(data);
+    this._initOptions(options);
+    this._initGraphTypes();
+    this._initCanvas();
+    Flotr.EventAdapter.fire(this.el, 'flotr:afterconstruct', [this]);
+    this._initEvents();
   
-  Flotr.EventAdapter.fire(this.el, 'flotr:beforeinit', [this]);
-  
-  // Initialize some variables
-  this.el.graph = this;
-  this.data = data;
-  this.lastMousePos = { pageX: null, pageY: null };
-  this.selection = { first: { x: -1, y: -1}, second: { x: -1, y: -1} };
-  this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
-  this.prevSelection = null;
-  this.selectionInterval = null;
-  this.ignoreClick = false;   
-  this.prevHit = null;
-  this.series = Flotr.getSeries(data);
-  this.setOptions(options);
-  
-  // Init graph types
-  var type, p;
-  for (type in Flotr.graphTypes) {
-    this[type] = _.clone(Flotr.graphTypes[type]);
-    for (p in this[type]) {
-      if (_.isFunction(this[type][p]))
-        this[type][p] = _.bind(this[type][p], this);
-    }
-  }
-  
-  // Create and prepare canvas.
-  this.constructCanvas();
-  
-  Flotr.EventAdapter.fire(this.el, 'flotr:afterconstruct', [this]);
-  
-  // Add event handlers for mouse tracking, clicking and selection
-  this.initEvents();
-  
-  this.findDataRanges();
-  this.calculateTicks(this.axes.x);
-  this.calculateTicks(this.axes.x2);
-  this.calculateTicks(this.axes.y);
-  this.calculateTicks(this.axes.y2);
-  
-  this.calculateSpacing();
-  this.setupAxes();
-  
-  this.draw(_.bind(function() {
-    Flotr.EventAdapter.fire(this.el, 'flotr:afterinit', [this]);
-  }, this));
+    this.findDataRanges();
+    this.calculateTicks(this.axes.x);
+    this.calculateTicks(this.axes.x2);
+    this.calculateTicks(this.axes.y);
+    this.calculateTicks(this.axes.y2);
+
+    this.calculateSpacing();
+    this.setupAxes();
+
+    this.draw(_.bind(function() {
+      Flotr.EventAdapter.fire(this.el, 'flotr:afterinit', [this]);
+    }, this));
+
+  try {
   } catch (e) {
     try {
       console.error(e);
@@ -85,7 +67,7 @@ Flotr.Graph.prototype = {
    * Sets options and initializes some variables and color specific values, used by the constructor. 
    * @param {Object} opts - options object
    */
-  setOptions: function(opts){
+  _initOptions: function(opts){
     var options = Flotr.clone(Flotr.defaultOptions);
     options.x2axis = _.extend(_.clone(options.xaxis), options.x2axis);
     options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
@@ -299,7 +281,7 @@ Flotr.Graph.prototype = {
    * of excanvas. The overlay canvas is inserted for displaying interactions. After the canvas elements
    * are created, the elements are inserted into the container element.
    */
-  constructCanvas: function(){
+  _initCanvas: function(){
     var el = this.el,
       o = this.options,
       size, style;
@@ -352,7 +334,8 @@ Flotr.Graph.prototype = {
     _.extend(o, options);
     return Flotr.Color.processColor(color, o);
   },
-  registerPlugins: function(){
+  _initPlugins: function(){
+    // TODO Should be moved to Flotr and mixed in.
     var name, plugin, c;
     for (name in Flotr.plugins) {
       plugin = Flotr.plugins[name];
@@ -397,7 +380,7 @@ Flotr.Graph.prototype = {
   /**
    * Initializes event some handlers.
    */
-  initEvents: function () {
+  _initEvents: function () {
     //@TODO: maybe stopObserving with only flotr functions
     Flotr.EventAdapter.
       stopObserving(this.overlay).
@@ -2006,6 +1989,32 @@ Flotr.Graph.prototype = {
     this.overlay.show();
     if (this.saveImageElement) this.el.removeChild(this.saveImageElement);
     this.saveImageElement = null;
+  },
+
+  _initMembers: function() {
+    this.selection = {first: {x: -1, y: -1}, second: {x: -1, y: -1}};
+    this.prevSelection = null;
+    this.selectionInterval = null;
+    this.lastMousePos = {pageX: null, pageY: null };
+    this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
+    this.ignoreClick = false;
+    this.prevHit = null;
+  },
+  _initGraphTypes: function() {
+    var type, p;
+    for (type in Flotr.graphTypes) {
+      this[type] = _.clone(Flotr.graphTypes[type]);
+      for (p in this[type]) {
+        if (_.isFunction(this[type][p]))
+          this[type][p] = _.bind(this[type][p], this);
+      }
+    }
+  },
+  _setEl: function(el) {
+    if (!el) throw 'The target container doesn\'t exist';
+    if (!el.clientWidth) throw 'The target container must be visible';
+    this.el = el;
+    this.el.graph = this;
   }
 }
 })();
