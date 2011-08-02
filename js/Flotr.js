@@ -67,11 +67,7 @@ var Flotr = {
    */
   getSeries: function(data){
     return _.map(data, function(serie){
-      serie = (serie.data) ? _.clone(serie) : {data: serie};
-      for (var i = serie.data.length-1; i > -1; --i) {
-        serie.data[i][1] = (serie.data[i][1] === null ? null : parseFloat(serie.data[i][1])); 
-      }
-      return serie;
+      return (serie.data) ? (_.clone(serie) : {data: serie};
     });
   },
   
