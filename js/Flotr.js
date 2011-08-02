@@ -67,7 +67,7 @@ var Flotr = {
    */
   getSeries: function(data){
     return _.map(data, function(serie){
-      return (serie.data) ? (_.clone(serie) : {data: serie};
+      return (serie.data ? serie : {data: serie});
     });
   },
   
