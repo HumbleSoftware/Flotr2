@@ -79,11 +79,6 @@ Flotr.defaultOptions = {
     color: '#B6D9FF',      // => selection box color
     fps: 20                // => frames-per-second
   },
-  crosshair: {
-    mode: null,            // => one of null, 'x', 'y' or 'xy'
-    color: '#FF0000',      // => crosshair color
-    hideCursor: true       // => hide the cursor when the crosshair is shown
-  },
   mouse: {
     track: false,          // => true to track the mouse, no tracking otherwise
     trackAll: false,

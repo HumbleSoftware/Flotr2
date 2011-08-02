@@ -33,9 +33,10 @@ yepnope([
   '../js/types/radar.js',
   '../js/types/bubbles.js',
   '../js/plugins/spreadsheet.js',
+  '../js/plugins/hit.js',
+  '../js/plugins/crosshair.js',
   '../js/plugins/legend.js',
   '../js/plugins/titles.js',
-  '../js/plugins/hit.js',
   '../js/types/gantt.js',
   { complete : example }
 ]);

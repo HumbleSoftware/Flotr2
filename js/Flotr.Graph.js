@@ -1381,17 +1381,8 @@ Flotr.Graph.prototype = {
    */
   mouseMoveHandler: function(event){
     var pos = this.getEventPosition(event);
-
     this.lastMousePos.pageX = pos.absX;
     this.lastMousePos.pageY = pos.absY;  
-      
-      //@todo Add another overlay for the crosshair
-    if (this.options.crosshair.mode)
-      this.clearCrosshair();
-      
-    if (this.options.crosshair.mode)
-      this.drawCrosshair(pos);
-    
     Flotr.EventAdapter.fire(this.el, 'flotr:mousemove', [event, pos, this]);
   },
   /**
@@ -1594,60 +1585,6 @@ Flotr.Graph.prototype = {
     octx.fillRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
     octx.strokeRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
     octx.restore();
-  },
-  /**   
-   * Draws the selection box.
-   */
-  drawCrosshair: function(pos) {
-    var octx = this.octx,
-      options = this.options,
-      plotOffset = this.plotOffset,
-      x = plotOffset.left+pos.relX+0.5,
-      y = plotOffset.top+pos.relY+0.5;
-    
-    if (pos.relX < 0 || pos.relY < 0 || pos.relX > this.plotWidth || pos.relY > this.plotHeight) {
-      this.el.style.cursor = null;
-      D.removeClass(this.el, 'flotr-crosshair');
-      return; 
-    }
-    
-    this.lastMousePos.relX = null;
-    this.lastMousePos.relY = null;
-    
-    if (options.crosshair.hideCursor) {
-      this.el.style.cursor = 'none';
-      D.addClass(this.el, 'flotr-crosshair');
-    }
-    
-    octx.save();
-    octx.strokeStyle = options.crosshair.color;
-    octx.lineWidth = 1;
-    octx.beginPath();
-    
-    if (options.crosshair.mode.indexOf('x') != -1) {
-      octx.moveTo(x, plotOffset.top);
-      octx.lineTo(x, plotOffset.top + this.plotHeight);
-      this.lastMousePos.relX = x;
-    }
-    
-    if (options.crosshair.mode.indexOf('y') != -1) {
-      octx.moveTo(plotOffset.left, y);
-      octx.lineTo(plotOffset.left + this.plotWidth, y);
-      this.lastMousePos.relY = y;
-    }
-    
-    octx.stroke();
-    octx.restore();
-  },
-  /**
-   * Removes the selection box from the overlay canvas.
-   */
-  clearCrosshair: function() {
-    if (this.lastMousePos.relX != null)
-      this.octx.clearRect(this.lastMousePos.relX-0.5, this.plotOffset.top, 1,this.plotHeight+1);
-    
-    if (this.lastMousePos.relY != null)
-      this.octx.clearRect(this.plotOffset.left, this.lastMousePos.relY-0.5, this.plotWidth+1, 1);    
   },
   /**
    * Determines whether or not the selection is sane and should be drawn.
