@@ -61,13 +61,13 @@ Flotr.addType('lines', {
       ya = series.yaxis,
       data = series.data, 
       length = data.length - 1,
-      plotWidth = this.plotWidth, 
-      plotHeight = this.plotHeight,
+      width = this.plotWidth, 
+      height = this.plotHeight,
       prevx = null,
       prevy = null,
       x1, x2, y1, y2, stack1, stack2, i;
       
-    if(data.length < 2) return;
+    if(length < 2) return;
 
     ctx.beginPath();
 
@@ -103,10 +103,10 @@ Flotr.addType('lines', {
         y2 = ya.d2p(data[i+1][1]);
       }
 
-      if ((y1 >= plotHeight && y2 >= plotHeight) || 
+      if ((y1 >= height && y2 >= width) || 
         (y1 <= 0 && y2 <= 0) ||
         (x1 <= 0 && x2 <= 0) ||
-        (x1 >= plotWidth && x2 >= plotWidth)) continue;
+        (x1 >= width && x2 >= width)) continue;
 
       if((prevx != x1) || (prevy != y1 + offset))
         ctx.moveTo(x1, y1 + offset);
