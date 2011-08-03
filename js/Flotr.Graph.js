@@ -332,16 +332,16 @@ Flotr.Graph.prototype = {
   },
   _initPlugins: function(){
     // TODO Should be moved to Flotr and mixed in.
-    var name, plugin, c;
+    var name, plugin, c, boundCallback;
+    Flotr.EventAdapter.fire(this.el, 'flotr:cleanup', [this]);
+    Flotr.EventAdapter.stopObserving(this.el, 'flotr:cleanup');
     for (name in Flotr.plugins) {
       plugin = Flotr.plugins[name];
       for (c in plugin.callbacks) {
-        Flotr.EventAdapter.observe(this.el, c, _.bind(plugin.callbacks[c], this));
-        // TODO
-        // Ensure no old handlers are still observing this element (prevent memory leaks)
-        // Make sure multiple plugins can listen to the same event.
-          //stopObserving(this.el, c).
-          
+        boundCallback = _.bind(plugin.callbacks[c], this);
+        Flotr.EventAdapter.observe(this.el, c, boundCallback);
+        Flotr.EventAdapter.observe(this.el, 'flotr:cleanup', _.bind(Flotr.EventAdapter.stopObserving, this, this.el, c, boundCallback));
+        boundCallback = null;
       }
       this[name] = _.clone(plugin);
       for (p in this[name]) {
@@ -379,12 +379,18 @@ Flotr.Graph.prototype = {
    * Initializes event some handlers.
    */
   _initEvents: function () {
-    //@TODO: maybe stopObserving with only flotr functions
+    var mousedown = _.bind(this.mouseDownHandler, this);
+    var mousemove = _.bind(this.mouseMoveHandler, this);
+    var click = _.bind(this.clickHandler, this);
+
     Flotr.EventAdapter.
-      stopObserving(this.overlay).
-      observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
-      observe(this.overlay, 'mousemove', _.bind(this.mouseMoveHandler, this)).
-      observe(this.overlay, 'click', _.bind(this.clickHandler, this));
+      observe(this.overlay, 'mousedown', mousedown).
+      observe(this.el, 'flotr:cleanup', _.bind(Flotr.EventAdapter.stopObserving, this, this.overlay, 'mousedown', mousedown)).
+      observe(this.overlay, 'mousemove', mousemove).
+      observe(this.el, 'flotr:cleanup', _.bind(Flotr.EventAdapter.stopObserving, this, this.overlay, 'mousemove', mousemove)).
+      observe(this.overlay, 'click', click).
+      observe(this.el, 'flotr:cleanup', _.bind(Flotr.EventAdapter.stopObserving, this, this.overlay, 'click', click));
+    mousedown = mousemove = click = null;
   },
   /**
    * Function determines the min and max values for the xaxis and yaxis.
@@ -1436,6 +1442,7 @@ Flotr.Graph.prototype = {
     
     this.mouseUpHandler = _.bind(this.mouseUpHandler, this);
     Flotr.EventAdapter.observe(document, 'mouseup', this.mouseUpHandler);
+    Flotr.EventAdapter.observe(this.el, 'flotr:cleanup', _.bind(Flotr.EventAdapter.stopObserving, this, document, 'mouseup', this.mouseUpHandler));
   },
   /**
    * Fires the 'flotr:select' event when the user made a selection.
