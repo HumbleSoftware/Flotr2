@@ -1498,7 +1498,7 @@ Flotr.Graph.prototype = {
     }
 
     if (options.selection.mode.indexOf('y') == -1){
-      pos.y = (pos == this.selection.first) ? 0 : this.plotHeight;
+      pos.y = (pos == this.selection.first) ? 0 : this.plotHeight - 1;
     }else{
       pos.y = pointer.pageY - offset.top - this.plotOffset.top;
       pos.y = Math.min(Math.max(0, pos.y), this.plotHeight);
@@ -1552,7 +1552,7 @@ Flotr.Graph.prototype = {
     this.clearSelection();
 
     this.selection.first.y  = (selX && !selY) ? 0 : (ya.max - area.y1) * vertScale;
-    this.selection.second.y = (selX && !selY) ? this.plotHeight : (ya.max - area.y2) * vertScale;      
+    this.selection.second.y = (selX && !selY) ? this.plotHeight - 1: (ya.max - area.y2) * vertScale;      
     this.selection.first.x  = (selY && !selX) ? 0 : (area.x1 - xa.min) * hozScale;
     this.selection.second.x = (selY && !selX) ? this.plotWidth : (area.x2 - xa.min) * hozScale;
     
