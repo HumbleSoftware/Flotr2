@@ -3,7 +3,8 @@
  */
 (function () {
 
-  var D = Flotr.DOM;
+  var D = Flotr.DOM,
+    E = Flotr.EventAdapter;
 
   // TODO Find a home for this.
   function eventPointer(e) {
@@ -27,7 +28,7 @@ Flotr.Graph = function(el, data, options){
 
     this._initPlugins();
 
-    Flotr.EventAdapter.fire(this.el, 'flotr:beforeinit', [this]);
+    E.fire(this.el, 'flotr:beforeinit', [this]);
 
     this._initMembers();
     this.data = data;
@@ -35,7 +36,7 @@ Flotr.Graph = function(el, data, options){
     this._initOptions(options);
     this._initGraphTypes();
     this._initCanvas();
-    Flotr.EventAdapter.fire(this.el, 'flotr:afterconstruct', [this]);
+    E.fire(this.el, 'flotr:afterconstruct', [this]);
     this._initEvents();
   
     this.findDataRanges();
@@ -48,7 +49,7 @@ Flotr.Graph = function(el, data, options){
     this.setupAxes();
 
     this.draw(_.bind(function() {
-      Flotr.EventAdapter.fire(this.el, 'flotr:afterinit', [this]);
+      E.fire(this.el, 'flotr:afterinit', [this]);
     }, this));
 
   } catch (e) {
@@ -336,7 +337,7 @@ Flotr.Graph.prototype = {
     for (name in Flotr.plugins) {
       plugin = Flotr.plugins[name];
       for (c in plugin.callbacks) {
-        Flotr.EventAdapter.observe(this.el, c, _.bind(plugin.callbacks[c], this));
+        E.observe(this.el, c, _.bind(plugin.callbacks[c], this));
         // TODO
         // Ensure no old handlers are still observing this element (prevent memory leaks)
         // Make sure multiple plugins can listen to the same event.
@@ -380,7 +381,7 @@ Flotr.Graph.prototype = {
    */
   _initEvents: function () {
     //@TODO: maybe stopObserving with only flotr functions
-    Flotr.EventAdapter.
+    E.
       stopObserving(this.overlay).
       observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
       observe(this.overlay, 'mousemove', _.bind(this.mouseMoveHandler, this)).
@@ -807,7 +808,7 @@ Flotr.Graph.prototype = {
       this.drawLabels();
 
       if(this.series.length){
-        Flotr.EventAdapter.fire(this.el, 'flotr:beforedraw', [this.series, this]);
+        E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
         
         for(var i = 0; i < this.series.length; i++){
           if (!this.series[i].hide)
@@ -816,7 +817,7 @@ Flotr.Graph.prototype = {
       }
     
       this.drawOutline();
-      Flotr.EventAdapter.fire(this.el, 'flotr:afterdraw', [this.series, this]);
+      E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
       after();
     }, this);
     
@@ -866,7 +867,7 @@ Flotr.Graph.prototype = {
         
     if(o.grid.verticalLines || o.grid.minorVerticalLines || 
            o.grid.horizontalLines || o.grid.minorHorizontalLines){
-      Flotr.EventAdapter.fire(this.el, 'flotr:beforegrid', [this.axes.x, this.axes.y, o, this]);
+      E.fire(this.el, 'flotr:beforegrid', [this.axes.x, this.axes.y, o, this]);
     }
     ctx.save();
     ctx.lineWidth = 1;
@@ -989,7 +990,7 @@ Flotr.Graph.prototype = {
     ctx.restore();
     if(o.grid.verticalLines || o.grid.minorVerticalLines ||
        o.grid.horizontalLines || o.grid.minorHorizontalLines){
-      Flotr.EventAdapter.fire(this.el, 'flotr:aftergrid', [this.axes.x, this.axes.y, o, this]);
+      E.fire(this.el, 'flotr:aftergrid', [this.axes.x, this.axes.y, o, this]);
     }
   }, 
   /**
@@ -1384,7 +1385,7 @@ Flotr.Graph.prototype = {
       this.ignoreClick = false;
       return this.ignoreClick;
     }
-    Flotr.EventAdapter.fire(this.el, 'flotr:click', [this.getEventPosition(event), this]);
+    E.fire(this.el, 'flotr:click', [this.getEventPosition(event), this]);
   },
   /**
    * Observes mouse movement over the graph area. Fires the 'flotr:mousemove' event.
@@ -1394,7 +1395,7 @@ Flotr.Graph.prototype = {
     var pos = this.getEventPosition(event);
     this.lastMousePos.pageX = pos.absX;
     this.lastMousePos.pageY = pos.absY;  
-    Flotr.EventAdapter.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+    E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
   },
   /**
    * Observes the 'mousedown' event.
@@ -1412,9 +1413,9 @@ Flotr.Graph.prototype = {
       
       function cancelContextMenu () {
         overlay.show();
-        Flotr.EventAdapter.stopObserving(document, 'mousemove', cancelContextMenu);
+        E.stopObserving(document, 'mousemove', cancelContextMenu);
       }
-      Flotr.EventAdapter.observe(document, 'mousemove', cancelContextMenu);
+      E.observe(document, 'mousemove', cancelContextMenu);
       return;
     }
     */
@@ -1435,7 +1436,7 @@ Flotr.Graph.prototype = {
       setInterval(_.bind(this.updateSelection, this), 1000/this.options.selection.fps);
     
     this.mouseUpHandler = _.bind(this.mouseUpHandler, this);
-    Flotr.EventAdapter.observe(document, 'mouseup', this.mouseUpHandler);
+    E.observe(document, 'mouseup', this.mouseUpHandler);
   },
   /**
    * Fires the 'flotr:select' event when the user made a selection.
@@ -1449,7 +1450,7 @@ Flotr.Graph.prototype = {
     y1 = a.y.p2d(s.first.y);
     y2 = a.y.p2d(s.second.y);
 
-    Flotr.EventAdapter.fire(this.el, 'flotr:select', [{
+    E.fire(this.el, 'flotr:select', [{
       x1:Math.min(x1, x2), 
       y1:Math.min(y1, y2), 
       x2:Math.max(x1, x2), 
@@ -1462,7 +1463,7 @@ Flotr.Graph.prototype = {
    * @param {Event} event - 'mouseup' Event object.
    */
   mouseUpHandler: function(event){
-    Flotr.EventAdapter.stopObserving(document, 'mouseup', this.mouseUpHandler);
+    E.stopObserving(document, 'mouseup', this.mouseUpHandler);
     // @TODO why?
     //event.stop();
     
