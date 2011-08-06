@@ -32,6 +32,7 @@ yepnope([
   '../js/types/markers.js',
   '../js/types/radar.js',
   '../js/types/bubbles.js',
+  '../js/plugins/selection.js',
   '../js/plugins/spreadsheet.js',
   '../js/plugins/hit.js',
   '../js/plugins/crosshair.js',

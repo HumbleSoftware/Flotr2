@@ -1352,7 +1352,7 @@ Flotr.Graph.prototype = {
   getEventPosition: function (e){
 
     var offset = D.position(this.overlay),
-        pointer = eventPointer(e),
+        pointer = E.eventPointer(e),
         rx = (pointer.x - offset.left - this.plotOffset.left),
         ry = (pointer.y - offset.top - this.plotOffset.top),
         dx = pointer.x - this.lastMousePos.pageX,
@@ -1415,43 +1415,10 @@ Flotr.Graph.prototype = {
     }
     */
 
-    function isLeftClick (e, type) {
-      return (e.which ? (e.which === 1) : (e.button === 0 || e.button === 1));
-    }
-
-    if(!this.options.selection.mode || !isLeftClick(event)) return;
-
-    var pointer = eventPointer(event);
-    this.setSelectionPos(this.selection.first, {pageX:pointer.x, pageY:pointer.y});
-    if(this.selectionInterval != null){
-      clearInterval(this.selectionInterval);
-    }
-    this.lastMousePos.pageX = null;
-    this.selectionInterval = 
-      setInterval(_.bind(this.updateSelection, this), 1000/this.options.selection.fps);
-    
+    // @TODO why?
     this.mouseUpHandler = _.bind(this.mouseUpHandler, this);
     E.observe(document, 'mouseup', this.mouseUpHandler);
-  },
-  /**
-   * Fires the 'flotr:select' event when the user made a selection.
-   */
-  fireSelectEvent: function(){
-    var a = this.axes, s = this.selection,
-        x1, x2, y1, y2;
-    
-    x1 = a.x.p2d(s.first.x);
-    x2 = a.x.p2d(s.second.x);
-    y1 = a.y.p2d(s.first.y);
-    y2 = a.y.p2d(s.second.y);
-
-    E.fire(this.el, 'flotr:select', [{
-      x1:Math.min(x1, x2), 
-      y1:Math.min(y1, y2), 
-      x2:Math.max(x1, x2), 
-      y2:Math.max(y1, y2),
-      xfirst:x1, xsecond:x2, yfirst:y1, ysecond:y2
-    }, this]);
+    E.fire(this.el, 'flotr:mousedown', [event, this]);
   },
   /**
    * Observes the mouseup event for the document. 
@@ -1461,148 +1428,11 @@ Flotr.Graph.prototype = {
     E.stopObserving(document, 'mouseup', this.mouseUpHandler);
     // @TODO why?
     //event.stop();
-    
-    if(this.selectionInterval != null){
-      clearInterval(this.selectionInterval);
-      this.selectionInterval = null;
-    }
-
-    var pointer = eventPointer(event);
-    this.setSelectionPos(this.selection.second, {pageX:pointer.x, pageY:pointer.y});
-    this.clearSelection();
-    
-    if(this.selectionIsSane()){
-      this.drawSelection();
-      this.fireSelectEvent();
-      this.ignoreClick = true;
-    }
+    E.fire(this.el, 'flotr:mouseup', [event, this]);
   },
-  /**
-   * Calculates the position of the selection.
-   * @param {Object} pos - Position object.
-   * @param {Event} event - Event object.
-   */
-  setSelectionPos: function(pos, pointer) {
-    var options = this.options,
-        offset = D.position(this.overlay);
+    
+    
 
-    if(options.selection.mode.indexOf('x') == -1){
-      pos.x = (pos == this.selection.first) ? 0 : this.plotWidth;         
-    }else{
-      pos.x = pointer.pageX - offset.left - this.plotOffset.left;
-      pos.x = Math.min(Math.max(0, pos.x), this.plotWidth);
-    }
-
-    if (options.selection.mode.indexOf('y') == -1){
-      pos.y = (pos == this.selection.first) ? 0 : this.plotHeight - 1;
-    }else{
-      pos.y = pointer.pageY - offset.top - this.plotOffset.top;
-      pos.y = Math.min(Math.max(0, pos.y), this.plotHeight);
-    }
-  },
-  /**
-   * Updates (draws) the selection box.
-   */
-  updateSelection: function(){
-    if(this.lastMousePos.pageX == null) return;
-    
-    this.setSelectionPos(this.selection.second, this.lastMousePos);
-    this.clearSelection();
-    
-    if(this.selectionIsSane()) this.drawSelection();
-  },
-  /**
-   * Removes the selection box from the overlay canvas.
-   */
-  clearSelection: function() {
-    if(this.prevSelection == null) return;
-      
-    var prevSelection = this.prevSelection,
-      lw = this.octx.lineWidth,
-      plotOffset = this.plotOffset,
-      x = Math.min(prevSelection.first.x, prevSelection.second.x),
-      y = Math.min(prevSelection.first.y, prevSelection.second.y),
-      w = Math.abs(prevSelection.second.x - prevSelection.first.x),
-      h = Math.abs(prevSelection.second.y - prevSelection.first.y);
-    
-    this.octx.clearRect(x + plotOffset.left - lw/2+0.5,
-                        y + plotOffset.top - lw/2+0.5,
-                        w + lw,
-                        h + lw);
-    
-    this.prevSelection = null;
-  },
-  /**
-   * Allows the user the manually select an area.
-   * @param {Object} area - Object with coordinates to select.
-   */
-  setSelection: function(area, preventEvent){
-    var options = this.options,
-      xa = this.axes.x,
-      ya = this.axes.y,
-      vertScale = ya.scale,
-      hozScale = xa.scale,
-      selX = options.selection.mode.indexOf('x') != -1,
-      selY = options.selection.mode.indexOf('y') != -1;
-    
-    this.clearSelection();
-
-    this.selection.first.y  = (selX && !selY) ? 0 : (ya.max - area.y1) * vertScale;
-    this.selection.second.y = (selX && !selY) ? this.plotHeight - 1: (ya.max - area.y2) * vertScale;      
-    this.selection.first.x  = (selY && !selX) ? 0 : area.x1; //xa.p2d(area.x1);
-    //this.selection.first.x  = (selY && !selX) ? 0 : (area.x1 - xa.min) * hozScale;
-    this.selection.second.x = (selY && !selX) ? this.plotWidth : area.x2;//xa.p2d(area.x2);//(area.x2 - xa.min) * hozScale;
-    //this.selection.second.x = (selY && !selX) ? this.plotWidth : (area.x2 - xa.min) * hozScale;
-    
-    this.drawSelection();
-    if (!preventEvent)
-      this.fireSelectEvent();
-  },
-  /**
-   * Draws the selection box.
-   */
-  drawSelection: function() {
-    var prevSelection = this.prevSelection,
-      s = this.selection,
-      octx = this.octx,
-      options = this.options,
-      plotOffset = this.plotOffset;
-    
-    if(prevSelection != null &&
-      s.first.x == prevSelection.first.x &&
-      s.first.y == prevSelection.first.y && 
-      s.second.x == prevSelection.second.x &&
-      s.second.y == prevSelection.second.y)
-      return;
-
-    octx.save();
-    octx.strokeStyle = this.processColor(options.selection.color, {opacity: 0.8});
-    octx.lineWidth = 1;
-    octx.lineJoin = 'miter';
-    octx.fillStyle = this.processColor(options.selection.color, {opacity: 0.4});
-
-    this.prevSelection = {
-      first: { x: s.first.x, y: s.first.y },
-      second: { x: s.second.x, y: s.second.y }
-    };
-
-    var x = Math.min(s.first.x, s.second.x),
-        y = Math.min(s.first.y, s.second.y),
-        w = Math.abs(s.second.x - s.first.x),
-        h = Math.abs(s.second.y - s.first.y);
-    
-    octx.fillRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
-    octx.strokeRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
-    octx.restore();
-  },
-  /**
-   * Determines whether or not the selection is sane and should be drawn.
-   * @return {Boolean} - True when sane, false otherwise.
-   */
-  selectionIsSane: function(){
-    return Math.abs(this.selection.second.x - this.selection.first.x) >= 5 &&
-           Math.abs(this.selection.second.y - this.selection.first.y) >= 5;
-  },
   getMouseTrack: function() {
     if (!this.mouseTrack) {
       this.mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
@@ -1673,9 +1503,6 @@ Flotr.Graph.prototype = {
   },
 
   _initMembers: function() {
-    this.selection = {first: {x: -1, y: -1}, second: {x: -1, y: -1}};
-    this.prevSelection = null;
-    this.selectionInterval = null;
     this.lastMousePos = {pageX: null, pageY: null };
     this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
     this.ignoreClick = false;
