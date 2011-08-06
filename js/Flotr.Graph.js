@@ -6,15 +6,6 @@
   var D = Flotr.DOM,
     E = Flotr.EventAdapter;
 
-  // TODO Find a home for this.
-  function eventPointer(e) {
-    if (Flotr.isIE && Flotr.isIE < 9) {
-      return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
-    } else {
-      return {x: e.pageX, y: e.pageY};
-    }
-  }
-
 /**
  * Flotr Graph constructor.
  * @param {Element} el - element to insert the graph into

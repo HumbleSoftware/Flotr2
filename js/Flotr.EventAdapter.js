@@ -16,5 +16,12 @@ Flotr.EventAdapter = {
   stopObserving: function(object, name, callback) {
     bean.remove(object, name, callback);
     return this;
+  },
+  eventPointer: function(e) {
+    if (Flotr.isIE && Flotr.isIE < 9) {
+      return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
+    } else {
+      return {x: e.pageX, y: e.pageY};
+    }
   }
 };
