@@ -164,15 +164,7 @@ function mouseMoveHandler(e, position) {
 
   var delta = position.dX,
     selection = this.selection.selection,
-    area;
-  
-  area = {
-    x1 : selection.first.x,
-    x2 : selection.second.x,
-    y1 : selection.first.y,
-    y2 : selection.second.y
-  };
-
+    area = this.selection.getArea();
   moveHandler(area, delta);
   this.selection.setSelection(area);
 }
