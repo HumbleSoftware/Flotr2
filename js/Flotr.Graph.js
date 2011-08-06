@@ -1363,7 +1363,9 @@ Flotr.Graph.prototype = {
     var offset = D.position(this.overlay),
         pointer = eventPointer(e),
         rx = (pointer.x - offset.left - this.plotOffset.left),
-        ry = (pointer.y - offset.top - this.plotOffset.top);
+        ry = (pointer.y - offset.top - this.plotOffset.top),
+        dx = pointer.x - this.lastMousePos.pageX,
+        dy = pointer.y - this.lastMousePos.pageY;
 
     return {
       x:  this.axes.x.p2d(rx),
@@ -1372,6 +1374,8 @@ Flotr.Graph.prototype = {
       y2: this.axes.y2.p2d(ry),
       relX: rx,
       relY: ry,
+      dX: dx,
+      dY: dy,
       absX: pointer.x,
       absY: pointer.y
     };
