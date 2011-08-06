@@ -163,7 +163,7 @@ function mouseMoveHandler(e, position) {
   if (!moveHandler) return;
 
   var delta = position.dX,
-    selection = this.selection,
+    selection = this.selection.selection,
     area;
   
   area = {
@@ -174,7 +174,7 @@ function mouseMoveHandler(e, position) {
   };
 
   moveHandler(area, delta);
-  this.setSelection(area);
+  this.selection.setSelection(area);
 }
 
 })();
