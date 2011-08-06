@@ -106,9 +106,9 @@ Flotr.addPlugin('selection', {
     s.second.x = (selY && !selX) ? this.plotWidth : area.x2;//xa.p2d(area.x2);//(area.x2 - xa.min) * hozScale;
     //this.selection.second.x = (selY && !selX) ? this.plotWidth : (area.x2 - xa.min) * hozScale;
     
-    this.drawSelection();
+    this.selection.drawSelection();
     if (!preventEvent)
-      this.fireSelectEvent();
+      this.selection.fireSelectEvent();
   },
 
   /**
