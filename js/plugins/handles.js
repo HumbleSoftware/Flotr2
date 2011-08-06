@@ -26,7 +26,7 @@ Flotr.addPlugin('handles', {
   callbacks: {
     'flotr:afterinit': init,
     'flotr:select': handleSelect,
-    'flotr:click': reset,
+    'flotr:mousedown': reset,
     'flotr:mousemove': mouseMoveHandler
   }
 
