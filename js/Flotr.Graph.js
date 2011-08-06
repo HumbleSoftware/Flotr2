@@ -1558,8 +1558,10 @@ Flotr.Graph.prototype = {
 
     this.selection.first.y  = (selX && !selY) ? 0 : (ya.max - area.y1) * vertScale;
     this.selection.second.y = (selX && !selY) ? this.plotHeight - 1: (ya.max - area.y2) * vertScale;      
-    this.selection.first.x  = (selY && !selX) ? 0 : (area.x1 - xa.min) * hozScale;
-    this.selection.second.x = (selY && !selX) ? this.plotWidth : (area.x2 - xa.min) * hozScale;
+    this.selection.first.x  = (selY && !selX) ? 0 : area.x1; //xa.p2d(area.x1);
+    //this.selection.first.x  = (selY && !selX) ? 0 : (area.x1 - xa.min) * hozScale;
+    this.selection.second.x = (selY && !selX) ? this.plotWidth : area.x2;//xa.p2d(area.x2);//(area.x2 - xa.min) * hozScale;
+    //this.selection.second.x = (selY && !selX) ? this.plotWidth : (area.x2 - xa.min) * hozScale;
     
     this.drawSelection();
     if (!preventEvent)
