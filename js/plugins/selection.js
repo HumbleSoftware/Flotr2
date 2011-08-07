@@ -13,6 +13,14 @@ function isLeftClick (e, type) {
   return (e.which ? (e.which === 1) : (e.button === 0 || e.button === 1));
 }
 
+function boundX(x, graph) {
+  return Math.min(Math.max(0, x), graph.plotWidth);
+}
+
+function boundY(y, graph) {
+  return Math.min(Math.max(0, y), graph.plotHeight);
+}
+
 var D = Flotr.DOM,
   E = Flotr.EventAdapter;
 
@@ -113,12 +121,10 @@ Flotr.addPlugin('selection', {
     
     this.selection.clearSelection();
 
-    s.first.y  = (selX && !selY) ? 0 : (ya.max - area.y1) * vertScale;
-    s.second.y = (selX && !selY) ? this.plotHeight - 1: (ya.max - area.y2) * vertScale;      
-    s.first.x  = (selY && !selX) ? 0 : area.x1; //xa.p2d(area.x1);
-    //this.selection.first.x  = (selY && !selX) ? 0 : (area.x1 - xa.min) * hozScale;
-    s.second.x = (selY && !selX) ? this.plotWidth : area.x2;//xa.p2d(area.x2);//(area.x2 - xa.min) * hozScale;
-    //this.selection.second.x = (selY && !selX) ? this.plotWidth : (area.x2 - xa.min) * hozScale;
+    s.first.y  = boundY((selX && !selY) ? 0 : (ya.max - area.y1) * vertScale, this);
+    s.second.y = boundY((selX && !selY) ? this.plotHeight - 1: (ya.max - area.y2) * vertScale, this);
+    s.first.x  = boundX((selY && !selX) ? 0 : area.x1, this);
+    s.second.x = boundX((selY && !selX) ? this.plotWidth : area.x2, this);
     
     this.selection.drawSelection();
     if (!preventEvent)
@@ -138,15 +144,13 @@ Flotr.addPlugin('selection', {
     if(options.selection.mode.indexOf('x') == -1){
       pos.x = (pos == s.first) ? 0 : this.plotWidth;         
     }else{
-      pos.x = pointer.pageX - offset.left - this.plotOffset.left;
-      pos.x = Math.min(Math.max(0, pos.x), this.plotWidth);
+      pos.x = boundX(pointer.pageX - offset.left - this.plotOffset.left, this);
     }
 
     if (options.selection.mode.indexOf('y') == -1){
       pos.y = (pos == s.first) ? 0 : this.plotHeight - 1;
     }else{
-      pos.y = pointer.pageY - offset.top - this.plotOffset.top;
-      pos.y = Math.min(Math.max(0, pos.y), this.plotHeight);
+      pos.y = boundY(pointer.pageY - offset.top - this.plotOffset.top, this);
     }
   },
   /**
