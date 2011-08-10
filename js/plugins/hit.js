@@ -264,7 +264,7 @@ Flotr.addPlugin('hit', {
           nearest: n,
           fraction: n.fraction
         });
-        Flotr.EventAdapter.fire(mt, 'flotr:hit', [n, this]);
+        Flotr.EventAdapter.fire(this.el, 'flotr:hit', [n, this]);
       }
       else if(prevHit){
         D.hide(mt);
