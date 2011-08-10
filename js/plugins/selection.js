@@ -34,7 +34,7 @@ Flotr.addPlugin('selection', {
 
   callbacks: {
     'flotr:mouseup' : function (event) {
-
+      if (!this.options.selection || !this.options.selection.mode) return;
       if (this.selection.interval) clearInterval(this.selection.interval);
 
       var pointer = E.eventPointer(event);
@@ -48,8 +48,8 @@ Flotr.addPlugin('selection', {
       }
     },
     'flotr:mousedown' : function (event) {
-
-      if(!this.options.selection.mode || !isLeftClick(event)) return;
+      if (!this.options.selection || !this.options.selection.mode) return;
+      if (!this.options.selection.mode || !isLeftClick(event)) return;
 
       var pointer = E.eventPointer(event);
 
