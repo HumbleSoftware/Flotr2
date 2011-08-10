@@ -16,12 +16,11 @@ Flotr.Graph = function(el, data, options){
 
   try {
     this._setEl(el);
-
+    this._initMembers();
     this._initPlugins();
 
     E.fire(this.el, 'flotr:beforeinit', [this]);
 
-    this._initMembers();
     this.data = data;
     this.series = Flotr.getSeries(data);
     this._initOptions(options);
@@ -51,6 +50,20 @@ Flotr.Graph = function(el, data, options){
 };
 
 Flotr.Graph.prototype = {
+
+  destroy: function () {
+    _.each(this._handles, function (handle) {
+      E.stopObserving.apply(this, handle);
+    });
+    this.handles = [];
+  },
+
+  _observe: function (object, name, callback) {
+    E.observe.apply(this, arguments);
+    this._handles.push(arguments);
+    return this;
+  },
+
   /**
    * Sets options and initializes some variables and color specific values, used by the constructor. 
    * @param {Object} opts - options object
@@ -328,12 +341,7 @@ Flotr.Graph.prototype = {
     for (name in Flotr.plugins) {
       plugin = Flotr.plugins[name];
       for (c in plugin.callbacks) {
-        E.observe(this.el, c, _.bind(plugin.callbacks[c], this));
-        // TODO
-        // Ensure no old handlers are still observing this element (prevent memory leaks)
-        // Make sure multiple plugins can listen to the same event.
-          //stopObserving(this.el, c).
-          
+        this._observe(this.el, c, _.bind(plugin.callbacks[c], this));
       }
       this[name] = _.clone(plugin);
       for (p in this[name]) {
@@ -371,12 +379,10 @@ Flotr.Graph.prototype = {
    * Initializes event some handlers.
    */
   _initEvents: function () {
-    //@TODO: maybe stopObserving with only flotr functions
-    E.
-      stopObserving(this.overlay).
-      observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
-      observe(this.overlay, 'mousemove', _.bind(this.mouseMoveHandler, this)).
-      observe(this.overlay, 'click', _.bind(this.clickHandler, this));
+    this.
+      _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
+      _observe(this.el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+      _observe(this.overlay, 'click', _.bind(this.clickHandler, this));
   },
   /**
    * Function determines the min and max values for the xaxis and yaxis.
@@ -1503,6 +1509,7 @@ Flotr.Graph.prototype = {
   },
 
   _initMembers: function() {
+    this._handles = [];
     this.lastMousePos = {pageX: null, pageY: null };
     this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
     this.ignoreClick = false;
@@ -1522,6 +1529,9 @@ Flotr.Graph.prototype = {
     if (!el) throw 'The target container doesn\'t exist';
     if (!el.clientWidth) throw 'The target container must be visible';
     this.el = el;
+
+    if (this.el.graph) this.el.graph.destroy();
+
     this.el.graph = this;
   }
 }
