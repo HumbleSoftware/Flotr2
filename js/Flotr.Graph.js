@@ -1436,16 +1436,6 @@ Flotr.Graph.prototype = {
     //event.stop();
     E.fire(this.el, 'flotr:mouseup', [event, this]);
   },
-    
-    
-
-  getMouseTrack: function() {
-    if (!this.mouseTrack) {
-      this.mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
-      D.insert(this.el, this.mouseTrack);
-    }
-    return this.mouseTrack;
-  },
   drawTooltip: function(content, x, y, options) {
     var mt = this.getMouseTrack(),
         style = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;', 
