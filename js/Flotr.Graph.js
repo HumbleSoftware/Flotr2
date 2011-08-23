@@ -22,7 +22,7 @@ Flotr.Graph = function(el, data, options){
     E.fire(this.el, 'flotr:beforeinit', [this]);
 
     this.data = data;
-    this.series = Flotr.getSeries(data);
+    this.series = Flotr.Series.getSeries(data);
     this._initOptions(options);
     this._initGraphTypes();
     this._initCanvas();
