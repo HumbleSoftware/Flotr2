@@ -3,6 +3,7 @@
  */
 
 (function () {
+
 var Series = {
 
 };
