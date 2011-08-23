@@ -24,6 +24,7 @@ yepnope([
   '../js/Flotr.DOM.js',
   '../js/Flotr.EventAdapter.js',
   '../js/Flotr.Graph.js',
+  '../js/Flotr.Axis.js',
   '../js/Flotr.Series.js',
   '../js/types/lines.js',
   '../js/types/bars.js',
