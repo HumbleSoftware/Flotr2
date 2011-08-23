@@ -30,10 +30,6 @@ Flotr.addType('bars', {
     ctx.lineWidth = lw;
     ctx.strokeStyle = series.color;
     
-    ctx.save();
-    this.bars.plotShadows(series, bw, 0, series.bars.fill);
-    ctx.restore();
-    
     if(series.bars.fill){
       var color = series.bars.fillColor || series.color;
       ctx.fillStyle = this.processColor(color, {opacity: series.bars.fillOpacity});
@@ -64,6 +60,7 @@ Flotr.addType('bars', {
       ya = series.yaxis,
       ctx = this.ctx,
       stack = this.bars.getStack(series),
+      shadowSize = this.options.shadowSize,
       i, stackIndex, stackValue;
 
     for(i = 0; i < data.length; i++){
@@ -146,12 +143,21 @@ Flotr.addType('bars', {
           xaRight  = xa.d2p(right),
           yaTop    = ya.d2p(top), 
           yaBottom = ya.d2p(bottom);
+          width    = xaRight - xaLeft,
+          height   = yaBottom - yaTop;
 
       /**
        * Fill the bar.
        */
       if(fill){
-        ctx.fillRect(xaLeft, yaTop, xaRight - xaLeft, yaBottom - yaTop);
+        ctx.fillRect(xaLeft, yaTop, width, height);
+      }
+
+      if (shadowSize) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0,0,0,0.05)';
+        ctx.fillRect(xaLeft + shadowSize, yaTop + shadowSize, width, height);
+        ctx.restore();
       }
 
       /**
@@ -171,84 +177,6 @@ Flotr.addType('bars', {
         ctx.stroke();
         ctx.closePath();
       }
-    }
-  },
-  plotShadows: function(series, barWidth, offset){
-    var data = series.data;
-    if(data.length < 1) return;
-    
-    var i, x, y, 
-        xa = series.xaxis,
-        ya = series.yaxis,
-        ctx = this.ctx,
-        stack = this.bars.getStack(series),
-        sw = this.options.shadowSize,
-        stackIndex, stackValue;
-    
-    for(i = 0; i < data.length; i++){
-      x = data[i][0];
-        y = data[i][1];
-        
-      if (y === null) continue;
-      
-      // Stacked bars
-      var stackOffsetPos = 0;
-      var stackOffsetNeg = 0;
-      
-      // TODO reconcile this with the same logic in Plot, maybe precalc
-      if (stack) {
-
-        if(series.bars.horizontal) {
-          stackIndex = y;
-          stackValue = x;
-        } else {
-          stackIndex = x;
-          stackValue = y;
-        }
-
-        stackOffsetPos = stack._positive[stackIndex] || 0;
-        stackOffsetNeg = stack._negative[stackIndex] || 0;
-
-        if (stackValue > 0) {
-          stack._positive[stackIndex] = stackOffsetPos + stackValue;
-        } else {
-          stack._negative[stackIndex] = stackOffsetNeg + stackValue;
-        }
-      }
-      
-      // Horizontal bars
-      var barOffset = series.bars.centered ? barWidth/2 : 0;
-      
-      if(series.bars.horizontal){
-        if (x > 0)
-          var left = stackOffsetPos, right = x + stackOffsetPos;
-        else
-          var right = stackOffsetNeg, left = x + stackOffsetNeg;
-          
-        var bottom = y- barOffset, top = y + barWidth - barOffset;
-      }
-      else {
-        if (y > 0)
-          var bottom = stackOffsetPos, top = y + stackOffsetPos;
-        else
-          var top = stackOffsetNeg, bottom = y + stackOffsetNeg;
-          
-        var left = x - barOffset, right = x + barWidth - barOffset;
-      }
-      
-      if(right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
-        continue;
-      
-      if(left < xa.min)   left = xa.min;
-      if(right > xa.max)  right = xa.max;
-      if(bottom < ya.min) bottom = ya.min;
-      if(top > ya.max)    top = ya.max;
-      
-      var width =  xa.d2p(right)-xa.d2p(left)-((xa.d2p(right)+sw <= this.plotWidth) ? 0 : sw);
-      var height = ya.d2p(bottom)-ya.d2p(top)-((ya.d2p(bottom)+sw <= this.plotHeight) ? 0 : sw );
-      
-      ctx.fillStyle = 'rgba(0,0,0,0.05)';
-      ctx.fillRect(Math.min(xa.d2p(left)+sw, this.plotWidth), Math.min(ya.d2p(top)+sw, this.plotHeight), width, height);
     }
   },
   extendXRange: function(axis) {
