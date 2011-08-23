@@ -4,13 +4,12 @@
 
 (function () {
 
-function Series () {
-
+function Series (o) {
+  _.extend(this, o);
 };
 
 Series.prototype = {
-
-}
+};
 
 _.extend(Series, {
   /**
@@ -20,8 +19,15 @@ _.extend(Series, {
    * @return {Array} Array of Objects parsed into the right format ({(...,) data: [[x1,y1], [x2,y2], ...] (, ...)})
    */
   getSeries: function(data){
-    return _.map(data, function(serie){
-      return (serie.data ? serie : {data: serie});
+    return _.map(data, function(s){
+      var series;
+      if (s.data) {
+        series = new Series();
+        _.extend(series, s);
+      } else {
+        series = new Series({data:s});
+      }
+      return series;
     });
   }
 });
