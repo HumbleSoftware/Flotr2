@@ -42,13 +42,29 @@ Flotr.addType('bars', {
     this.bars.plot(series, bw, 0, series.bars.fill);
     ctx.restore();
   },
+  getStack: function (series) {
+    var stack = false;
+    if(series.bars.stacked) {
+      stack = (series.bars.horizontal ? series.yaxis : series.xaxis).getStack('bars');
+      if (_.isEmpty(stack)) {
+        stack.positive = [];
+        stack.negative = [];
+        stack._positive = []; // Shadow
+        stack._negative = []; // Shadow
+      }
+    }
+
+    return stack;
+  },
   plot: function(series, barWidth, offset, fill){
-    var data = series.data;
-    if(data.length < 1) return;
+    if(series.data.length < 1) return;
     
-    var xa = series.xaxis,
-        ya = series.yaxis,
-        ctx = this.ctx, i;
+    var data = series.data,
+      xa = series.xaxis,
+      ya = series.yaxis,
+      ctx = this.ctx,
+      stack = this.bars.getStack(series),
+      i, stackIndex, stackValue;
 
     for(i = 0; i < data.length; i++){
       var x = data[i][0],
@@ -60,25 +76,24 @@ Flotr.addType('bars', {
       // Stacked bars
       var stackOffsetPos = 0;
       var stackOffsetNeg = 0;
-      
-      if(series.bars.stacked) {
+
+      if (stack) {
+
         if(series.bars.horizontal) {
-          stackOffsetPos = ya.values[y].stackPos || 0;
-          stackOffsetNeg = ya.values[y].stackNeg || 0;
-          if(x > 0) {
-            ya.values[y].stackPos = stackOffsetPos + x;
-          } else {
-            ya.values[y].stackNeg = stackOffsetNeg + x;
-          }
-        } 
-        else {
-          stackOffsetPos = xa.values[x].stackPos || 0;
-          stackOffsetNeg = xa.values[x].stackNeg || 0;
-          if(y > 0) {
-            xa.values[x].stackPos = stackOffsetPos + y;
-          } else {
-            xa.values[x].stackNeg = stackOffsetNeg + y;
-          }
+          stackIndex = y;
+          stackValue = x;
+        } else {
+          stackIndex = x;
+          stackValue = y;
+        }
+
+        stackOffsetPos = stack.positive[stackIndex] || 0;
+        stackOffsetNeg = stack.negative[stackIndex] || 0;
+
+        if (stackValue > 0) {
+          stack.positive[stackIndex] = stackOffsetPos + stackValue;
+        } else {
+          stack.negative[stackIndex] = stackOffsetNeg + stackValue;
         }
       }
       
@@ -166,7 +181,9 @@ Flotr.addType('bars', {
         xa = series.xaxis,
         ya = series.yaxis,
         ctx = this.ctx,
-        sw = this.options.shadowSize;
+        stack = this.bars.getStack(series),
+        sw = this.options.shadowSize,
+        stackIndex, stackValue;
     
     for(i = 0; i < data.length; i++){
       x = data[i][0];
@@ -179,24 +196,23 @@ Flotr.addType('bars', {
       var stackOffsetNeg = 0;
       
       // TODO reconcile this with the same logic in Plot, maybe precalc
-      if(series.bars.stacked) {
+      if (stack) {
+
         if(series.bars.horizontal) {
-          stackOffsetPos = ya.values[y].stackShadowPos || 0;
-          stackOffsetNeg = ya.values[y].stackShadowNeg || 0;
-          if(x > 0) {
-            ya.values[y].stackShadowPos = stackOffsetPos + x;
-          } else {
-            ya.values[y].stackShadowNeg = stackOffsetNeg + x;
-          }
+          stackIndex = y;
+          stackValue = x;
+        } else {
+          stackIndex = x;
+          stackValue = y;
         }
-        else {
-          stackOffsetPos = xa.values[x].stackShadowPos || 0;
-          stackOffsetNeg = xa.values[x].stackShadowNeg || 0;
-          if(y > 0) {
-            xa.values[x].stackShadowPos = stackOffsetPos + y;
-          } else {
-            xa.values[x].stackShadowNeg = stackOffsetNeg + y;
-          }
+
+        stackOffsetPos = stack._positive[stackIndex] || 0;
+        stackOffsetNeg = stack._negative[stackIndex] || 0;
+
+        if (stackValue > 0) {
+          stack._positive[stackIndex] = stackOffsetPos + stackValue;
+        } else {
+          stack._negative[stackIndex] = stackOffsetNeg + stackValue;
         }
       }
       
@@ -448,10 +464,5 @@ Flotr.addType('bars', {
         );
       }
     }
-  },
-  findAxesValues: function(s){
-    this.findXAxesValues(s);
-    if(s.bars.show && s.bars.horizontal && s.bars.stacked)
-      this.findYAxesValues(s);
   }
 });
