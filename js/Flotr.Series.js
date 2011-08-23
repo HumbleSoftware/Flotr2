@@ -9,6 +9,36 @@ function Series (o) {
 };
 
 Series.prototype = {
+
+  getRange: function () {
+
+    var data = this.data,
+      length = data.length,
+      xmin = ymin = Number.MAX_VALUE,
+      xmax = ymax = Number.MIN_VALUE,
+      xused, yused,
+      x, y, i;
+
+    if (length < 0 || this.hide) return false;
+
+    for (i = 0; i < length; i++) {
+      x = data[i][0];
+      y = data[i][1];
+      if (x < xmin) { xmin = x; xused = true; }
+      if (x > xmax) { xmax = x; xused = true; }
+      if (y < ymin) { ymin = y; yused = true; }
+      if (y > ymax) { ymax = y; yused = true; }
+    }
+
+    return {
+      xmin : xmin,
+      xmax : xmax,
+      ymin : ymin,
+      ymax : ymax,
+      xused : xused,
+      yused : yused
+    };
+  }
 };
 
 _.extend(Series, {
