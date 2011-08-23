@@ -23,6 +23,7 @@ Flotr.Graph = function(el, data, options){
 
     this.data = data;
     this.series = Flotr.Series.getSeries(data);
+    console.log(this.series);
     this._initOptions(options);
     this._initGraphTypes();
     this._initCanvas();
@@ -410,86 +411,38 @@ Flotr.Graph.prototype = {
   },
   /**
    * Function determines the min and max values for the xaxis and yaxis.
+   *
+   * TODO logarithmic range validation (consideration of 0)
    */
   findDataRanges: function(){
-    var s = this.series, 
-        a = this.axes,
-        yLogarithmic, yLogarithmic,
-        i, j, h, x, y, data, xaxis, yaxis, length, xmax, xmin, ymax, ymin, xused, yused;
+    var a = this.axes,
+      xaxis, yaxis, range;
     
     a.x.datamin = a.x2.datamin = a.y.datamin = a.y2.datamin = Number.MAX_VALUE;
     a.x.datamax = a.x2.datamax = a.y.datamax = a.y2.datamax = -Number.MAX_VALUE;
 
-    if(s.length > 0){
-
-      // Get datamin, datamax start values 
-      for(i = 0; i < s.length; ++i) {
-        data = s[i].data;
-        xaxis = s[i].xaxis;
-        yaxis = s[i].yaxis;
-        xmin = xaxis.datamin;
-        xmax = xaxis.datamax;
-        ymin = yaxis.datamin;
-        ymax = yaxis.datamax;
-        xused = xaxis.used;
-        yused = yaxis.used;
-
-        xLogarithmic = (xaxis.options.scaling === 'logarithmic');
-        yLogarithmic = (yaxis.options.scaling === 'logarithmic');
-
-        if (data.length > 0 && !s[i].hide) {
-          length = data.length;
-          for(h = 0; h < length; h++){
-            x = data[h][0];
-            y = data[h][1];
-            
-            // Logarithm is only defined for values > 0
-            if (xLogarithmic && (x <= 0)) continue;
-
-            if(x < xmin) {
-              xmin = x;
-              xused = true;
-            }
-
-            if(x > xmax) {
-              xmax = x;
-              xused = true;
-            }
-
-            // Logarithm is only defined for values > 0
-            if (yLogarithmic && (y <= 0)) continue;
-
-            if(y < ymin) {
-              ymin = y;
-              yused = true;
-            }
-
-            if(y > ymax) {
-              ymax = y;
-              yused = true;
-            }
-          }
-        }
-
-        xaxis.datamin = xmin;
-        xaxis.datamax = xmax;
-        yaxis.datamin = ymin;
-        yaxis.datamax = ymax;
-        xaxis.used = xused;
-        yaxis.used = yused;
+    _.each(this.series, function (series) {
+      range = series.getRange();
+      if (range) {
+        xaxis = series.xaxis;
+        yaxis = series.yaxis;
+        xaxis.datamin = Math.min(range.xmin, xaxis.datamin);
+        xaxis.datamax = Math.max(range.xmax, xaxis.datamax);
+        yaxis.datamin = Math.min(range.ymin, yaxis.datamin);
+        yaxis.datamax = Math.max(range.ymax, yaxis.datamax);
+        xaxis.used = (xaxis.used || range.xused ? true : false);
+        yaxis.used = (yaxis.used || range.yused ? true : false);
       }
-    }
-    
+    }, this);
+
     this.findAxesValues();
-    
+
     this.calculateRange(a.x, 'x');
-    
     if (a.x2.used) {
       this.calculateRange(a.x2, 'x');
     }
-    
+
     this.calculateRange(a.y, 'y');
-    
     if (a.y2.used) {
       this.calculateRange(a.y2, 'y');
     }
