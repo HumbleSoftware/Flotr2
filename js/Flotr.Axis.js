@@ -47,39 +47,28 @@ Axis.prototype = {
           minorTicks = o.minorTicks || [], 
           t, label;
 
-      if(_.isFunction(ticks)){
-        ticks = ticks({min: axis.min, max: axis.max});
-      }
-      
-      if(_.isFunction(minorTicks)){
-        minorTicks = minorTicks({min: axis.min, max: axis.max});
-      }
-      
-      // Clean up the user-supplied ticks, copy them over.
-      for(i = 0; i < ticks.length; ++i){
-        t = ticks[i];
-        if(typeof(t) === 'object'){
-          v = t[0];
-          label = (t.length > 1) ? t[1] : o.tickFormatter(v);
-        }else{
-          v = t;
-          label = o.tickFormatter(v);
+      cleanUserTicks(ticks, axis.ticks);
+      cleanUserTicks(minorTicks, axis.minorTicks);
+
+      function cleanUserTicks (ticks, axisTicks) {
+
+        if(_.isFunction(ticks)){
+          ticks = ticks({min: axis.min, max: axis.max});
         }
-        axis.ticks[i] = { v: v, label: label };
-      }
-      
-      for(i = 0; i < minorTicks.length; ++i){
-        t = minorTicks[i];
-        if(typeof(t) === 'object'){
-          v = t[0];
-          label = (t.length > 1) ? t[1] : o.tickFormatter(v);
+
+        for(i = 0; i < ticks.length; ++i){
+          t = ticks[i];
+          if(typeof(t) === 'object'){
+            v = t[0];
+            label = (t.length > 1) ? t[1] : o.tickFormatter(v);
+          }else{
+            v = t;
+            label = o.tickFormatter(v);
+          }
+          axisTicks[i] = { v: v, label: label };
         }
-        else {
-          v = t;
-          label = o.tickFormatter(v);
-        }
-        axis.minorTicks[i] = { v: v, label: label };
       }
+
     }
     else {
       if (o.mode == 'time') {
