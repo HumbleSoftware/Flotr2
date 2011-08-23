@@ -35,16 +35,23 @@
 		<script type="text/javascript">
 			function example(){
 
-                var container = document.getElementById('container');
+        var container = document.getElementById('container'),
+          horizontal = false;
 
 				/**
 				 * Fill series.
 				 */
 				var d1 = [], d2 = [], d3 = [];
 				for (i = -10; i < 10; i++) {
-				  d1.push([i, Math.random()]);
-				  d2.push([i, Math.random()]);
-				  d3.push([i, Math.random()]);
+          if (horizontal) {
+            d1.push([Math.random(), i]);
+            d2.push([Math.random(), i]);
+            d3.push([Math.random(), i]);
+          } else {
+            d1.push([i, Math.random()]);
+            d2.push([i, Math.random()]);
+            d3.push([i, Math.random()]);
+          }
 				}
 			
 				/**
@@ -61,7 +68,7 @@
 						bars: {
 						  show: true,
               stacked: true,
-              //horizontal: true,
+              horizontal: horizontal,
               barWidth: 0.6
 						},
 						grid: {
