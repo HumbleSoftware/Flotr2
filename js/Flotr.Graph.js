@@ -383,6 +383,29 @@ Flotr.Graph.prototype = {
       _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
       _observe(this.el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
       _observe(this.overlay, 'click', _.bind(this.clickHandler, this));
+
+
+    var touchEndHandler = _.bind(function (e) {
+      E.stopObserving(document, 'touchend', touchEndHandler);
+      E.fire(this.el, 'flotr:mouseup', [event, this]);
+    }, this);
+
+    this._observe(this.overlay, 'touchstart', _.bind(function (e) {
+      E.fire(this.el, 'flotr:mousedown', [event, this]);
+      this._observe(document, 'touchend', touchEndHandler);
+    }, this));
+
+    this._observe(this.overlay, 'touchmove', _.bind(function (e) {
+      e.preventDefault();
+      var pageX = e.touches[0].pageX,
+        pageY = e.touches[0].pageY,
+        pos = { absX : pageX , absY : pageY };
+      this.lastMousePos.pageX = pageX;
+      this.lastMousePos.pageY = pageY;  
+      //console.log(pageX);
+      E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+    }, this));
+
   },
   /**
    * Function determines the min and max values for the xaxis and yaxis.
