@@ -49,7 +49,7 @@ Flotr.addPlugin('selection', {
     },
     'flotr:mousedown' : function (event) {
       if (!this.options.selection || !this.options.selection.mode) return;
-      if (!this.options.selection.mode || (!isLeftClick(event) && _.isUndefined(event.touches)) return;
+      if (!this.options.selection.mode || (!isLeftClick(event) && _.isUndefined(event.touches))) return;
 
       var pointer = E.eventPointer(event);
 
