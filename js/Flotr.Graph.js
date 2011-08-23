@@ -75,15 +75,9 @@ Flotr.Graph.prototype = {
     options.x2axis = _.extend(_.clone(options.xaxis), options.x2axis);
     options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
     this.options = Flotr.merge(opts || {}, options);
-    
-    // The 4 axes of the plot
-    this.axes = {
-      x:  {options: this.options.xaxis,  n: 1}, 
-      x2: {options: this.options.x2axis, n: 2}, 
-      y:  {options: this.options.yaxis,  n: 1}, 
-      y2: {options: this.options.y2axis, n: 2}
-    };
-    
+
+    this.axes = Flotr.Axis.getAxes(this.options);
+
     if (this.options.grid.minorVerticalLines === null && 
       this.options.xaxis.scaling === 'logarithmic') {
       this.options.grid.minorVerticalLines = true;
