@@ -31,6 +31,7 @@
       "./js/plugins/crosshair.js",
       "./js/plugins/hit.js",
       "./js/plugins/selection.js",
+      "../js/plugins/labels.js",
       "./js/plugins/legend.js",
       "./js/plugins/spreadsheet.js",
       "./js/plugins/titles.js"
