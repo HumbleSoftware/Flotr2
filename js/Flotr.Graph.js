@@ -37,7 +37,6 @@ Flotr.Graph = function(el, data, options){
     this.calculateTicks(this.axes.y2);
 
     this.calculateSpacing();
-    this.setupAxes();
 
     this.draw(_.bind(function() {
       E.fire(this.el, 'flotr:afterinit', [this]);
@@ -196,82 +195,6 @@ Flotr.Graph.prototype = {
     _.each(s, e, this);
 
     return success;
-  },
-  setupAxes: function(){
-    /**
-     * Translates data number to pixel number
-     * @param {Number} v - data number
-     * @return {Number} translated pixel number
-     */
-    function d2p(v, o){
-      if (o.scaling === 'logarithmic') {
-        v = Math.log(Math.max(v, Number.MIN_VALUE));
-        if (o.base !== Math.E) 
-          v /= Math.log(o.base);
-      }
-      return v;
-    }
-
-    /**
-     * Translates pixel number to data number
-     * @param {Number} v - pixel data
-     * @return {Number} translated data number
-     */
-    function p2d(v, o){
-      if (o.scaling === 'logarithmic')
-        v = (o.base === Math.E) ? Math.exp(v) : Math.pow(o.base, v);
-      return v;
-    }
-
-    var x = this.axes.x, 
-        x2 = this.axes.x2, 
-        y = this.axes.y, 
-        y2 = this.axes.y2,
-        pw = this.plotWidth, 
-        ph = this.plotHeight;
-
-    x.scale  = pw / (d2p(x.max, x.options) - d2p(x.min, x.options));
-    x2.scale = pw / (d2p(x2.max, x2.options) - d2p(x2.min, x2.options));
-    y.scale  = ph / (d2p(y.max, y.options) - d2p(y.min, y.options));
-    y2.scale = ph / (d2p(y2.max, y2.options) - d2p(y2.min, y2.options));
-
-    if (this.options.scaling === 'logarithmic') {
-        x.d2p = x2.d2p = function(xval){
-          var o = this.options;
-          return (d2p(xval, o) - d2p(this.min, o)) * this.scale;
-        };
-
-        x.p2d = this.axes.x2.p2d = function(xval){
-          var o = this.options;
-          return p2d(xval / this.scale + d2p(this.min, o), o);
-        };
-
-        y.d2p = y2.d2p = function(yval){
-          var o = this.options;
-          return ph - (d2p(yval, o) - d2p(this.min, o)) * this.scale;
-        };
-
-        y.p2d = y2.p2d = function(yval){
-          var o = this.options;
-          return p2d((ph - yval) / this.scale + d2p(this.min, o), o);
-        };
-    } else {
-        x.d2p = x2.d2p = function(xval){
-          return (xval - this.min) * this.scale;
-        };
-
-        x.p2d = this.axes.x2.p2d = function(xval){
-          return xval / this.scale + this.min;
-        };
-
-        y.d2p = y2.d2p = function(yval){
-          return ph - (yval - this.min) * this.scale;
-        };
-
-        y.p2d = y2.p2d = function(yval){
-          return (ph - yval) / this.scale + this.min;
-        };
-    }
   },
   /**
    * Initializes the canvas and it's overlay canvas element. When the browser is IE, this makes use 
@@ -766,6 +689,17 @@ Flotr.Graph.prototype = {
     
     this.plotWidth  = this.canvasWidth - p.left - p.right;
     this.plotHeight = this.canvasHeight - p.bottom - p.top;
+
+    // TODO post refactor, fix this
+
+    x.length = x2.length = this.plotWidth;
+    y.length = y2.length = this.plotHeight;
+    y.offset = y2.offset = this.plotHeight;
+    x.setScale();
+    x2.setScale();
+    y.setScale();
+    y2.setScale();
+    /**/
   },
   /**
    * Draws grid, labels, series and outline.
