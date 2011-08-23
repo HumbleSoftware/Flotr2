@@ -14,10 +14,10 @@ Axis.prototype = {
 _.extend(Axis, {
   getAxes : function (options) {
     return {
-      x:  {options: options.xaxis,  n: 1}, 
-      x2: {options: options.x2axis, n: 2}, 
-      y:  {options: options.yaxis,  n: 1}, 
-      y2: {options: options.y2axis, n: 2}
+      x:  new Axis({options: options.xaxis,  n: 1}),
+      x2: new Axis({options: options.x2axis, n: 2}),
+      y:  new Axis({options: options.yaxis,  n: 1}),
+      y2: new Axis({options: options.y2axis, n: 2})
     };
   }
 });
