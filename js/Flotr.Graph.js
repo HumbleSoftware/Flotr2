@@ -23,7 +23,6 @@ Flotr.Graph = function(el, data, options){
 
     this.data = data;
     this.series = Flotr.Series.getSeries(data);
-    console.log(this.series);
     this._initOptions(options);
     this._initGraphTypes();
     this._initCanvas();
@@ -31,10 +30,6 @@ Flotr.Graph = function(el, data, options){
     this._initEvents();
   
     this.findDataRanges();
-    this.calculateTicks(this.axes.x);
-    this.calculateTicks(this.axes.x2);
-    this.calculateTicks(this.axes.y);
-    this.calculateTicks(this.axes.y2);
 
     this.calculateSpacing();
 
@@ -486,137 +481,10 @@ Flotr.Graph.prototype = {
       }
   },
   /**
-   * Calculate axis ticks.
-   * @param {Object} axis - The axis for what the ticks will be calculated
-   */
-  calculateTicks: function(axis){
-    var o = axis.options, i, v;
-    
-    axis.ticks = [];  
-    axis.minorTicks = [];
-    
-    if(o.ticks){
-      var ticks = o.ticks, 
-          minorTicks = o.minorTicks || [], 
-          t, label;
-
-      if(_.isFunction(ticks)){
-        ticks = ticks({min: axis.min, max: axis.max});
-      }
-      
-      if(_.isFunction(minorTicks)){
-        minorTicks = minorTicks({min: axis.min, max: axis.max});
-      }
-      
-      // Clean up the user-supplied ticks, copy them over.
-      for(i = 0; i < ticks.length; ++i){
-        t = ticks[i];
-        if(typeof(t) === 'object'){
-          v = t[0];
-          label = (t.length > 1) ? t[1] : o.tickFormatter(v);
-        }else{
-          v = t;
-          label = o.tickFormatter(v);
-        }
-        axis.ticks[i] = { v: v, label: label };
-      }
-      
-      for(i = 0; i < minorTicks.length; ++i){
-        t = minorTicks[i];
-        if(typeof(t) === 'object'){
-          v = t[0];
-          label = (t.length > 1) ? t[1] : o.tickFormatter(v);
-        }
-        else {
-          v = t;
-          label = o.tickFormatter(v);
-        }
-        axis.minorTicks[i] = { v: v, label: label };
-      }
-    }
-    else {
-      if (o.mode == 'time') {
-        var tu = Flotr.Date.timeUnits,
-            spec = Flotr.Date.spec,
-            delta = (axis.max - axis.min) / axis.options.noTicks,
-            size, unit;
-
-        for (i = 0; i < spec.length - 1; ++i) {
-          var d = spec[i][0] * tu[spec[i][1]];
-          if (delta < (d + spec[i+1][0] * tu[spec[i+1][1]]) / 2 && d >= axis.tickSize)
-            break;
-        }
-        size = spec[i][0];
-        unit = spec[i][1];
-        
-        // special-case the possibility of several years
-        if (unit == "year") {
-          size = Flotr.getTickSize(axis.options.noTicks*tu.year, axis.min, axis.max, 0);
-        }
-        
-        axis.tickSize = size;
-        axis.tickUnit = unit;
-        axis.ticks = Flotr.Date.generator(axis);
-      }
-      else if (o.scaling === 'logarithmic') {
-        var max = Math.log(axis.max);
-        if (o.base != Math.E) max /= Math.log(o.base);
-        max = Math.ceil(max);
-
-        var min = Math.log(axis.min);
-        if (o.base != Math.E) min /= Math.log(o.base);
-        min = Math.ceil(min);
-        
-        for (i = min; i < max; i += axis.tickSize) {
-          var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
-          // Next decade begins here:
-          var decadeEnd = decadeStart * ((o.base == Math.E) ? Math.exp(axis.tickSize) : Math.pow(o.base, axis.tickSize));
-          var stepSize = (decadeEnd - decadeStart) / o.minorTickFreq;
-          
-          axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart)});
-          for (v = decadeStart + stepSize; v < decadeEnd; v += stepSize)
-            axis.minorTicks.push({v: v, label: o.tickFormatter(v)});
-        }
-        
-        // Always show the value at the would-be start of next decade (end of this decade)
-        var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
-        axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart)});
-      }
-      else {
-        // Round to nearest multiple of tick size.
-        var start = axis.tickSize * Math.ceil(axis.min / axis.tickSize),
-            decimals, minorTickSize, v2;
-        
-        if (o.minorTickFreq)
-          minorTickSize = axis.tickSize / o.minorTickFreq;
-                          
-        // Then store all possible ticks.
-        for(i = 0; start + i * axis.tickSize <= axis.max; ++i){
-          v = v2 = start + i * axis.tickSize;
-          
-          // Round (this is always needed to fix numerical instability).
-          decimals = o.tickDecimals;
-          if(decimals == null) decimals = 1 - Math.floor(Math.log(axis.tickSize) / Math.LN10);
-          if(decimals < 0) decimals = 0;
-          
-          v = v.toFixed(decimals);
-          axis.ticks.push({ v: v, label: o.tickFormatter(v) });
-
-          if (o.minorTickFreq) {
-            for(var j = 0; j < o.minorTickFreq && (i * axis.tickSize + j * minorTickSize) < axis.max; ++j) {
-              v = v2 + j * minorTickSize;
-              v = v.toFixed(decimals);
-              axis.minorTicks.push({ v: v, label: o.tickFormatter(v) });
-            }
-          }
-        }
-      }
-    }
-  },
-  /**
    * Calculates axis label sizes.
    */
   calculateSpacing: function(){
+
     var a = this.axes,
         options = this.options,
         series = this.series,
@@ -627,6 +495,11 @@ Flotr.Graph.prototype = {
         y2 = a.y2,
         maxOutset = 2,
         i, j, l, dim;
+
+    // TODO post refactor, fix this
+    _.each(a, function (axis) {
+      axis.calculateTicks();
+    });
     
     // Labels width and height
     _.each([x, x2, y, y2], function(axis) {
@@ -691,7 +564,6 @@ Flotr.Graph.prototype = {
     this.plotHeight = this.canvasHeight - p.bottom - p.top;
 
     // TODO post refactor, fix this
-
     x.length = x2.length = this.plotWidth;
     y.length = y2.length = this.plotHeight;
     y.offset = y2.offset = this.plotHeight;
