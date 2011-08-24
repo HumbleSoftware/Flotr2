@@ -10,6 +10,7 @@ function Axis (o) {
 
   this.orientation = 1;
   this.offset = 0;
+  this.stacks = {};
 
   _.extend(this, o);
 
@@ -27,6 +28,11 @@ Axis.prototype = {
     } else {
       this.scale = length / (this.max - this.min);
     }
+  },
+
+  getStack : function (type) {
+    var stacks = this.stacks;
+    return (_.isUndefined(stacks[type]) ? stacks[type] = {} : stacks[type]);
   },
 
   _setTranslations : function (logarithmic) {
@@ -149,7 +155,6 @@ Axis.prototype = {
       }
     }
   }
-
 };
 
 
