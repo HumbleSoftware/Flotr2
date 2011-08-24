@@ -70,7 +70,7 @@ var Flotr = {
     var i, v, result = dest || {};
     for(i in src){
       v = src[i];
-      result[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !_.isElement(v)) ? Flotr.merge(v, dest[i]) : result[i] = v;
+      result[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !_.isElement(v)) ? Flotr.merge(v, (dest ? dest[i] : undefined)) : result[i] = v;
     }
     return result;
   },
