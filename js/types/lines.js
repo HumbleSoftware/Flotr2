@@ -46,6 +46,18 @@ Flotr.addType('lines', {
     ctx.restore();
   },
 
+  getStack: function (series) {
+    var stack = false;
+    if(series.lines.stacked) {
+      stack = series.xaxis.getStack('bars');
+      if (_.isEmpty(stack)) {
+        stack.values = [];
+      }
+    }
+
+    return stack;
+  },
+
   plot: function(series, offset, incStack){
 
     var ctx = this.ctx,
@@ -57,6 +69,7 @@ Flotr.addType('lines', {
       height = this.plotHeight,
       prevx = null,
       prevy = null,
+      stack = this.lines.getStack(series),
       x1, x2, y1, y2, stack1, stack2, i;
       
     if(length < 2) return;
@@ -75,19 +88,19 @@ Flotr.addType('lines', {
       x1 = xa.d2p(data[i][0]);
       x2 = xa.d2p(data[i+1][0]);
       
-      if (series.lines.stacked) {
+      if (stack) {
 
-        stack1 = xa.values[data[i][0]].stack || 0;
-        stack2 = xa.values[data[i+1][0]].stack || xa.values[data[i][0]].stack || 0;
+        stack1 = stack.values[data[i][0]] || 0;
+        stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
 
         y1 = ya.d2p(data[i][1] + stack1);
         y2 = ya.d2p(data[i+1][1] + stack2);
         
         if(incStack){
-          xa.values[data[i][0]].stack = data[i][1]+stack1;
+          stack.values[data[i][0]] = data[i][1]+stack1;
             
           if(i == length-1)
-            xa.values[data[i+1][0]].stack = data[i+1][1]+stack2;
+            stack.values[data[i+1][0]] = data[i+1][1]+stack2;
         }
       }
       else{
