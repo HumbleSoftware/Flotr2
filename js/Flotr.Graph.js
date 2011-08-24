@@ -30,7 +30,6 @@ Flotr.Graph = function(el, data, options){
     this._initEvents();
   
     this.findDataRanges();
-
     this.calculateSpacing();
 
     this.draw(_.bind(function() {
@@ -347,8 +346,6 @@ Flotr.Graph.prototype = {
       }
     }, this);
 
-    this.findAxesValues();
-
     this.calculateRange(a.x, 'x');
     if (a.x2.used) {
       this.calculateRange(a.x2, 'x');
@@ -447,38 +444,6 @@ Flotr.Graph.prototype = {
     }
 
     if (axis.min == axis.max) axis.max = axis.min + 1;
-  },
-  /** 
-   * Find every values of the x axes or when horizontal stacked bar chart is used also y axes
-   */
-  findAxesValues: function(){
-    var i, j, s;
-    for(i = this.series.length-1; i > -1 ; --i){
-      s = this.series[i];
-      if(!this.executeOnType(this.series, 'findAxesValues', [s])){
-        this.findXAxesValues(s);
-      }
-    }
-  },
-  /** 
-   * Find every values of the x axes
-   */
-  findXAxesValues: function(s){
-    var  j;
-    s.xaxis.values = s.xaxis.values || {};
-    for (j = s.data.length-1; j > -1 ; --j){
-      s.xaxis.values[s.data[j][0]+''] = {};
-    }
-  },
-  /** 
-   * Find every values of the y axes
-   */
-  findYAxesValues: function(s){
-    var j;
-      s.yaxis.values = s.yaxis.values || {};
-      for (j = s.data.length-1; j > -1 ; --j){
-        s.yaxis.values[s.data[j][1]+''] = {};
-      }
   },
   /**
    * Calculates axis label sizes.
