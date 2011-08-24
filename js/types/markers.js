@@ -23,6 +23,19 @@ Flotr.addType('markers', {
     stackingType: 'b',     // => define staching behavior, (b- bars like, a - area like) (see Issue 125 for details)
     horizontal: false      // => true if markers should be horizontal (For now only in a case on horizontal stacked bars, stacks should be calculated horizontaly)
   },
+  getStack: function (series) {
+    var stack = false;
+    if(series.bars.stacked) {
+      stack = (series.bars.horizontal ? series.yaxis : series.xaxis).getStack('bars');
+      if (_.isEmpty(stack)) {
+        stack.positive = [];
+        stack.negative = [];
+        stack.values = [];
+      }
+    }
+
+    return stack;
+  },
   /**
    * Draws lines series in the canvas element.
    * @param {Object} series - Series with options.lines.show = true.
@@ -33,6 +46,7 @@ Flotr.addType('markers', {
         xa = series.xaxis,
         ya = series.yaxis,
         options = series.markers,
+        stack = this.markers.getStack(series),
         data = series.data;
         
     ctx.save();
@@ -48,38 +62,37 @@ Flotr.addType('markers', {
         y = data[i][1],
         label;
         
-      if(series.markers.stacked) {
+      if(stack) {
         if(series.markers.stackingType == 'b'){
-          // Stacked bars
+
           var stackOffsetPos = 0,
             stackOffsetNeg = 0;
             
           if(series.markers.horizontal) {
-            stackOffsetPos = ya.values[y].stackMarkPos || 0;
-            stackOffsetNeg = ya.values[y].stackMarkNeg || 0;
+            stackOffsetPos = stack.positive[y] || 0;
+            stackOffsetNeg = stack.negative[y] || 0;
             if(x > 0) {
-              ya.values[y].stackMarkPos = stackOffsetPos + x;
+              stack.positive[y] = stackOffsetPos + x;
               x = stackOffsetPos + x;
             } else {
-              ya.values[y].stackMarkNeg = stackOffsetNeg + x;
+              stack.negative[y] = stackOffsetNeg + x;
               x = stackOffsetNeg + x;
             }
           }
           else {
-            stackOffsetPos = xa.values[x].stackMarkPos || 0;
-            stackOffsetNeg = xa.values[x].stackMarkNeg || 0;
+            stackOffsetPos = stack.negative[x] || 0;
+            stackOffsetNeg = stack.positive[x] || 0;
             if(y > 0) {
-              xa.values[x].stackMarkPos = stackOffsetPos + y;
+              stack.positive[x] = stackOffsetPos + y;
               y = stackOffsetPos + y;
             } else {
-              xa.values[x].stackMarkNeg = stackOffsetNeg + y;
+              stack.negative[x] = stackOffsetNeg + y;
               y = stackOffsetNeg + y;
             }
           }
         } else if(series.markers.stackingType == 'a') {
-          var stackOffset = xa.values[x].stackMark || 0;
-            
-          xa.values[x].stackMark = stackOffset + y;
+          var stackOffset = stack.values[x] || 0;
+          stack.values[x] = stackOffset + y;
           y = stackOffset + y;
         }
       }
