@@ -60,100 +60,6 @@ Flotr.Graph.prototype = {
   },
 
   /**
-   * Sets options and initializes some variables and color specific values, used by the constructor. 
-   * @param {Object} opts - options object
-   */
-  _initOptions: function(opts){
-    var options = Flotr.clone(Flotr.defaultOptions);
-    options.x2axis = _.extend(_.clone(options.xaxis), options.x2axis);
-    options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
-    this.options = Flotr.merge(opts || {}, options);
-
-    this.axes = Flotr.Axis.getAxes(this.options);
-
-    if (this.options.grid.minorVerticalLines === null && 
-      this.options.xaxis.scaling === 'logarithmic') {
-      this.options.grid.minorVerticalLines = true;
-    }
-    if (this.options.grid.minorHorizontalLines === null && 
-      this.options.yaxis.scaling === 'logarithmic') {
-      this.options.grid.minorHorizontalLines = true;
-    }
-    
-    // Initialize some variables used throughout this function.
-    var assignedColors = [],
-        colors = [],
-        ln = this.series.length,
-        neededColors = this.series.length,
-        oc = this.options.colors, 
-        usedColors = [],
-        variation = 0,
-        c, i, j, s;
-
-    // Collect user-defined colors from series.
-    for(i = neededColors - 1; i > -1; --i){
-      c = this.series[i].color;
-      if(c){
-        --neededColors;
-        if(_.isNumber(c)) assignedColors.push(c);
-        else usedColors.push(Flotr.Color.parse(c));
-      }
-    }
-    
-    // Calculate the number of colors that need to be generated.
-    for(i = assignedColors.length - 1; i > -1; --i)
-      neededColors = Math.max(neededColors, assignedColors[i] + 1);
-
-    // Generate needed number of colors.
-    for(i = 0; colors.length < neededColors;){
-      c = (oc.length == i) ? new Flotr.Color(100, 100, 100) : Flotr.Color.parse(oc[i]);
-      
-      // Make sure each serie gets a different color.
-      var sign = variation % 2 == 1 ? -1 : 1,
-          factor = 1 + sign * Math.ceil(variation / 2) * 0.2;
-      c.scale(factor, factor, factor);
-
-      /**
-       * @todo if we're getting too close to something else, we should probably skip this one
-       */
-      colors.push(c);
-      
-      if(++i >= oc.length){
-        i = 0;
-        ++variation;
-      }
-    }
-  
-    // Fill the options with the generated colors.
-    for(i = 0, j = 0; i < ln; ++i){
-      s = this.series[i];
-
-      // Assign the color.
-      if(s.color == null){
-        s.color = colors[j++].toString();
-      }else if(_.isNumber(s.color)){
-        s.color = colors[s.color].toString();
-      }
-      
-      // Every series needs an axis
-      if (!s.xaxis) s.xaxis = this.axes.x;
-           if (s.xaxis == 1) s.xaxis = this.axes.x;
-      else if (s.xaxis == 2) s.xaxis = this.axes.x2;
-      
-      if (!s.yaxis) s.yaxis = this.axes.y;
-           if (s.yaxis == 1) s.yaxis = this.axes.y;
-      else if (s.yaxis == 2) s.yaxis = this.axes.y2;
-      
-      // Apply missing options to the series.
-      for (var t in Flotr.graphTypes){
-        s[t] = _.extend(_.clone(this.options[t]), s[t]);
-      }
-      s.mouse = _.extend(_.clone(this.options.mouse), s.mouse);
-      
-      if(s.shadowSize == null) s.shadowSize = this.options.shadowSize;
-    }
-  },
-  /**
    * Get graph type for a series
    * @param {Object} series - the series
    * @return {Object} the graph type
@@ -190,78 +96,10 @@ Flotr.Graph.prototype = {
 
     return success;
   },
-  /**
-   * Initializes the canvas and it's overlay canvas element. When the browser is IE, this makes use 
-   * of excanvas. The overlay canvas is inserted for displaying interactions. After the canvas elements
-   * are created, the elements are inserted into the container element.
-   */
-  _initCanvas: function(){
-    var el = this.el,
-      o = this.options,
-      size, style;
-    
-    D.empty(el);
-    D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
-    size = D.size(el);
-
-    if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
-      throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
-    }
-    
-    // The old canvases are retrieved to avoid memory leaks ...
-    // @TODO Confirm.
-    // this.canvas = el.select('.flotr-canvas')[0];
-    // this.overlay = el.select('.flotr-overlay')[0];
-    this.canvas = getCanvas(this.canvas, 'canvas'); // Main canvas for drawing graph types
-    this.overlay = getCanvas(this.overlay, 'overlay'); // Overlay canvas for interactive features
-    this.ctx = getContext(this.canvas);
-    this.octx = getContext(this.overlay);
-    this.canvasHeight = size.height*o.resolution;
-    this.canvasWidth = size.width*o.resolution;
-    this.textEnabled = !!this.ctx.drawText; // Enable text functions
-
-    function getCanvas(canvas, name){
-      if(!canvas){
-        canvas = D.create('canvas');
-        canvas.className = 'flotr-'+name;
-        canvas.style.cssText = 'position:absolute;left:0px;top:0px;';
-      }
-      _.each(size, function(size, attribute){
-        canvas.setAttribute(attribute, size*o.resolution);
-        canvas.style[attribute] = size+'px';
-        D.show(canvas);
-      });
-      canvas.context_ = null; // Reset the ExCanvas context
-      D.insert(el, canvas);
-      return canvas;
-    }
-
-    function getContext(canvas){
-      if(window.G_vmlCanvasManager) window.G_vmlCanvasManager.initElement(canvas); // For ExCanvas
-      var context = canvas.getContext('2d');
-      if(!window.G_vmlCanvasManager) context.scale(o.resolution, o.resolution);
-      return context;
-    }
-  },
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
     return Flotr.Color.processColor(color, o);
-  },
-  _initPlugins: function(){
-    // TODO Should be moved to Flotr and mixed in.
-    var name, plugin, c;
-    for (name in Flotr.plugins) {
-      plugin = Flotr.plugins[name];
-      for (c in plugin.callbacks) {
-        this._observe(this.el, c, _.bind(plugin.callbacks[c], this));
-      }
-      this[name] = _.clone(plugin);
-      for (p in this[name]) {
-        if (_.isFunction(this[name][p]))
-          this[name][p] = _.bind(this[name][p], this);
-      }
-    }
   },
   /**
    * Calculates a text box dimensions, wether it is drawn on the canvas or inserted into the DOM
@@ -287,38 +125,6 @@ Flotr.Graph.prototype = {
       D.insert(this.el, dummyDiv);
       return D.size(dummyDiv);
     }
-  },
-  /**
-   * Initializes event some handlers.
-   */
-  _initEvents: function () {
-    this.
-      _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
-      _observe(this.el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
-      _observe(this.overlay, 'click', _.bind(this.clickHandler, this));
-
-
-    var touchEndHandler = _.bind(function (e) {
-      E.stopObserving(document, 'touchend', touchEndHandler);
-      E.fire(this.el, 'flotr:mouseup', [event, this]);
-    }, this);
-
-    this._observe(this.overlay, 'touchstart', _.bind(function (e) {
-      E.fire(this.el, 'flotr:mousedown', [event, this]);
-      this._observe(document, 'touchend', touchEndHandler);
-    }, this));
-
-    this._observe(this.overlay, 'touchmove', _.bind(function (e) {
-      e.preventDefault();
-      var pageX = e.touches[0].pageX,
-        pageY = e.touches[0].pageY,
-        pos = { absX : pageX , absY : pageY };
-      this.lastMousePos.pageX = pageX;
-      this.lastMousePos.pageY = pageY;  
-      //console.log(pageX);
-      E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
-    }, this));
-
   },
   /**
    * Function determines the min and max values for the xaxis and yaxis.
@@ -950,6 +756,7 @@ Flotr.Graph.prototype = {
     this.ignoreClick = false;
     this.prevHit = null;
   },
+
   _initGraphTypes: function() {
     var type, p;
     for (type in Flotr.graphTypes) {
@@ -960,6 +767,201 @@ Flotr.Graph.prototype = {
       }
     }
   },
+
+  _initEvents: function () {
+    this.
+      _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
+      _observe(this.el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+      _observe(this.overlay, 'click', _.bind(this.clickHandler, this));
+
+
+    var touchEndHandler = _.bind(function (e) {
+      E.stopObserving(document, 'touchend', touchEndHandler);
+      E.fire(this.el, 'flotr:mouseup', [event, this]);
+    }, this);
+
+    this._observe(this.overlay, 'touchstart', _.bind(function (e) {
+      E.fire(this.el, 'flotr:mousedown', [event, this]);
+      this._observe(document, 'touchend', touchEndHandler);
+    }, this));
+
+    this._observe(this.overlay, 'touchmove', _.bind(function (e) {
+      e.preventDefault();
+      var pageX = e.touches[0].pageX,
+        pageY = e.touches[0].pageY,
+        pos = { absX : pageX , absY : pageY };
+      this.lastMousePos.pageX = pageX;
+      this.lastMousePos.pageY = pageY;  
+      //console.log(pageX);
+      E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+    }, this));
+  },
+
+  /**
+   * Initializes the canvas and it's overlay canvas element. When the browser is IE, this makes use 
+   * of excanvas. The overlay canvas is inserted for displaying interactions. After the canvas elements
+   * are created, the elements are inserted into the container element.
+   */
+  _initCanvas: function(){
+    var el = this.el,
+      o = this.options,
+      size, style;
+    
+    D.empty(el);
+    D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
+    size = D.size(el);
+
+    if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
+      throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
+    }
+    
+    // The old canvases are retrieved to avoid memory leaks ...
+    // @TODO Confirm.
+    // this.canvas = el.select('.flotr-canvas')[0];
+    // this.overlay = el.select('.flotr-overlay')[0];
+    this.canvas = getCanvas(this.canvas, 'canvas'); // Main canvas for drawing graph types
+    this.overlay = getCanvas(this.overlay, 'overlay'); // Overlay canvas for interactive features
+    this.ctx = getContext(this.canvas);
+    this.octx = getContext(this.overlay);
+    this.canvasHeight = size.height*o.resolution;
+    this.canvasWidth = size.width*o.resolution;
+    this.textEnabled = !!this.ctx.drawText; // Enable text functions
+
+    function getCanvas(canvas, name){
+      if(!canvas){
+        canvas = D.create('canvas');
+        canvas.className = 'flotr-'+name;
+        canvas.style.cssText = 'position:absolute;left:0px;top:0px;';
+      }
+      _.each(size, function(size, attribute){
+        canvas.setAttribute(attribute, size*o.resolution);
+        canvas.style[attribute] = size+'px';
+        D.show(canvas);
+      });
+      canvas.context_ = null; // Reset the ExCanvas context
+      D.insert(el, canvas);
+      return canvas;
+    }
+
+    function getContext(canvas){
+      if(window.G_vmlCanvasManager) window.G_vmlCanvasManager.initElement(canvas); // For ExCanvas
+      var context = canvas.getContext('2d');
+      if(!window.G_vmlCanvasManager) context.scale(o.resolution, o.resolution);
+      return context;
+    }
+  },
+
+  _initPlugins: function(){
+    // TODO Should be moved to Flotr and mixed in.
+    var name, plugin, c;
+    for (name in Flotr.plugins) {
+      plugin = Flotr.plugins[name];
+      for (c in plugin.callbacks) {
+        this._observe(this.el, c, _.bind(plugin.callbacks[c], this));
+      }
+      this[name] = _.clone(plugin);
+      for (p in this[name]) {
+        if (_.isFunction(this[name][p]))
+          this[name][p] = _.bind(this[name][p], this);
+      }
+    }
+  },
+
+  /**
+   * Sets options and initializes some variables and color specific values, used by the constructor. 
+   * @param {Object} opts - options object
+   */
+  _initOptions: function(opts){
+    var options = Flotr.clone(Flotr.defaultOptions);
+    options.x2axis = _.extend(_.clone(options.xaxis), options.x2axis);
+    options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
+    this.options = Flotr.merge(opts || {}, options);
+
+    this.axes = Flotr.Axis.getAxes(this.options);
+
+    if (this.options.grid.minorVerticalLines === null && 
+      this.options.xaxis.scaling === 'logarithmic') {
+      this.options.grid.minorVerticalLines = true;
+    }
+    if (this.options.grid.minorHorizontalLines === null && 
+      this.options.yaxis.scaling === 'logarithmic') {
+      this.options.grid.minorHorizontalLines = true;
+    }
+    
+    // Initialize some variables used throughout this function.
+    var assignedColors = [],
+        colors = [],
+        ln = this.series.length,
+        neededColors = this.series.length,
+        oc = this.options.colors, 
+        usedColors = [],
+        variation = 0,
+        c, i, j, s;
+
+    // Collect user-defined colors from series.
+    for(i = neededColors - 1; i > -1; --i){
+      c = this.series[i].color;
+      if(c){
+        --neededColors;
+        if(_.isNumber(c)) assignedColors.push(c);
+        else usedColors.push(Flotr.Color.parse(c));
+      }
+    }
+    
+    // Calculate the number of colors that need to be generated.
+    for(i = assignedColors.length - 1; i > -1; --i)
+      neededColors = Math.max(neededColors, assignedColors[i] + 1);
+
+    // Generate needed number of colors.
+    for(i = 0; colors.length < neededColors;){
+      c = (oc.length == i) ? new Flotr.Color(100, 100, 100) : Flotr.Color.parse(oc[i]);
+      
+      // Make sure each serie gets a different color.
+      var sign = variation % 2 == 1 ? -1 : 1,
+          factor = 1 + sign * Math.ceil(variation / 2) * 0.2;
+      c.scale(factor, factor, factor);
+
+      /**
+       * @todo if we're getting too close to something else, we should probably skip this one
+       */
+      colors.push(c);
+      
+      if(++i >= oc.length){
+        i = 0;
+        ++variation;
+      }
+    }
+  
+    // Fill the options with the generated colors.
+    for(i = 0, j = 0; i < ln; ++i){
+      s = this.series[i];
+
+      // Assign the color.
+      if(s.color == null){
+        s.color = colors[j++].toString();
+      }else if(_.isNumber(s.color)){
+        s.color = colors[s.color].toString();
+      }
+      
+      // Every series needs an axis
+      if (!s.xaxis) s.xaxis = this.axes.x;
+           if (s.xaxis == 1) s.xaxis = this.axes.x;
+      else if (s.xaxis == 2) s.xaxis = this.axes.x2;
+      
+      if (!s.yaxis) s.yaxis = this.axes.y;
+           if (s.yaxis == 1) s.yaxis = this.axes.y;
+      else if (s.yaxis == 2) s.yaxis = this.axes.y2;
+      
+      // Apply missing options to the series.
+      for (var t in Flotr.graphTypes){
+        s[t] = _.extend(_.clone(this.options[t]), s[t]);
+      }
+      s.mouse = _.extend(_.clone(this.options.mouse), s.mouse);
+      
+      if(s.shadowSize == null) s.shadowSize = this.options.shadowSize;
+    }
+  },
+
   _setEl: function(el) {
     if (!el) throw 'The target container doesn\'t exist';
     if (!el.clientWidth) throw 'The target container must be visible';
