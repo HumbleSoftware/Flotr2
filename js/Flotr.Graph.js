@@ -51,6 +51,7 @@ Flotr.Graph.prototype = {
       E.stopObserving.apply(this, handle);
     });
     this._handles = [];
+    this.el.graph = null;
   },
 
   _observe: function (object, name, callback) {
