@@ -53,9 +53,6 @@ Axis.prototype = {
           minorTicks = o.minorTicks || [], 
           t, label;
 
-      cleanUserTicks(ticks, axis.ticks);
-      cleanUserTicks(minorTicks, axis.minorTicks);
-
       function cleanUserTicks (ticks, axisTicks) {
 
         if(_.isFunction(ticks)){
@@ -74,6 +71,9 @@ Axis.prototype = {
           axisTicks[i] = { v: v, label: label };
         }
       }
+
+      cleanUserTicks(ticks, axis.ticks);
+      cleanUserTicks(minorTicks, axis.minorTicks);
 
     }
     else {
