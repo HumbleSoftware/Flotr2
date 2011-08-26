@@ -19,6 +19,8 @@
       "./js/Flotr.Color.js",
       "./js/Flotr.Date.js",
       "./js/Flotr.Graph.js",
+      "./js/Flotr.Axis.js",
+      "./js/Flotr.Series.js",
       "./js/types/lines.js",
       "./js/types/bars.js",
       "./js/types/bubbles.js",
@@ -30,6 +32,8 @@
       "./js/types/radar.js",
       "./js/plugins/crosshair.js",
       "./js/plugins/hit.js",
+      "./js/plugins/selection.js",
+      "./js/plugins/labels.js",
       "./js/plugins/legend.js",
       "./js/plugins/spreadsheet.js",
       "./js/plugins/titles.js"

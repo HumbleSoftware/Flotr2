@@ -3,16 +3,8 @@
  */
 (function () {
 
-  var D = Flotr.DOM;
-
-  // TODO Find a home for this.
-  function eventPointer(e) {
-    if (Flotr.isIE && Flotr.isIE < 9) {
-      return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
-    } else {
-      return {x: e.pageX, y: e.pageY};
-    }
-  }
+  var D = Flotr.DOM,
+    E = Flotr.EventAdapter;
 
 /**
  * Flotr Graph constructor.
@@ -22,35 +14,29 @@
  */
 Flotr.Graph = function(el, data, options){
 
-  try {
+//  try {
     this._setEl(el);
-
+    this._initMembers();
     this._initPlugins();
 
-    Flotr.EventAdapter.fire(this.el, 'flotr:beforeinit', [this]);
+    E.fire(this.el, 'flotr:beforeinit', [this]);
 
-    this._initMembers();
     this.data = data;
-    this.series = Flotr.getSeries(data);
+    this.series = Flotr.Series.getSeries(data);
     this._initOptions(options);
     this._initGraphTypes();
     this._initCanvas();
-    Flotr.EventAdapter.fire(this.el, 'flotr:afterconstruct', [this]);
+    E.fire(this.el, 'flotr:afterconstruct', [this]);
     this._initEvents();
   
     this.findDataRanges();
-    this.calculateTicks(this.axes.x);
-    this.calculateTicks(this.axes.x2);
-    this.calculateTicks(this.axes.y);
-    this.calculateTicks(this.axes.y2);
-
     this.calculateSpacing();
-    this.setupAxes();
 
     this.draw(_.bind(function() {
-      Flotr.EventAdapter.fire(this.el, 'flotr:afterinit', [this]);
+      E.fire(this.el, 'flotr:afterinit', [this]);
     }, this));
 
+    try {
   } catch (e) {
     try {
       console.error(e);
@@ -59,106 +45,20 @@ Flotr.Graph = function(el, data, options){
 };
 
 Flotr.Graph.prototype = {
-  /**
-   * Sets options and initializes some variables and color specific values, used by the constructor. 
-   * @param {Object} opts - options object
-   */
-  _initOptions: function(opts){
-    var options = Flotr.clone(Flotr.defaultOptions);
-    options.x2axis = _.extend(_.clone(options.xaxis), options.x2axis);
-    options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
-    this.options = Flotr.merge(opts || {}, options);
-    
-    // The 4 axes of the plot
-    this.axes = {
-      x:  {options: this.options.xaxis,  n: 1}, 
-      x2: {options: this.options.x2axis, n: 2}, 
-      y:  {options: this.options.yaxis,  n: 1}, 
-      y2: {options: this.options.y2axis, n: 2}
-    };
-    
-    if (this.options.grid.minorVerticalLines === null && 
-      this.options.xaxis.scaling === 'logarithmic') {
-      this.options.grid.minorVerticalLines = true;
-    }
-    if (this.options.grid.minorHorizontalLines === null && 
-      this.options.yaxis.scaling === 'logarithmic') {
-      this.options.grid.minorHorizontalLines = true;
-    }
-    
-    // Initialize some variables used throughout this function.
-    var assignedColors = [],
-        colors = [],
-        ln = this.series.length,
-        neededColors = this.series.length,
-        oc = this.options.colors, 
-        usedColors = [],
-        variation = 0,
-        c, i, j, s;
 
-    // Collect user-defined colors from series.
-    for(i = neededColors - 1; i > -1; --i){
-      c = this.series[i].color;
-      if(c){
-        --neededColors;
-        if(_.isNumber(c)) assignedColors.push(c);
-        else usedColors.push(Flotr.Color.parse(c));
-      }
-    }
-    
-    // Calculate the number of colors that need to be generated.
-    for(i = assignedColors.length - 1; i > -1; --i)
-      neededColors = Math.max(neededColors, assignedColors[i] + 1);
-
-    // Generate needed number of colors.
-    for(i = 0; colors.length < neededColors;){
-      c = (oc.length == i) ? new Flotr.Color(100, 100, 100) : Flotr.Color.parse(oc[i]);
-      
-      // Make sure each serie gets a different color.
-      var sign = variation % 2 == 1 ? -1 : 1,
-          factor = 1 + sign * Math.ceil(variation / 2) * 0.2;
-      c.scale(factor, factor, factor);
-
-      /**
-       * @todo if we're getting too close to something else, we should probably skip this one
-       */
-      colors.push(c);
-      
-      if(++i >= oc.length){
-        i = 0;
-        ++variation;
-      }
-    }
-  
-    // Fill the options with the generated colors.
-    for(i = 0, j = 0; i < ln; ++i){
-      s = this.series[i];
-
-      // Assign the color.
-      if(s.color == null){
-        s.color = colors[j++].toString();
-      }else if(_.isNumber(s.color)){
-        s.color = colors[s.color].toString();
-      }
-      
-      // Every series needs an axis
-      if (!s.xaxis) s.xaxis = this.axes.x;
-           if (s.xaxis == 1) s.xaxis = this.axes.x;
-      else if (s.xaxis == 2) s.xaxis = this.axes.x2;
-      
-      if (!s.yaxis) s.yaxis = this.axes.y;
-           if (s.yaxis == 1) s.yaxis = this.axes.y;
-      else if (s.yaxis == 2) s.yaxis = this.axes.y2;
-      
-      // Apply missing options to the series.
-      for (var t in Flotr.graphTypes){
-        s[t] = _.extend(_.clone(this.options[t]), s[t]);
-      }
-      s.mouse = _.extend(_.clone(this.options.mouse), s.mouse);
-      
-      if(s.shadowSize == null) s.shadowSize = this.options.shadowSize;
-    }
+  destroy: function () {
+    _.each(this._handles, function (handle) {
+      E.stopObserving.apply(this, handle);
+    });
+    this._handles = [];
   },
+
+  _observe: function (object, name, callback) {
+    E.observe.apply(this, arguments);
+    this._handles.push(arguments);
+    return this;
+  },
+
   /**
    * Get graph type for a series
    * @param {Object} series - the series
@@ -196,159 +96,10 @@ Flotr.Graph.prototype = {
 
     return success;
   },
-  setupAxes: function(){
-    /**
-     * Translates data number to pixel number
-     * @param {Number} v - data number
-     * @return {Number} translated pixel number
-     */
-    function d2p(v, o){
-      if (o.scaling === 'logarithmic') {
-        v = Math.log(Math.max(v, Number.MIN_VALUE));
-        if (o.base !== Math.E) 
-          v /= Math.log(o.base);
-      }
-      return v;
-    }
-
-    /**
-     * Translates pixel number to data number
-     * @param {Number} v - pixel data
-     * @return {Number} translated data number
-     */
-    function p2d(v, o){
-      if (o.scaling === 'logarithmic')
-        v = (o.base === Math.E) ? Math.exp(v) : Math.pow(o.base, v);
-      return v;
-    }
-
-    var x = this.axes.x, 
-        x2 = this.axes.x2, 
-        y = this.axes.y, 
-        y2 = this.axes.y2,
-        pw = this.plotWidth, 
-        ph = this.plotHeight;
-
-    x.scale  = pw / (d2p(x.max, x.options) - d2p(x.min, x.options));
-    x2.scale = pw / (d2p(x2.max, x2.options) - d2p(x2.min, x2.options));
-    y.scale  = ph / (d2p(y.max, y.options) - d2p(y.min, y.options));
-    y2.scale = ph / (d2p(y2.max, y2.options) - d2p(y2.min, y2.options));
-
-    if (this.options.scaling === 'logarithmic') {
-        x.d2p = x2.d2p = function(xval){
-          var o = this.options;
-          return (d2p(xval, o) - d2p(this.min, o)) * this.scale;
-        };
-
-        x.p2d = this.axes.x2.p2d = function(xval){
-          var o = this.options;
-          return p2d(xval / this.scale + d2p(this.min, o), o);
-        };
-
-        y.d2p = y2.d2p = function(yval){
-          var o = this.options;
-          return ph - (d2p(yval, o) - d2p(this.min, o)) * this.scale;
-        };
-
-        y.p2d = y2.p2d = function(yval){
-          var o = this.options;
-          return p2d((ph - yval) / this.scale + d2p(this.min, o), o);
-        };
-    } else {
-        x.d2p = x2.d2p = function(xval){
-          return (xval - this.min) * this.scale;
-        };
-
-        x.p2d = this.axes.x2.p2d = function(xval){
-          return xval / this.scale + this.min;
-        };
-
-        y.d2p = y2.d2p = function(yval){
-          return ph - (yval - this.min) * this.scale;
-        };
-
-        y.p2d = y2.p2d = function(yval){
-          return (ph - yval) / this.scale + this.min;
-        };
-    }
-  },
-  /**
-   * Initializes the canvas and it's overlay canvas element. When the browser is IE, this makes use 
-   * of excanvas. The overlay canvas is inserted for displaying interactions. After the canvas elements
-   * are created, the elements are inserted into the container element.
-   */
-  _initCanvas: function(){
-    var el = this.el,
-      o = this.options,
-      size, style;
-    
-    D.empty(el);
-    D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
-    size = D.size(el);
-
-    if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
-      throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
-    }
-    
-    // The old canvases are retrieved to avoid memory leaks ...
-    // @TODO Confirm.
-    // this.canvas = el.select('.flotr-canvas')[0];
-    // this.overlay = el.select('.flotr-overlay')[0];
-    this.canvas = getCanvas(this.canvas, 'canvas'); // Main canvas for drawing graph types
-    this.overlay = getCanvas(this.overlay, 'overlay'); // Overlay canvas for interactive features
-    this.ctx = getContext(this.canvas);
-    this.octx = getContext(this.overlay);
-    this.canvasHeight = size.height*o.resolution;
-    this.canvasWidth = size.width*o.resolution;
-    this.textEnabled = !!this.ctx.drawText; // Enable text functions
-
-    function getCanvas(canvas, name){
-      if(!canvas){
-        canvas = D.create('canvas');
-        canvas.className = 'flotr-'+name;
-        canvas.style.cssText = 'position:absolute;left:0px;top:0px;';
-      }
-      _.each(size, function(size, attribute){
-        canvas.setAttribute(attribute, size*o.resolution);
-        canvas.style[attribute] = size+'px';
-        D.show(canvas);
-      });
-      canvas.context_ = null; // Reset the ExCanvas context
-      D.insert(el, canvas);
-      return canvas;
-    }
-
-    function getContext(canvas){
-      if(window.G_vmlCanvasManager) window.G_vmlCanvasManager.initElement(canvas); // For ExCanvas
-      var context = canvas.getContext('2d');
-      if(!window.G_vmlCanvasManager) context.scale(o.resolution, o.resolution);
-      return context;
-    }
-  },
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
     return Flotr.Color.processColor(color, o);
-  },
-  _initPlugins: function(){
-    // TODO Should be moved to Flotr and mixed in.
-    var name, plugin, c, boundCallback;
-    Flotr.EventAdapter.fire(this.el, 'flotr:cleanup', [this]);
-    Flotr.EventAdapter.stopObserving(this.el, 'flotr:cleanup');
-    for (name in Flotr.plugins) {
-      plugin = Flotr.plugins[name];
-      for (c in plugin.callbacks) {
-        boundCallback = _.bind(plugin.callbacks[c], this);
-        Flotr.EventAdapter.observe(this.el, c, boundCallback);
-        Flotr.EventAdapter.observe(this.el, 'flotr:cleanup', _.bind(Flotr.EventAdapter.stopObserving, this, this.el, c, boundCallback));
-        boundCallback = null;
-      }
-      this[name] = _.clone(plugin);
-      for (p in this[name]) {
-        if (_.isFunction(this[name][p]))
-          this[name][p] = _.bind(this[name][p], this);
-      }
-    }
   },
   /**
    * Calculates a text box dimensions, wether it is drawn on the canvas or inserted into the DOM
@@ -376,104 +127,37 @@ Flotr.Graph.prototype = {
     }
   },
   /**
-   * Initializes event some handlers.
-   */
-  _initEvents: function () {
-    var mousedown = _.bind(this.mouseDownHandler, this);
-    var mousemove = _.bind(this.mouseMoveHandler, this);
-    var click = _.bind(this.clickHandler, this);
-
-    Flotr.EventAdapter.
-      observe(this.overlay, 'mousedown', mousedown).
-      observe(this.el, 'flotr:cleanup', _.bind(Flotr.EventAdapter.stopObserving, this, this.overlay, 'mousedown', mousedown)).
-      observe(this.overlay, 'mousemove', mousemove).
-      observe(this.el, 'flotr:cleanup', _.bind(Flotr.EventAdapter.stopObserving, this, this.overlay, 'mousemove', mousemove)).
-      observe(this.overlay, 'click', click).
-      observe(this.el, 'flotr:cleanup', _.bind(Flotr.EventAdapter.stopObserving, this, this.overlay, 'click', click));
-    mousedown = mousemove = click = null;
-  },
-  /**
    * Function determines the min and max values for the xaxis and yaxis.
+   *
+   * TODO logarithmic range validation (consideration of 0)
    */
   findDataRanges: function(){
-    var s = this.series, 
-        a = this.axes,
-        yLogarithmic, yLogarithmic,
-        i, j, h, x, y, data, xaxis, yaxis, length, xmax, xmin, ymax, ymin, xused, yused;
+    var a = this.axes,
+      xaxis, yaxis, range;
     
     a.x.datamin = a.x2.datamin = a.y.datamin = a.y2.datamin = Number.MAX_VALUE;
     a.x.datamax = a.x2.datamax = a.y.datamax = a.y2.datamax = -Number.MAX_VALUE;
 
-    if(s.length > 0){
-
-      // Get datamin, datamax start values 
-      for(i = 0; i < s.length; ++i) {
-        data = s[i].data;
-        xaxis = s[i].xaxis;
-        yaxis = s[i].yaxis;
-        xmin = xaxis.datamin;
-        xmax = xaxis.datamax;
-        ymin = yaxis.datamin;
-        ymax = yaxis.datamax;
-        xused = xaxis.used;
-        yused = yaxis.used;
-
-        xLogarithmic = (xaxis.options.scaling === 'logarithmic');
-        yLogarithmic = (yaxis.options.scaling === 'logarithmic');
-
-        if (data.length > 0 && !s[i].hide) {
-          length = data.length;
-          for(h = 0; h < length; h++){
-            x = data[h][0];
-            y = data[h][1];
-            
-            // Logarithm is only defined for values > 0
-            if (xLogarithmic && (x <= 0)) continue;
-
-            if(x < xmin) {
-              xmin = x;
-              xused = true;
-            }
-
-            if(x > xmax) {
-              xmax = x;
-              xused = true;
-            }
-
-            // Logarithm is only defined for values > 0
-            if (yLogarithmic && (y <= 0)) continue;
-
-            if(y < ymin) {
-              ymin = y;
-              yused = true;
-            }
-
-            if(y > ymax) {
-              ymax = y;
-              yused = true;
-            }
-          }
-        }
-
-        xaxis.datamin = xmin;
-        xaxis.datamax = xmax;
-        yaxis.datamin = ymin;
-        yaxis.datamax = ymax;
-        xaxis.used = xused;
-        yaxis.used = yused;
+    _.each(this.series, function (series) {
+      range = series.getRange();
+      if (range) {
+        xaxis = series.xaxis;
+        yaxis = series.yaxis;
+        xaxis.datamin = Math.min(range.xmin, xaxis.datamin);
+        xaxis.datamax = Math.max(range.xmax, xaxis.datamax);
+        yaxis.datamin = Math.min(range.ymin, yaxis.datamin);
+        yaxis.datamax = Math.max(range.ymax, yaxis.datamax);
+        xaxis.used = (xaxis.used || range.xused ? true : false);
+        yaxis.used = (yaxis.used || range.yused ? true : false);
       }
-    }
-    
-    this.findAxesValues();
-    
+    }, this);
+
     this.calculateRange(a.x, 'x');
-    
     if (a.x2.used) {
       this.calculateRange(a.x2, 'x');
     }
-    
+
     this.calculateRange(a.y, 'y');
-    
     if (a.y2.used) {
       this.calculateRange(a.y2, 'y');
     }
@@ -567,170 +251,11 @@ Flotr.Graph.prototype = {
 
     if (axis.min == axis.max) axis.max = axis.min + 1;
   },
-  /** 
-   * Find every values of the x axes or when horizontal stacked bar chart is used also y axes
-   */
-  findAxesValues: function(){
-    var i, j, s;
-    for(i = this.series.length-1; i > -1 ; --i){
-      s = this.series[i];
-      if(!this.executeOnType(this.series, 'findAxesValues', [s])){
-        this.findXAxesValues(s);
-      }
-    }
-  },
-  /** 
-   * Find every values of the x axes
-   */
-  findXAxesValues: function(s){
-    var  j;
-    s.xaxis.values = s.xaxis.values || {};
-    for (j = s.data.length-1; j > -1 ; --j){
-      s.xaxis.values[s.data[j][0]+''] = {};
-    }
-  },
-  /** 
-   * Find every values of the y axes
-   */
-  findYAxesValues: function(s){
-    var j;
-      s.yaxis.values = s.yaxis.values || {};
-      for (j = s.data.length-1; j > -1 ; --j){
-        s.yaxis.values[s.data[j][1]+''] = {};
-      }
-  },
-  /**
-   * Calculate axis ticks.
-   * @param {Object} axis - The axis for what the ticks will be calculated
-   */
-  calculateTicks: function(axis){
-    var o = axis.options, i, v;
-    
-    axis.ticks = [];  
-    axis.minorTicks = [];
-    
-    if(o.ticks){
-      var ticks = o.ticks, 
-          minorTicks = o.minorTicks || [], 
-          t, label;
-
-      if(_.isFunction(ticks)){
-        ticks = ticks({min: axis.min, max: axis.max});
-      }
-      
-      if(_.isFunction(minorTicks)){
-        minorTicks = minorTicks({min: axis.min, max: axis.max});
-      }
-      
-      // Clean up the user-supplied ticks, copy them over.
-      for(i = 0; i < ticks.length; ++i){
-        t = ticks[i];
-        if(typeof(t) === 'object'){
-          v = t[0];
-          label = (t.length > 1) ? t[1] : o.tickFormatter(v);
-        }else{
-          v = t;
-          label = o.tickFormatter(v);
-        }
-        axis.ticks[i] = { v: v, label: label };
-      }
-      
-      for(i = 0; i < minorTicks.length; ++i){
-        t = minorTicks[i];
-        if(typeof(t) === 'object'){
-          v = t[0];
-          label = (t.length > 1) ? t[1] : o.tickFormatter(v);
-        }
-        else {
-          v = t;
-          label = o.tickFormatter(v);
-        }
-        axis.minorTicks[i] = { v: v, label: label };
-      }
-    }
-    else {
-      if (o.mode == 'time') {
-        var tu = Flotr.Date.timeUnits,
-            spec = Flotr.Date.spec,
-            delta = (axis.max - axis.min) / axis.options.noTicks,
-            size, unit;
-
-        for (i = 0; i < spec.length - 1; ++i) {
-          var d = spec[i][0] * tu[spec[i][1]];
-          if (delta < (d + spec[i+1][0] * tu[spec[i+1][1]]) / 2 && d >= axis.tickSize)
-            break;
-        }
-        size = spec[i][0];
-        unit = spec[i][1];
-        
-        // special-case the possibility of several years
-        if (unit == "year") {
-          size = Flotr.getTickSize(axis.options.noTicks*tu.year, axis.min, axis.max, 0);
-        }
-        
-        axis.tickSize = size;
-        axis.tickUnit = unit;
-        axis.ticks = Flotr.Date.generator(axis);
-      }
-      else if (o.scaling === 'logarithmic') {
-        var max = Math.log(axis.max);
-        if (o.base != Math.E) max /= Math.log(o.base);
-        max = Math.ceil(max);
-
-        var min = Math.log(axis.min);
-        if (o.base != Math.E) min /= Math.log(o.base);
-        min = Math.ceil(min);
-        
-        for (i = min; i < max; i += axis.tickSize) {
-          var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
-          // Next decade begins here:
-          var decadeEnd = decadeStart * ((o.base == Math.E) ? Math.exp(axis.tickSize) : Math.pow(o.base, axis.tickSize));
-          var stepSize = (decadeEnd - decadeStart) / o.minorTickFreq;
-          
-          axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart)});
-          for (v = decadeStart + stepSize; v < decadeEnd; v += stepSize)
-            axis.minorTicks.push({v: v, label: o.tickFormatter(v)});
-        }
-        
-        // Always show the value at the would-be start of next decade (end of this decade)
-        var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
-        axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart)});
-      }
-      else {
-        // Round to nearest multiple of tick size.
-        var start = axis.tickSize * Math.ceil(axis.min / axis.tickSize),
-            decimals, minorTickSize, v2;
-        
-        if (o.minorTickFreq)
-          minorTickSize = axis.tickSize / o.minorTickFreq;
-                          
-        // Then store all possible ticks.
-        for(i = 0; start + i * axis.tickSize <= axis.max; ++i){
-          v = v2 = start + i * axis.tickSize;
-          
-          // Round (this is always needed to fix numerical instability).
-          decimals = o.tickDecimals;
-          if(decimals == null) decimals = 1 - Math.floor(Math.log(axis.tickSize) / Math.LN10);
-          if(decimals < 0) decimals = 0;
-          
-          v = v.toFixed(decimals);
-          axis.ticks.push({ v: v, label: o.tickFormatter(v) });
-
-          if (o.minorTickFreq) {
-            for(var j = 0; j < o.minorTickFreq && (i * axis.tickSize + j * minorTickSize) < axis.max; ++j) {
-              v = v2 + j * minorTickSize;
-              v = v.toFixed(decimals);
-              axis.minorTicks.push({ v: v, label: o.tickFormatter(v) });
-            }
-          }
-        }
-      }
-    }
-  },
   /**
    * Calculates axis label sizes.
    */
   calculateSpacing: function(){
+
     var a = this.axes,
         options = this.options,
         series = this.series,
@@ -741,6 +266,11 @@ Flotr.Graph.prototype = {
         y2 = a.y2,
         maxOutset = 2,
         i, j, l, dim;
+
+    // TODO post refactor, fix this
+    _.each(a, function (axis) {
+      axis.calculateTicks();
+    });
     
     // Labels width and height
     _.each([x, x2, y, y2], function(axis) {
@@ -803,6 +333,16 @@ Flotr.Graph.prototype = {
     
     this.plotWidth  = this.canvasWidth - p.left - p.right;
     this.plotHeight = this.canvasHeight - p.bottom - p.top;
+
+    // TODO post refactor, fix this
+    x.length = x2.length = this.plotWidth;
+    y.length = y2.length = this.plotHeight;
+    y.offset = y2.offset = this.plotHeight;
+    x.setScale();
+    x2.setScale();
+    y.setScale();
+    y2.setScale();
+    /**/
   },
   /**
    * Draws grid, labels, series and outline.
@@ -810,10 +350,9 @@ Flotr.Graph.prototype = {
   draw: function(after) {
     var afterImageLoad = _.bind(function() {
       this.drawGrid();
-      this.drawLabels();
 
       if(this.series.length){
-        Flotr.EventAdapter.fire(this.el, 'flotr:beforedraw', [this.series, this]);
+        E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
         
         for(var i = 0; i < this.series.length; i++){
           if (!this.series[i].hide)
@@ -822,7 +361,7 @@ Flotr.Graph.prototype = {
       }
     
       this.drawOutline();
-      Flotr.EventAdapter.fire(this.el, 'flotr:afterdraw', [this.series, this]);
+      E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
       after();
     }, this);
     
@@ -872,7 +411,7 @@ Flotr.Graph.prototype = {
         
     if(o.grid.verticalLines || o.grid.minorVerticalLines || 
            o.grid.horizontalLines || o.grid.minorHorizontalLines){
-      Flotr.EventAdapter.fire(this.el, 'flotr:beforegrid', [this.axes.x, this.axes.y, o, this]);
+      E.fire(this.el, 'flotr:beforegrid', [this.axes.x, this.axes.y, o, this]);
     }
     ctx.save();
     ctx.lineWidth = 1;
@@ -995,7 +534,7 @@ Flotr.Graph.prototype = {
     ctx.restore();
     if(o.grid.verticalLines || o.grid.minorVerticalLines ||
        o.grid.horizontalLines || o.grid.minorHorizontalLines){
-      Flotr.EventAdapter.fire(this.el, 'flotr:aftergrid', [this.axes.x, this.axes.y, o, this]);
+      E.fire(this.el, 'flotr:aftergrid', [this.axes.x, this.axes.y, o, this]);
     }
   }, 
   /**
@@ -1044,302 +583,6 @@ Flotr.Graph.prototype = {
     ctx.restore();
   },
   /**
-   * Draws labels for x and y axis.
-   */   
-  drawLabels: function(){    
-    // Construct fixed width label boxes, which can be styled easily. 
-    var noLabels = 0, axis,
-        xBoxWidth, i, html, tick, left, top,
-        options = this.options,
-        ctx = this.ctx,
-        a = this.axes;
-    
-    for(i = 0; i < a.x.ticks.length; ++i){
-      if (a.x.ticks[i].label) {
-        ++noLabels;
-      }
-    }
-    xBoxWidth = this.plotWidth / noLabels;
-    
-    if (options.grid.circular) {
-      ctx.save();
-      ctx.translate(this.plotOffset.left+this.plotWidth/2, this.plotOffset.top+this.plotHeight/2);
-      var radius = this.plotHeight*options.radar.radiusRatio/2 + options.fontSize,
-          sides = this.axes.x.ticks.length,
-          coeff = 2*(Math.PI/sides),
-          angle = -Math.PI/2;
-      
-      var style = {
-        size: options.fontSize
-      };
-
-      // Add x labels.
-      axis = a.x;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels; ++i){
-        tick = axis.ticks[i];
-        tick.label += '';
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        var x = Math.cos(i*coeff+angle) * radius, 
-            y = Math.sin(i*coeff+angle) * radius;
-            
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textBaseline = 'middle';
-        style.textAlign = (Math.abs(x) < 0.1 ? 'center' : (x < 0 ? 'right' : 'left'));
-
-        Flotr.drawText(ctx, tick.label, x, y, style);
-      }
-      for(i = 0; i < axis.minorTicks.length && axis.options.showMinorLabels; ++i){
-        tick = axis.minorTicks[i];
-        tick.label += '';
-        if(!tick.label || tick.label.length == 0) continue;
-      
-        var x = Math.cos(i*coeff+angle) * radius, 
-            y = Math.sin(i*coeff+angle) * radius;
-            
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textBaseline = 'middle';
-        style.textAlign = (Math.abs(x) < 0.1 ? 'center' : (x < 0 ? 'right' : 'left'));
-
-        Flotr.drawText(ctx, tick.label, x, y, style);
-      }
-      
-      // Add y labels.
-      axis = a.y;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels; ++i){
-        tick = axis.ticks[i];
-        tick.label += '';
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textBaseline = 'middle';
-        style.textAlign = 'left';
-        
-        Flotr.drawText(ctx, tick.label, 3, -(axis.ticks[i].v / axis.max) * (radius - options.fontSize), style);
-      }
-      for(i = 0; i < axis.minorTicks.length && axis.options.showMinorLabels; ++i){
-        tick = axis.minorTicks[i];
-        tick.label += '';
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textBaseline = 'middle';
-        style.textAlign = 'left';
-        
-        Flotr.drawText(ctx, tick.label, 3, -(axis.ticks[i].v / axis.max) * (radius - options.fontSize), style);
-      }
-      ctx.restore();
-      return;
-    }
-    
-    if (!options.HtmlText && this.textEnabled) {
-      var style = {
-        size: options.fontSize
-      };
-  
-      // Add x labels.
-      axis = a.x;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels && axis.used; ++i){
-        tick = axis.ticks[i];
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        left = axis.d2p(tick.v);
-        if (left < 0 || left > this.plotWidth) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textAlign = 'center';
-        style.textBaseline = 'top';
-        style = Flotr.getBestTextAlign(style.angle, style);
-        
-        Flotr.drawText(
-          ctx, tick.label,
-          this.plotOffset.left + left, 
-          this.plotOffset.top + this.plotHeight + options.grid.labelMargin,
-          style
-        );
-      }
-        
-      // Add x2 labels.
-      axis = a.x2;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels && axis.used; ++i){
-        tick = axis.ticks[i];
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        left = axis.d2p(tick.v);
-        if(left < 0 || left > this.plotWidth) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textAlign = 'center';
-        style.textBaseline = 'bottom';
-        style = Flotr.getBestTextAlign(style.angle, style);
-        
-        Flotr.drawText(
-          ctx, tick.label,
-          this.plotOffset.left + left, 
-          this.plotOffset.top + options.grid.labelMargin,
-          style
-        );
-      }
-        
-      // Add y labels.
-      axis = a.y;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels && axis.used; ++i){
-        tick = axis.ticks[i];
-        if (!tick.label || tick.label.length == 0) continue;
-        
-        top = axis.d2p(tick.v);
-        if(top < 0 || top > this.plotHeight) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textAlign = 'right';
-        style.textBaseline = 'middle';
-        style = Flotr.getBestTextAlign(style.angle, style);
-        
-        Flotr.drawText(
-          ctx, tick.label,
-          this.plotOffset.left - options.grid.labelMargin, 
-          this.plotOffset.top + top,
-          style
-        );
-      }
-        
-      // Add y2 labels.
-      axis = a.y2;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels && axis.used; ++i){
-        tick = axis.ticks[i];
-        if (!tick.label || tick.label.length == 0) continue;
-        
-        top = axis.d2p(tick.v);
-        if(top < 0 || top > this.plotHeight) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textAlign = 'left';
-        style.textBaseline = 'middle';
-        style = Flotr.getBestTextAlign(style.angle, style);
-        
-        Flotr.drawText(
-          ctx, tick.label,
-          this.plotOffset.left + this.plotWidth + options.grid.labelMargin, 
-          this.plotOffset.top + top,
-          style
-        );
-        
-        ctx.save();
-        ctx.strokeStyle = style.color;
-        ctx.beginPath();
-        ctx.moveTo(this.plotOffset.left + this.plotWidth - 8, this.plotOffset.top + axis.d2p(tick.v));
-        ctx.lineTo(this.plotOffset.left + this.plotWidth,     this.plotOffset.top + axis.d2p(tick.v));
-        ctx.stroke();
-        ctx.restore();
-      }
-    } 
-    else if (a.x.options.showLabels || a.x2.options.showLabels || a.y.options.showLabels || a.y2.options.showLabels) {
-      html = [];
-      
-      // Add x labels.
-      axis = a.x;
-      if (axis.options.showLabels){
-        for(i = 0; i < axis.ticks.length; ++i){
-          tick = axis.ticks[i];
-          if(!tick.label || tick.label.length == 0 || 
-              (this.plotOffset.left + axis.d2p(tick.v) < 0) || 
-              (this.plotOffset.left + axis.d2p(tick.v) > this.canvasWidth)) continue;
-          
-          html.push(
-            '<div style="position:absolute;top:', 
-            (this.plotOffset.top + this.plotHeight + options.grid.labelMargin), 'px;left:', 
-            (this.plotOffset.left +axis.d2p(tick.v) - xBoxWidth/2), 'px;width:', 
-            xBoxWidth, 'px;text-align:center;', (axis.options.color?('color:'+axis.options.color+';'):''), 
-            '" class="flotr-grid-label">', tick.label, '</div>'
-          );
-        }
-      }
-      
-      // Add x2 labels.
-      axis = a.x2;
-      if (axis.options.showLabels && axis.used){
-        for(i = 0; i < axis.ticks.length; ++i){
-          tick = axis.ticks[i];
-          if(!tick.label || tick.label.length == 0 || 
-              (this.plotOffset.left + axis.d2p(tick.v) < 0) || 
-              (this.plotOffset.left + axis.d2p(tick.v) > this.canvasWidth)) continue;
-          
-          html.push(
-            '<div style="position:absolute;top:', 
-            (this.plotOffset.top - options.grid.labelMargin - axis.maxLabel.height), 'px;left:', 
-            (this.plotOffset.left + axis.d2p(tick.v) - xBoxWidth/2), 'px;width:', 
-            xBoxWidth, 'px;text-align:center;', (axis.options.color?('color:'+axis.options.color+';'):''), 
-            '" class="flotr-grid-label">', tick.label, '</div>'
-          );
-        }
-      }
-      
-      // Add y labels.
-      axis = a.y;
-      if (axis.options.showLabels){
-        for(i = 0; i < axis.ticks.length; ++i){
-          tick = axis.ticks[i];
-          if (!tick.label || tick.label.length == 0 ||
-               (this.plotOffset.top + axis.d2p(tick.v) < 0) || 
-               (this.plotOffset.top + axis.d2p(tick.v) > this.canvasHeight)) continue;
-          
-          html.push(
-            '<div style="position:absolute;top:', 
-            (this.plotOffset.top + axis.d2p(tick.v) - axis.maxLabel.height/2), 'px;left:0;width:', 
-            (this.plotOffset.left - options.grid.labelMargin), 'px;text-align:right;', 
-            (axis.options.color?('color:'+axis.options.color+';'):''), 
-            '" class="flotr-grid-label flotr-grid-label-y">', tick.label, '</div>'
-          );
-        }
-      }
-      
-      // Add y2 labels.
-      axis = a.y2;
-      if (axis.options.showLabels && axis.used){
-        ctx.save();
-        ctx.strokeStyle = axis.options.color || options.grid.color;
-        ctx.beginPath();
-        
-        for(i = 0; i < axis.ticks.length; ++i){
-          tick = axis.ticks[i];
-          if (!tick.label || tick.label.length == 0 ||
-               (this.plotOffset.top + axis.d2p(tick.v) < 0) || 
-               (this.plotOffset.top + axis.d2p(tick.v) > this.canvasHeight)) continue;
-          
-          html.push(
-            '<div style="position:absolute;top:', 
-            (this.plotOffset.top + axis.d2p(tick.v) - axis.maxLabel.height/2), 'px;right:0;width:', 
-            (this.plotOffset.right - options.grid.labelMargin), 'px;text-align:left;', 
-            (axis.options.color?('color:'+axis.options.color+';'):''), 
-            '" class="flotr-grid-label flotr-grid-label-y">', tick.label, '</div>'
-          );
-
-          ctx.moveTo(this.plotOffset.left + this.plotWidth - 8, this.plotOffset.top + axis.d2p(tick.v));
-          ctx.lineTo(this.plotOffset.left + this.plotWidth,     this.plotOffset.top + axis.d2p(tick.v));
-        }
-        ctx.stroke();
-        ctx.restore();
-      }
-      
-      html = html.join('');
-
-      var div = D.create('div');
-      D.setStyles(div, {
-        fontSize: 'smaller',
-        color: options.grid.color 
-      });
-      div.className = 'flotr-labels';
-      D.insert(this.el, div);
-      D.insert(div, html);
-    }
-  },
-  /**
    * Actually draws the graph.
    * @param {Object} series - series to draw
    */
@@ -1366,9 +609,11 @@ Flotr.Graph.prototype = {
   getEventPosition: function (e){
 
     var offset = D.position(this.overlay),
-        pointer = eventPointer(e),
+        pointer = E.eventPointer(e),
         rx = (pointer.x - offset.left - this.plotOffset.left),
-        ry = (pointer.y - offset.top - this.plotOffset.top);
+        ry = (pointer.y - offset.top - this.plotOffset.top),
+        dx = pointer.x - this.lastMousePos.pageX,
+        dy = pointer.y - this.lastMousePos.pageY;
 
     return {
       x:  this.axes.x.p2d(rx),
@@ -1377,6 +622,8 @@ Flotr.Graph.prototype = {
       y2: this.axes.y2.p2d(ry),
       relX: rx,
       relY: ry,
+      dX: dx,
+      dY: dy,
       absX: pointer.x,
       absY: pointer.y
     };
@@ -1390,7 +637,7 @@ Flotr.Graph.prototype = {
       this.ignoreClick = false;
       return this.ignoreClick;
     }
-    Flotr.EventAdapter.fire(this.el, 'flotr:click', [this.getEventPosition(event), this]);
+    E.fire(this.el, 'flotr:click', [this.getEventPosition(event), this]);
   },
   /**
    * Observes mouse movement over the graph area. Fires the 'flotr:mousemove' event.
@@ -1400,7 +647,7 @@ Flotr.Graph.prototype = {
     var pos = this.getEventPosition(event);
     this.lastMousePos.pageX = pos.absX;
     this.lastMousePos.pageY = pos.absY;  
-    Flotr.EventAdapter.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+    E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
   },
   /**
    * Observes the 'mousedown' event.
@@ -1418,206 +665,27 @@ Flotr.Graph.prototype = {
       
       function cancelContextMenu () {
         overlay.show();
-        Flotr.EventAdapter.stopObserving(document, 'mousemove', cancelContextMenu);
+        E.stopObserving(document, 'mousemove', cancelContextMenu);
       }
-      Flotr.EventAdapter.observe(document, 'mousemove', cancelContextMenu);
+      E.observe(document, 'mousemove', cancelContextMenu);
       return;
     }
     */
 
-    function isLeftClick (e, type) {
-      return (e.which ? (e.which === 1) : (e.button === 0 || e.button === 1));
-    }
-
-    if(!this.options.selection.mode || !isLeftClick(event)) return;
-
-    var pointer = eventPointer(event);
-    this.setSelectionPos(this.selection.first, {pageX:pointer.x, pageY:pointer.y});
-    if(this.selectionInterval != null){
-      clearInterval(this.selectionInterval);
-    }
-    this.lastMousePos.pageX = null;
-    this.selectionInterval = 
-      setInterval(_.bind(this.updateSelection, this), 1000/this.options.selection.fps);
-    
+    // @TODO why?
     this.mouseUpHandler = _.bind(this.mouseUpHandler, this);
-    Flotr.EventAdapter.observe(document, 'mouseup', this.mouseUpHandler);
-    Flotr.EventAdapter.observe(this.el, 'flotr:cleanup', _.bind(Flotr.EventAdapter.stopObserving, this, document, 'mouseup', this.mouseUpHandler));
-  },
-  /**
-   * Fires the 'flotr:select' event when the user made a selection.
-   */
-  fireSelectEvent: function(){
-    var a = this.axes, s = this.selection,
-        x1, x2, y1, y2;
-    
-    x1 = a.x.p2d(s.first.x);
-    x2 = a.x.p2d(s.second.x);
-    y1 = a.y.p2d(s.first.y);
-    y2 = a.y.p2d(s.second.y);
-
-    Flotr.EventAdapter.fire(this.el, 'flotr:select', [{
-      x1:Math.min(x1, x2), 
-      y1:Math.min(y1, y2), 
-      x2:Math.max(x1, x2), 
-      y2:Math.max(y1, y2),
-      xfirst:x1, xsecond:x2, yfirst:y1, ysecond:y2
-    }, this]);
+    E.observe(document, 'mouseup', this.mouseUpHandler);
+    E.fire(this.el, 'flotr:mousedown', [event, this]);
   },
   /**
    * Observes the mouseup event for the document. 
    * @param {Event} event - 'mouseup' Event object.
    */
   mouseUpHandler: function(event){
-    Flotr.EventAdapter.stopObserving(document, 'mouseup', this.mouseUpHandler);
+    E.stopObserving(document, 'mouseup', this.mouseUpHandler);
     // @TODO why?
     //event.stop();
-    
-    if(this.selectionInterval != null){
-      clearInterval(this.selectionInterval);
-      this.selectionInterval = null;
-    }
-
-    var pointer = eventPointer(event);
-    this.setSelectionPos(this.selection.second, {pageX:pointer.x, pageY:pointer.y});
-    this.clearSelection();
-    
-    if(this.selectionIsSane()){
-      this.drawSelection();
-      this.fireSelectEvent();
-      this.ignoreClick = true;
-    }
-  },
-  /**
-   * Calculates the position of the selection.
-   * @param {Object} pos - Position object.
-   * @param {Event} event - Event object.
-   */
-  setSelectionPos: function(pos, pointer) {
-    var options = this.options,
-        offset = D.position(this.overlay);
-
-    if(options.selection.mode.indexOf('x') == -1){
-      pos.x = (pos == this.selection.first) ? 0 : this.plotWidth;         
-    }else{
-      pos.x = pointer.pageX - offset.left - this.plotOffset.left;
-      pos.x = Math.min(Math.max(0, pos.x), this.plotWidth);
-    }
-
-    if (options.selection.mode.indexOf('y') == -1){
-      pos.y = (pos == this.selection.first) ? 0 : this.plotHeight;
-    }else{
-      pos.y = pointer.pageY - offset.top - this.plotOffset.top;
-      pos.y = Math.min(Math.max(0, pos.y), this.plotHeight);
-    }
-  },
-  /**
-   * Updates (draws) the selection box.
-   */
-  updateSelection: function(){
-    if(this.lastMousePos.pageX == null) return;
-    
-    this.setSelectionPos(this.selection.second, this.lastMousePos);
-    this.clearSelection();
-    
-    if(this.selectionIsSane()) this.drawSelection();
-  },
-  /**
-   * Removes the selection box from the overlay canvas.
-   */
-  clearSelection: function() {
-    if(this.prevSelection == null) return;
-      
-    var prevSelection = this.prevSelection,
-      lw = this.octx.lineWidth,
-      plotOffset = this.plotOffset,
-      x = Math.min(prevSelection.first.x, prevSelection.second.x),
-      y = Math.min(prevSelection.first.y, prevSelection.second.y),
-      w = Math.abs(prevSelection.second.x - prevSelection.first.x),
-      h = Math.abs(prevSelection.second.y - prevSelection.first.y);
-    
-    this.octx.clearRect(x + plotOffset.left - lw/2+0.5,
-                        y + plotOffset.top - lw/2+0.5,
-                        w + lw,
-                        h + lw);
-    
-    this.prevSelection = null;
-  },
-  /**
-   * Allows the user the manually select an area.
-   * @param {Object} area - Object with coordinates to select.
-   */
-  setSelection: function(area, preventEvent){
-    var options = this.options,
-      xa = this.axes.x,
-      ya = this.axes.y,
-      vertScale = ya.scale,
-      hozScale = xa.scale,
-      selX = options.selection.mode.indexOf('x') != -1,
-      selY = options.selection.mode.indexOf('y') != -1;
-    
-    this.clearSelection();
-
-    this.selection.first.y  = (selX && !selY) ? 0 : (ya.max - area.y1) * vertScale;
-    this.selection.second.y = (selX && !selY) ? this.plotHeight : (ya.max - area.y2) * vertScale;      
-    this.selection.first.x  = (selY && !selX) ? 0 : (area.x1 - xa.min) * hozScale;
-    this.selection.second.x = (selY && !selX) ? this.plotWidth : (area.x2 - xa.min) * hozScale;
-    
-    this.drawSelection();
-    if (!preventEvent)
-      this.fireSelectEvent();
-  },
-  /**
-   * Draws the selection box.
-   */
-  drawSelection: function() {
-    var prevSelection = this.prevSelection,
-      s = this.selection,
-      octx = this.octx,
-      options = this.options,
-      plotOffset = this.plotOffset;
-    
-    if(prevSelection != null &&
-      s.first.x == prevSelection.first.x &&
-      s.first.y == prevSelection.first.y && 
-      s.second.x == prevSelection.second.x &&
-      s.second.y == prevSelection.second.y)
-      return;
-
-    octx.save();
-    octx.strokeStyle = this.processColor(options.selection.color, {opacity: 0.8});
-    octx.lineWidth = 1;
-    octx.lineJoin = 'miter';
-    octx.fillStyle = this.processColor(options.selection.color, {opacity: 0.4});
-
-    this.prevSelection = {
-      first: { x: s.first.x, y: s.first.y },
-      second: { x: s.second.x, y: s.second.y }
-    };
-
-    var x = Math.min(s.first.x, s.second.x),
-        y = Math.min(s.first.y, s.second.y),
-        w = Math.abs(s.second.x - s.first.x),
-        h = Math.abs(s.second.y - s.first.y);
-    
-    octx.fillRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
-    octx.strokeRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
-    octx.restore();
-  },
-  /**
-   * Determines whether or not the selection is sane and should be drawn.
-   * @return {Boolean} - True when sane, false otherwise.
-   */
-  selectionIsSane: function(){
-    return Math.abs(this.selection.second.x - this.selection.first.x) >= 5 &&
-           Math.abs(this.selection.second.y - this.selection.first.y) >= 5;
-  },
-  getMouseTrack: function() {
-    if (!this.mouseTrack) {
-      this.mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
-      D.insert(this.el, this.mouseTrack);
-    }
-    return this.mouseTrack;
+    E.fire(this.el, 'flotr:mouseup', [event, this]);
   },
   drawTooltip: function(content, x, y, options) {
     var mt = this.getMouseTrack(),
@@ -1682,14 +750,13 @@ Flotr.Graph.prototype = {
   },
 
   _initMembers: function() {
-    this.selection = {first: {x: -1, y: -1}, second: {x: -1, y: -1}};
-    this.prevSelection = null;
-    this.selectionInterval = null;
+    this._handles = [];
     this.lastMousePos = {pageX: null, pageY: null };
     this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
     this.ignoreClick = false;
     this.prevHit = null;
   },
+
   _initGraphTypes: function() {
     var type, p;
     for (type in Flotr.graphTypes) {
@@ -1700,10 +767,208 @@ Flotr.Graph.prototype = {
       }
     }
   },
+
+  _initEvents: function () {
+    this.
+      _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
+      _observe(this.el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+      _observe(this.overlay, 'click', _.bind(this.clickHandler, this));
+
+
+    var touchEndHandler = _.bind(function (e) {
+      E.stopObserving(document, 'touchend', touchEndHandler);
+      E.fire(this.el, 'flotr:mouseup', [event, this]);
+    }, this);
+
+    this._observe(this.overlay, 'touchstart', _.bind(function (e) {
+      E.fire(this.el, 'flotr:mousedown', [event, this]);
+      this._observe(document, 'touchend', touchEndHandler);
+    }, this));
+
+    this._observe(this.overlay, 'touchmove', _.bind(function (e) {
+      e.preventDefault();
+      var pageX = e.touches[0].pageX,
+        pageY = e.touches[0].pageY,
+        pos = { absX : pageX , absY : pageY };
+      this.lastMousePos.pageX = pageX;
+      this.lastMousePos.pageY = pageY;  
+      //console.log(pageX);
+      E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+    }, this));
+  },
+
+  /**
+   * Initializes the canvas and it's overlay canvas element. When the browser is IE, this makes use 
+   * of excanvas. The overlay canvas is inserted for displaying interactions. After the canvas elements
+   * are created, the elements are inserted into the container element.
+   */
+  _initCanvas: function(){
+    var el = this.el,
+      o = this.options,
+      size, style;
+    
+    D.empty(el);
+    D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
+    size = D.size(el);
+
+    if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
+      throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
+    }
+    
+    // The old canvases are retrieved to avoid memory leaks ...
+    // @TODO Confirm.
+    // this.canvas = el.select('.flotr-canvas')[0];
+    // this.overlay = el.select('.flotr-overlay')[0];
+    this.canvas = getCanvas(this.canvas, 'canvas'); // Main canvas for drawing graph types
+    this.overlay = getCanvas(this.overlay, 'overlay'); // Overlay canvas for interactive features
+    this.ctx = getContext(this.canvas);
+    this.octx = getContext(this.overlay);
+    this.canvasHeight = size.height*o.resolution;
+    this.canvasWidth = size.width*o.resolution;
+    this.textEnabled = !!this.ctx.drawText; // Enable text functions
+
+    function getCanvas(canvas, name){
+      if(!canvas){
+        canvas = D.create('canvas');
+        canvas.className = 'flotr-'+name;
+        canvas.style.cssText = 'position:absolute;left:0px;top:0px;';
+      }
+      _.each(size, function(size, attribute){
+        canvas.setAttribute(attribute, size*o.resolution);
+        canvas.style[attribute] = size+'px';
+        D.show(canvas);
+      });
+      canvas.context_ = null; // Reset the ExCanvas context
+      D.insert(el, canvas);
+      return canvas;
+    }
+
+    function getContext(canvas){
+      if(window.G_vmlCanvasManager) window.G_vmlCanvasManager.initElement(canvas); // For ExCanvas
+      var context = canvas.getContext('2d');
+      if(!window.G_vmlCanvasManager) context.scale(o.resolution, o.resolution);
+      return context;
+    }
+  },
+
+  _initPlugins: function(){
+    // TODO Should be moved to Flotr and mixed in.
+    var name, plugin, c;
+    for (name in Flotr.plugins) {
+      plugin = Flotr.plugins[name];
+      for (c in plugin.callbacks) {
+        this._observe(this.el, c, _.bind(plugin.callbacks[c], this));
+      }
+      this[name] = _.clone(plugin);
+      for (p in this[name]) {
+        if (_.isFunction(this[name][p]))
+          this[name][p] = _.bind(this[name][p], this);
+      }
+    }
+  },
+
+  /**
+   * Sets options and initializes some variables and color specific values, used by the constructor. 
+   * @param {Object} opts - options object
+   */
+  _initOptions: function(opts){
+    var options = Flotr.clone(Flotr.defaultOptions);
+    options.x2axis = _.extend(_.clone(options.xaxis), options.x2axis);
+    options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
+    this.options = Flotr.merge(opts || {}, options);
+
+    this.axes = Flotr.Axis.getAxes(this.options);
+
+    if (this.options.grid.minorVerticalLines === null && 
+      this.options.xaxis.scaling === 'logarithmic') {
+      this.options.grid.minorVerticalLines = true;
+    }
+    if (this.options.grid.minorHorizontalLines === null && 
+      this.options.yaxis.scaling === 'logarithmic') {
+      this.options.grid.minorHorizontalLines = true;
+    }
+    
+    // Initialize some variables used throughout this function.
+    var assignedColors = [],
+        colors = [],
+        ln = this.series.length,
+        neededColors = this.series.length,
+        oc = this.options.colors, 
+        usedColors = [],
+        variation = 0,
+        c, i, j, s;
+
+    // Collect user-defined colors from series.
+    for(i = neededColors - 1; i > -1; --i){
+      c = this.series[i].color;
+      if(c){
+        --neededColors;
+        if(_.isNumber(c)) assignedColors.push(c);
+        else usedColors.push(Flotr.Color.parse(c));
+      }
+    }
+    
+    // Calculate the number of colors that need to be generated.
+    for(i = assignedColors.length - 1; i > -1; --i)
+      neededColors = Math.max(neededColors, assignedColors[i] + 1);
+
+    // Generate needed number of colors.
+    for(i = 0; colors.length < neededColors;){
+      c = (oc.length == i) ? new Flotr.Color(100, 100, 100) : Flotr.Color.parse(oc[i]);
+      
+      // Make sure each serie gets a different color.
+      var sign = variation % 2 == 1 ? -1 : 1,
+          factor = 1 + sign * Math.ceil(variation / 2) * 0.2;
+      c.scale(factor, factor, factor);
+
+      /**
+       * @todo if we're getting too close to something else, we should probably skip this one
+       */
+      colors.push(c);
+      
+      if(++i >= oc.length){
+        i = 0;
+        ++variation;
+      }
+    }
+  
+    // Fill the options with the generated colors.
+    for(i = 0, j = 0; i < ln; ++i){
+      s = this.series[i];
+
+      // Assign the color.
+      if(s.color == null){
+        s.color = colors[j++].toString();
+      }else if(_.isNumber(s.color)){
+        s.color = colors[s.color].toString();
+      }
+      
+      // Every series needs an axis
+      if (!s.xaxis) s.xaxis = this.axes.x;
+           if (s.xaxis == 1) s.xaxis = this.axes.x;
+      else if (s.xaxis == 2) s.xaxis = this.axes.x2;
+      
+      if (!s.yaxis) s.yaxis = this.axes.y;
+           if (s.yaxis == 1) s.yaxis = this.axes.y;
+      else if (s.yaxis == 2) s.yaxis = this.axes.y2;
+      
+      // Apply missing options to the series.
+      for (var t in Flotr.graphTypes){
+        s[t] = _.extend(_.clone(this.options[t]), s[t]);
+      }
+      s.mouse = _.extend(_.clone(this.options.mouse), s.mouse);
+      
+      if(s.shadowSize == null) s.shadowSize = this.options.shadowSize;
+    }
+  },
+
   _setEl: function(el) {
     if (!el) throw 'The target container doesn\'t exist';
     if (!el.clientWidth) throw 'The target container must be visible';
     this.el = el;
+
+    if (this.el.graph) this.el.graph.destroy();
+
     this.el.graph = this;
   }
 }

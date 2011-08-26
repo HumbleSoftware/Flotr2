@@ -74,11 +74,6 @@ Flotr.defaultOptions = {
     outlineWidth: 2,       // => width of the grid outline/border in pixels
     circular: false        // => if set to true, the grid will be circular, must be used when radars are drawn
   },
-  selection: {
-    mode: null,            // => one of null, 'x', 'y' or 'xy'
-    color: '#B6D9FF',      // => selection box color
-    fps: 20                // => frames-per-second
-  },
   mouse: {
     track: false,          // => true to track the mouse, no tracking otherwise
     trackAll: false,

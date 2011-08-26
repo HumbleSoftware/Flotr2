@@ -5,8 +5,8 @@ var D = Flotr.DOM;
 Flotr.addPlugin('hit', {
   callbacks: {
     'flotr:mousemove': function(e, pos) {
-      if(this.selectionInterval == null && 
-          (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;})))
+      //if(this.selectionInterval == null && 
+      if (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;}))
         this.hit.hit(pos);
     },
     'mouseout': function() {
@@ -57,6 +57,7 @@ Flotr.addPlugin('hit', {
         offset*2,
         offset*2
       );
+      D.hide(this.mouseTrack);
     }
   },
   /**
@@ -206,7 +207,7 @@ Flotr.addPlugin('hit', {
     }
     
     if(n.series && (n.mouse && n.mouse.track && !prevHit || (prevHit /*&& (n.x != prevHit.x || n.y != prevHit.y)*/))){
-      var mt = this.getMouseTrack(),
+      var mt = this.hit.getMouseTrack(),
           pos = '', 
           s = n.series,
           p = n.mouse.position, 
@@ -248,10 +249,10 @@ Flotr.addPlugin('hit', {
       mt.style.cssText = elStyle;
 
       if(n.x !== null && n.y !== null){
-        D.show(mt);
         
         this.hit.clearHit();
         this.hit.drawHit(n);
+        D.show(mt);
         
         var decimals = n.mouse.trackDecimals;
         if(decimals == null || decimals < 0) decimals = 0;
@@ -264,17 +265,22 @@ Flotr.addPlugin('hit', {
           nearest: n,
           fraction: n.fraction
         });
-        Flotr.EventAdapter.fire(mt, 'flotr:hit', [n, this]);
+        Flotr.EventAdapter.fire(this.el, 'flotr:hit', [n, this]);
       }
       else if(prevHit){
-        D.hide(mt);
-        this.clearHit();
+        this.hit.clearHit();
       }
     }
     else if(this.prevHit) {
-      D.hide(this.mouseTrack);
       this.hit.clearHit();
     }
+  },
+  getMouseTrack: function() {
+    if (!this.mouseTrack) {
+      this.mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
+      D.insert(this.el, this.mouseTrack);
+    }
+    return this.mouseTrack;
   }
 });
 })();

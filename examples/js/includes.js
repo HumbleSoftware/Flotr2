@@ -12,9 +12,8 @@ yepnope([
   },
   '../lib/canvas2image.js',
   '../lib/canvastext.js',
-
-  // Examples
-  'examples.js',
+  'lib/google-code-prettify/prettify.js',
+  'lib/beautify.js',
 
   // Flotr
   '../js/Flotr.js',
@@ -42,5 +41,10 @@ yepnope([
   '../js/plugins/legend.js',
   '../js/plugins/titles.js',
   '../js/types/gantt.js',
-  { complete : example }
+
+  // Examples
+  'js/Flotr.Examples.js',
+  'js/Flotr.ExampleList.js',
+
+  { complete : function () { new Flotr.Examples(); } }
 ]);

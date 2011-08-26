@@ -28,7 +28,8 @@
 		<script type="text/javascript">
 			function example(){
 
-                var container = document.getElementById('container');
+        var container = document.getElementById('container'),
+          horizontal = false;
 
         function markerFomatter(obj) {
           return obj.y+'%';
@@ -43,11 +44,22 @@
             markers = {data:[], markers:{show: true, position: 'ct', labelFormatter: markerFomatter}, bars:{show: false}};
             
 			  for(var i = 0; i < 4; i++ ){
-          point = [i, Math.ceil(Math.random()*10)];
+          
+          if (horizontal) { 
+            point = [Math.ceil(Math.random()*10), i];
+          } else {
+            point = [i, Math.ceil(Math.random()*10)];
+          }
+
 					d1.push(point);
           markers.data.push(point);
           
-          point = [i+0.5, Math.ceil(Math.random()*10)];
+          if (horizontal) { 
+            point = [Math.ceil(Math.random()*10), i+0.5];
+          } else {
+            point = [i+0.5, Math.ceil(Math.random()*10)];
+          }
+
 					d2.push(point);
           markers.data.push(point);
 				}
@@ -59,7 +71,11 @@
 					container,
 					[d1, d2, markers],
 					{
-            bars: {show:true, barWidth:0.5}, 
+            bars: {
+              show:true,
+              barWidth:0.5, 
+              horizontal: horizontal
+            },
             mouse: {track:true, relative:true},
 					  yaxis: {min: 0, autoscaleMargin: 1},
             spreadsheet: {show: true}
