@@ -302,8 +302,7 @@ Flotr.addPlugin('labels', {
       D.insert(this.el, div);
       D.insert(div, html);
     }
-  },
-
+  }
 
 });
 })();
