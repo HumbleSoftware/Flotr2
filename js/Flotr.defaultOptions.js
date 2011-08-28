@@ -10,6 +10,7 @@ Flotr.defaultOptions = {
   HtmlText: true,          // => wether to draw the text using HTML or on the canvas
   fontSize: 7.5,           // => canvas' text font size
   resolution: 1,           // => resolution of the graph, to have printer-friendly graphs !
+  parseFloat: true,        // => whether to preprocess data for floats (ie. if input is string)
   xaxis: {
     ticks: null,           // => format: either [1, 3] or [[1, 'a'], 3]
     minorTicks: null,      // => format: either [1, 3] or [[1, 'a'], 3]
@@ -71,7 +72,7 @@ Flotr.defaultOptions = {
     minorVerticalLines: null, // => whether to show gridlines for minor ticks in vertical dir.
     horizontalLines: true, // => whether to show gridlines in horizontal direction
     minorHorizontalLines: null, // => whether to show gridlines for minor ticks in horizontal dir.
-    outlineWidth: 2,       // => width of the grid outline/border in pixels
+    outlineWidth: 1,       // => width of the grid outline/border in pixels
     circular: false        // => if set to true, the grid will be circular, must be used when radars are drawn
   },
   mouse: {
