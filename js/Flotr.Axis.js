@@ -42,18 +42,19 @@ Axis.prototype = {
 
   _cleanUserTicks : function (ticks, axisTicks) {
 
-    var v, i, label, tick;
+    var options = this.options,
+      v, i, label, tick;
 
     if(_.isFunction(ticks)) ticks = ticks({min : axis.min, max : axis.max});
 
     for(i = 0; i < ticks.length; ++i){
       tick = ticks[i];
-      if(typeof(t) === 'object'){
+      if(typeof(tick) === 'object'){
         v = tick[0];
-        label = (tick.length > 1) ? t[1] : o.tickFormatter(v);
+        label = (tick.length > 1) ? tick[1] : options.tickFormatter(v);
       } else {
         v = tick;
-        label = this.options.tickFormatter(v);
+        label = options.tickFormatter(v);
       }
       axisTicks[i] = { v: v, label: label };
     }
