@@ -69,6 +69,6 @@ Flotr.addPlugin('crosshair', {
     
     if (this.lastMousePos.relY != null)
       this.octx.clearRect(this.plotOffset.left, this.lastMousePos.relY-0.5, this.plotWidth+1, 1);    
-  },
+  }
 });
 })();

@@ -40,121 +40,139 @@ Axis.prototype = {
     this.p2d = (logarithmic ? p2dLog : p2d);
   },
 
-  calculateTicks : function () {
-    var axis = this,
-      o = axis.options,
-      i, v;
+  _cleanUserTicks : function (ticks, axisTicks) {
 
-    axis.ticks = [];
-    axis.minorTicks = [];
-    
-    if(o.ticks){
-      var ticks = o.ticks, 
-          minorTicks = o.minorTicks || [], 
-          t, label;
+    var options = this.options,
+      v, i, label, tick;
 
-      function cleanUserTicks (ticks, axisTicks) {
+    if(_.isFunction(ticks)) ticks = ticks({min : axis.min, max : axis.max});
 
-        if(_.isFunction(ticks)){
-          ticks = ticks({min: axis.min, max: axis.max});
-        }
-
-        for(i = 0; i < ticks.length; ++i){
-          t = ticks[i];
-          if(typeof(t) === 'object'){
-            v = t[0];
-            label = (t.length > 1) ? t[1] : o.tickFormatter(v);
-          }else{
-            v = t;
-            label = o.tickFormatter(v);
-          }
-          axisTicks[i] = { v: v, label: label };
-        }
+    for(i = 0; i < ticks.length; ++i){
+      tick = ticks[i];
+      if(typeof(tick) === 'object'){
+        v = tick[0];
+        label = (tick.length > 1) ? tick[1] : options.tickFormatter(v);
+      } else {
+        v = tick;
+        label = options.tickFormatter(v);
       }
+      axisTicks[i] = { v: v, label: label };
+    }
+  },
 
-      cleanUserTicks(ticks, axis.ticks);
-      cleanUserTicks(minorTicks, axis.minorTicks);
+  calculateTicks : function () {
+    var options = this.options;
 
+    this.ticks = [];
+    this.minorTicks = [];
+    
+    // User Ticks
+    if(options.ticks){
+      this._cleanUserTicks(options.ticks, this.ticks);
+      this._cleanUserTicks(options.minorTicks || [], this.minorTicks);
     }
     else {
-      if (o.mode == 'time') {
-        var tu = Flotr.Date.timeUnits,
-            spec = Flotr.Date.spec,
-            delta = (axis.max - axis.min) / axis.options.noTicks,
-            size, unit;
-
-        for (i = 0; i < spec.length - 1; ++i) {
-          var d = spec[i][0] * tu[spec[i][1]];
-          if (delta < (d + spec[i+1][0] * tu[spec[i+1][1]]) / 2 && d >= axis.tickSize)
-            break;
-        }
-        size = spec[i][0];
-        unit = spec[i][1];
-        
-        // special-case the possibility of several years
-        if (unit == "year") {
-          size = Flotr.getTickSize(axis.options.noTicks*tu.year, axis.min, axis.max, 0);
-        }
-        
-        axis.tickSize = size;
-        axis.tickUnit = unit;
-        axis.ticks = Flotr.Date.generator(axis);
+      if (options.mode == 'time') {
+        this._calculateTimeTicks();
+      } else if (options.scaling === 'logarithmic') {
+        this._calculateLogTicks();
+      } else {
+        this._calculateTicks();
       }
-      else if (o.scaling === 'logarithmic') {
-        var max = Math.log(axis.max);
-        if (o.base != Math.E) max /= Math.log(o.base);
-        max = Math.ceil(max);
+    }
+  },
 
-        var min = Math.log(axis.min);
-        if (o.base != Math.E) min /= Math.log(o.base);
-        min = Math.ceil(min);
-        
-        for (i = min; i < max; i += axis.tickSize) {
-          var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
-          // Next decade begins here:
-          var decadeEnd = decadeStart * ((o.base == Math.E) ? Math.exp(axis.tickSize) : Math.pow(o.base, axis.tickSize));
-          var stepSize = (decadeEnd - decadeStart) / o.minorTickFreq;
-          
-          axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart)});
-          for (v = decadeStart + stepSize; v < decadeEnd; v += stepSize)
-            axis.minorTicks.push({v: v, label: o.tickFormatter(v)});
-        }
-        
-        // Always show the value at the would-be start of next decade (end of this decade)
-        var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
-        axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart)});
-      }
-      else {
-        // Round to nearest multiple of tick size.
-        var start = axis.tickSize * Math.ceil(axis.min / axis.tickSize),
-            decimals, minorTickSize, v2;
-        
-        if (o.minorTickFreq)
-          minorTickSize = axis.tickSize / o.minorTickFreq;
-                          
-        // Then store all possible ticks.
-        for(i = 0; start + i * axis.tickSize <= axis.max; ++i){
-          v = v2 = start + i * axis.tickSize;
-          
-          // Round (this is always needed to fix numerical instability).
-          decimals = o.tickDecimals;
-          if(decimals == null) decimals = 1 - Math.floor(Math.log(axis.tickSize) / Math.LN10);
-          if(decimals < 0) decimals = 0;
-          
-          v = v.toFixed(decimals);
-          axis.ticks.push({ v: v, label: o.tickFormatter(v) });
+  _calculateTimeTicks : function () {
+    var axis = this,
+        tu = Flotr.Date.timeUnits,
+        spec = Flotr.Date.spec,
+        delta = (axis.max - axis.min) / axis.options.noTicks,
+        size, unit, i;
 
-          if (o.minorTickFreq) {
-            for(var j = 0; j < o.minorTickFreq && (i * axis.tickSize + j * minorTickSize) < axis.max; ++j) {
-              v = v2 + j * minorTickSize;
-              v = v.toFixed(decimals);
-              axis.minorTicks.push({ v: v, label: o.tickFormatter(v) });
-            }
-          }
+    for (i = 0; i < spec.length - 1; ++i) {
+      var d = spec[i][0] * tu[spec[i][1]];
+      if (delta < (d + spec[i+1][0] * tu[spec[i+1][1]]) / 2 && d >= axis.tickSize)
+        break;
+    }
+    size = spec[i][0];
+    unit = spec[i][1];
+    
+    // special-case the possibility of several years
+    if (unit == "year") {
+      size = Flotr.getTickSize(axis.options.noTicks*tu.year, axis.min, axis.max, 0);
+    }
+    
+    axis.tickSize = size;
+    axis.tickUnit = unit;
+    axis.ticks = Flotr.Date.generator(axis);
+  },
+
+  _calculateLogTicks : function () {
+
+    var axis = this,
+      o = axis.options,
+      v;
+
+    var max = Math.log(axis.max);
+    if (o.base != Math.E) max /= Math.log(o.base);
+    max = Math.ceil(max);
+
+    var min = Math.log(axis.min);
+    if (o.base != Math.E) min /= Math.log(o.base);
+    min = Math.ceil(min);
+    
+    for (i = min; i < max; i += axis.tickSize) {
+      var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
+      // Next decade begins here:
+      var decadeEnd = decadeStart * ((o.base == Math.E) ? Math.exp(axis.tickSize) : Math.pow(o.base, axis.tickSize));
+      var stepSize = (decadeEnd - decadeStart) / o.minorTickFreq;
+      
+      axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart)});
+      for (v = decadeStart + stepSize; v < decadeEnd; v += stepSize)
+        axis.minorTicks.push({v: v, label: o.tickFormatter(v)});
+    }
+    
+    // Always show the value at the would-be start of next decade (end of this decade)
+    var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
+    axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart)});
+  },
+
+  _calculateTicks : function () {
+
+    var axis      = this,
+        o         = axis.options,
+        tickSize  = axis.tickSize,
+        min       = axis.min,
+        max       = axis.max,
+        start     = tickSize * Math.ceil(min / tickSize), // Round to nearest multiple of tick size.
+        decimals,
+        minorTickSize,
+        v, v2,
+        i, j;
+    
+    if (o.minorTickFreq)
+      minorTickSize = tickSize / o.minorTickFreq;
+                      
+    // Then store all possible ticks.
+    for (i = 0; (v = v2 = start + i * tickSize) <= max; ++i){
+      
+      // Round (this is always needed to fix numerical instability).
+      decimals = o.tickDecimals;
+      if (decimals == null) decimals = 1 - Math.floor(Math.log(tickSize) / Math.LN10);
+      if (decimals < 0) decimals = 0;
+      
+      v = v.toFixed(decimals);
+      axis.ticks.push({ v: v, label: o.tickFormatter(v) });
+
+      if (o.minorTickFreq) {
+        for (j = 0; j < o.minorTickFreq && (i * tickSize + j * minorTickSize) < max; ++j) {
+          v = (v2 + j * minorTickSize).toFixed(decimals);
+          axis.minorTicks.push({ v: v, label: o.tickFormatter(v) });
         }
       }
     }
   }
+
 };
 
 

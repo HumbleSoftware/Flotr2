@@ -1,11 +1,19 @@
-
 body {
   font-family : sans-serif;
 }
 
+
+/* Example */
+
 #example {
-  width : 600px;
-  height : 400px;
+  display: none;
+  width: 800px;
+  margin: 0px auto 48px auto;
+}
+#example-graph {
+  height: 400px;
+  width: 600px;
+  margin: 0px auto;
 }
 #example-source pre {
   padding: 12px 12px;
@@ -17,8 +25,47 @@ body {
 
 }
 
+
+/* Examples */
+
+#examples {
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
 #examples .example {
-  font-size: 11px;
-  width: 200px;
-  height: 120px;
+  display: inline-block;
+  font-size : 11px;
+  width : 300px;
+  height : 200px;
+  margin: 10px 15px;
+  border: 2px solid transparent;
+}
+#examples .example.highlight{
+  font-size : 12px;
+  width : 330px;
+  height : 220px;
+  margin: 0px 0px;
+}
+#examples .example .flotr-legend,
+#examples .example .flotr-legend,
+#examples .example .flotr-mouse-value {
+  display : none;
+}
+#examples.collapsed {
+  white-space: nowrap;
+  overflow-x: scroll;
+}
+
+/* Highlight */
+
+#example-highlight {
+  background: #fff;
+  display: none;
+  position: absolute;
+  width: 330px;
+  height: 220px;
+  font-size : 12px;
 }
