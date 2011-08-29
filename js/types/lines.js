@@ -58,7 +58,7 @@ Flotr.addType('lines', {
     return stack;
   },
 
-  plot: function(series, offset, incStack){
+  plot: function(series, shadowOffset, incStack){
 
     var ctx = this.ctx,
       xa = series.xaxis,
@@ -113,18 +113,18 @@ Flotr.addType('lines', {
         (x1 <= 0 && x2 <= 0) ||
         (x1 >= width && x2 >= width)) continue;
 
-      if((prevx != x1) || (prevy != y1 + offset))
-        ctx.moveTo(x1, y1 + offset);
+      if((prevx != x1) || (prevy != y1 + shadowOffset))
+        ctx.moveTo(x1, y1 + shadowOffset);
       
       prevx = x2;
-      prevy = y2 + offset;
+      prevy = y2 + shadowOffset;
       ctx.lineTo(prevx, prevy);
     }
     
     ctx.stroke();
 
-    // TODO stacked lines and shadow area
-    if(series.lines.fill){
+    // TODO stacked lines
+    if(!shadowOffset && series.lines.fill){
       ctx.fillStyle = this.processColor(series.lines.fillColor || series.color, {opacity: series.lines.fillOpacity});
       ctx.lineTo(this.plotWidth, ya.d2p(0));
       ctx.lineTo(0, ya.d2p(0));
