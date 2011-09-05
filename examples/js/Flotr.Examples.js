@@ -11,6 +11,7 @@ var
   ID_EXAMPLE_LABEL      = 'example-label',
   ID_EXAMPLE_GRAPH      = 'example-graph',
   ID_EXAMPLE_SOURCE     = 'example-source',
+  ID_EXAMPLE_MARKUP     = 'example-description',
   ID_EXAMPLE_HIGHLIGHT  = 'example-highlight',
   ID_EXAMPLES           = 'examples',
 
@@ -48,6 +49,7 @@ Examples.prototype = {
       labelNode     = document.getElementById(ID_EXAMPLE_LABEL),
       graphNode     = document.getElementById(ID_EXAMPLE_GRAPH),
       sourceNode    = document.getElementById(ID_EXAMPLE_SOURCE),
+      markupNode    = document.getElementById(ID_EXAMPLE_MARKUP),
       exampleString = this.getExampleString(example);
 
     D.setStyles(exampleNode, { display: 'block' });
@@ -55,6 +57,11 @@ Examples.prototype = {
     this.executeCallback(example, graphNode);
     sourceNode.innerHTML = exampleString;
     labelNode.innerHTML = example.name;
+
+    if (example.description) {
+      markupNode.innerHTML = example.description;
+    }
+
     prettyPrint();
   },
 
