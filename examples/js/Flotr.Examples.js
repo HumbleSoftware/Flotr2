@@ -25,6 +25,8 @@ Examples = function (o) {
   if (_.isUndefined(Flotr.ExampleList)) throw "Flotr.ExampleList not defined.";
 
   this.list = Flotr.ExampleList;
+  this.current = null;
+
   /*
   console.time(ID_EXAMPLES);
   console.profile();
@@ -54,9 +56,12 @@ Examples.prototype = {
 
     D.setStyles(exampleNode, { display: 'block' });
 
-    this.executeCallback(example, graphNode);
+    this.current = this.executeCallback(example, graphNode) || null;
     sourceNode.innerHTML = exampleString;
     labelNode.innerHTML = example.name;
+
+    console.log('this.current', this.current);
+    console.log('Flotr.Examples.current', Flotr.Examples.current);
 
     if (example.description) {
       markupNode.innerHTML = example.description;
@@ -145,7 +150,7 @@ Examples.prototype = {
 
   executeCallback : function (example, node) {
     var args = (example.args ? [node].concat(example.args) : [node]);
-    example.callback.apply(this, args);
+    return example.callback.apply(this, args);
   },
 
   getExampleString : function (example) {

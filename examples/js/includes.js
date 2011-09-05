@@ -46,5 +46,5 @@ yepnope([
   'js/Flotr.Examples.js',
   'js/Flotr.ExampleList.js',
 
-  { complete : function () { new Flotr.Examples(); } }
+  { complete : function () { Examples = new Flotr.Examples(); } }
 ]);
