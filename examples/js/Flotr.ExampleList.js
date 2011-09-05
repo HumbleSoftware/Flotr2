@@ -428,96 +428,97 @@ function basic_legend (container) {
 
 function mouse_tracking (container) {
 
-var
-  d1 = [],
-  d2 = [],
-  d3 = [],
-  graph, i;
+  var
+    d1 = [],
+    d2 = [],
+    d3 = [],
+    graph, i;
 
-for (i = 0; i < 20; i += 0.5) {
-  d1.push([i, 2*i]);
-  d2.push([i, i*1.5+1.5*Math.sin(i)]);
-  d3.push([i, 3*Math.cos(i)+10]);
-}
+  for (i = 0; i < 20; i += 0.5) {
+    d1.push([i, 2*i]);
+    d2.push([i, i*1.5+1.5*Math.sin(i)]);
+    d3.push([i, 3*Math.cos(i)+10]);
+  }
 
-graph = Flotr.draw(
-  container, 
-  [
+  graph = Flotr.draw(
+    container, 
+    [
+      {
+        data : d1,
+        mouse : { track : false } // Disable mouse tracking for d1
+      },
+      d2,
+      d3
+    ],
     {
-      data : d1,
-      mouse : { track : false } // Disable mouse tracking for d1
-    },
-    d2,
-    d3
-  ],
-  {
-    mouse : {
-      track           : true, // Enable mouse tracking
-      lineColor       : 'purple',
-      relative        : true,
-      position        : 'ne',
-      sensibility     : 1,
-      trackDecimals   : 2,
-      trackFormatter  : function (o) { return 'x = ' + o.x +', y = ' + o.y; }
-    },
-    crosshair : {
-      mode : 'xy'
+      mouse : {
+        track           : true, // Enable mouse tracking
+        lineColor       : 'purple',
+        relative        : true,
+        position        : 'ne',
+        sensibility     : 1,
+        trackDecimals   : 2,
+        trackFormatter  : function (o) { return 'x = ' + o.x +', y = ' + o.y; }
+      },
+      crosshair : {
+        mode : 'xy'
+      }
     }
-  });
+  );
 
 };      
 
 
 function mouse_zoom (container) {
 
-var
-  d1 = [],
-  d2 = [],
-  d3 = [],
-  options,
-  graph,
-  i;
+  var
+    d1 = [],
+    d2 = [],
+    d3 = [],
+    options,
+    graph,
+    i;
 
-for (i = 0; i < 40; i += 0.5) {
-  d1.push([i, Math.sin(i)+3*Math.cos(i)]);
-  d2.push([i, Math.pow(1.1, i)]);
-  d3.push([i, 40 - i+Math.random()*10]);
-}
+  for (i = 0; i < 40; i += 0.5) {
+    d1.push([i, Math.sin(i)+3*Math.cos(i)]);
+    d2.push([i, Math.pow(1.1, i)]);
+    d3.push([i, 40 - i+Math.random()*10]);
+  }
+      
+  options = {
+    selection : { mode : 'x', fps : 30 }
+  };
     
-options = {
-  selection : { mode : 'x', fps : 30 }
-};
-  
-// Draw graph with default options, overwriting with passed options
-function drawGraph (opts) {
+  // Draw graph with default options, overwriting with passed options
+  function drawGraph (opts) {
 
-  // Clone the options, so the 'options' variable always keeps intact.
-  var o = _.extend(_.clone(options), opts || {});
+    // Clone the options, so the 'options' variable always keeps intact.
+    var o = _.extend(_.clone(options), opts || {});
 
-  // Return a new graph.
-  return Flotr.draw(
-    container,
-    [ d1, d2, d3 ],
-    o
-  );
-}
+    // Return a new graph.
+    return Flotr.draw(
+      container,
+      [ d1, d2, d3 ],
+      o
+    );
+  }
 
-// Actually draw the graph.
-graph = drawGraph();      
-  
-// Hook into the 'flotr:select' event.
-Flotr.EventAdapter.observe(container, 'flotr:select', function (area) {
+  // Actually draw the graph.
+  graph = drawGraph();      
+    
+  // Hook into the 'flotr:select' event.
+  Flotr.EventAdapter.observe(container, 'flotr:select', function (area) {
 
-  // Draw graph with new area
-  f = drawGraph({
-    xaxis: {min:area.x1, max:area.x2},
-    yaxis: {min:area.y1, max:area.y2}
+    // Draw graph with new area
+    f = drawGraph({
+      xaxis: {min:area.x1, max:area.x2},
+      yaxis: {min:area.y1, max:area.y2}
+    });
+
   });
-
-});
-  
-// When graph is clicked, draw the graph with default area.
-Flotr.EventAdapter.observe(container, 'flotr:click', function () { drawGraph(); });
+    
+  // When graph is clicked, draw the graph with default area.
+  Flotr.EventAdapter.observe(container, 'flotr:click', function () { drawGraph(); });
 
 };
  
