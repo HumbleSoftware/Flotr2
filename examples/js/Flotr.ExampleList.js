@@ -72,7 +72,8 @@ ExampleList.push({
 ExampleList.push({
   key : 'mouse-zoom',
   name : 'Mouse Zoom',
-  callback : mouse_zoom
+  callback : mouse_zoom,
+  description : "<p>Select an area of the graph to zoom.  Click to reset the chart.</p>"
 });
 
 ExampleList.push({
