@@ -57,6 +57,12 @@ ExampleList.push({
   callback : basic_candle
 });
 
+ExampleList.push({
+  key : 'basic-legend',
+  name : 'Basic Legend',
+  callback : basic_legend
+});
+
 function basic (container) {
 
   var
