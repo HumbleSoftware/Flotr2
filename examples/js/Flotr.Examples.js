@@ -95,7 +95,8 @@ Examples.prototype = {
 
     _.each(this.list, function (example) {
 
-      var node = D.node(T_EXAMPLE),
+      var
+        node = D.node(T_EXAMPLE),
         styles = {cursor : 'pointer'};
 
       D.insert(examplesNode, node);
@@ -127,42 +128,7 @@ Examples.prototype = {
         D.addClass(examplesNode, CN_COLLAPSED);
       }, this));
 
-        /*
-        var position = D.position(node);
-        this.highlight(example, position);
-        */
-
     }, this);
-
-    /*
-    E.observe(highlightNode, CLICK, _.bind(function () {
-      this.example(this._highlightExample);
-      D.addClass(examplesNode, CN_COLLAPSED);
-      D.setStyles(highlightNode, {display : 'none'});
-    }, this));
-    */
-  },
-
-  highlight : function (example, position) {
-
-    /*
-    var node = document.getElementById(ID_EXAMPLE_HIGHLIGHT),
-      styles;
-
-    D.setStyles(node, {display : 'block'});
-
-    this._highlightExample = example;
-    this.executeCallback(example, node);
-
-    styles = {
-      cursor : 'pointer',
-      left: (position.left - 15) + 'px',
-      top: (position.top - 10) + 'px',
-      position: 'absolute'
-    };
-
-    D.setStyles(node, styles);
-    */
   },
 
   executeCallback : function (example, node) {
