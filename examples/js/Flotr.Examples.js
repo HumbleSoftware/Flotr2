@@ -42,10 +42,27 @@ Examples = function (o) {
 Examples.prototype = {
 
   init : function () {
+
+    var
+      hash = window.location.hash,
+      examplesNode = document.getElementById(ID_EXAMPLES);
+
     this.examples();
+
+    if (hash) {
+      hash = hash.substring(2);
+      _.each(this.list, function (example) {
+        if (example.key == hash) {
+          this.example(example);
+        }
+        D.addClass(examplesNode, CN_COLLAPSED);
+      }, this);
+    }
+
   },
 
   example : function (example) {
+
     var 
       exampleNode   = document.getElementById(ID_EXAMPLE),
       labelNode     = document.getElementById(ID_EXAMPLE_LABEL),
@@ -57,9 +74,12 @@ Examples.prototype = {
     D.setStyles(exampleNode, { display: 'block' });
 
     this.current = this.executeCallback(example, graphNode) || null;
+
+    window.location.hash = '!'+example.key;
+
+    // Markup Changes
     sourceNode.innerHTML = exampleString;
     labelNode.innerHTML = example.name;
-
     if (example.description) {
       markupNode.innerHTML = example.description;
     }
