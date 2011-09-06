@@ -39,22 +39,7 @@ Examples.prototype = {
 
   init : function () {
 
-    var
-      hash = window.location.hash,
-      examplesNode = document.getElementById(ID_EXAMPLES),
-      example;
-
-    this.examples();
-
-    if (hash) {
-      hash = hash.substring(2);
-      example = this.list.get(hash);
-
-      if (example) {
-        this.example(example);
-        D.addClass(examplesNode, CN_COLLAPSED);
-      }
-    }
+    this._initExamples();
 
   },
 
@@ -146,6 +131,26 @@ Examples.prototype = {
       ')(document.getElementById("' + ID_EXAMPLE_GRAPH + '"' +
       args +
       '));</pre>';
+  },
+
+  _initExamples : function () {
+
+    var
+      hash = window.location.hash,
+      examplesNode = document.getElementById(ID_EXAMPLES),
+      example;
+
+    this.examples();
+
+    if (hash) {
+      hash = hash.substring(2);
+      example = this.list.get(hash);
+
+      if (example) {
+        this.example(example);
+        D.addClass(examplesNode, CN_COLLAPSED);
+      }
+    }
   }
 }
 
