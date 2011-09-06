@@ -134,10 +134,17 @@ Examples.prototype = {
   },
 
   _getExampleString : function (example) {
-    var args = (example.args ? ', '+example.args.join(', ') : '');
+
+    var
+      args = (example.args ? ', '+example.args.join(', ') : ''),
+      callback = example.callback + '';
+
+    if (navigator.userAgent.search(/firefox/i) !== -1)
+      callback = js_beautify(callback);
+
     return '' +
       '(' +
-      example.callback +
+      callback +
       ')(document.getElementById("' + ID_EXAMPLE_GRAPH + '"' +
       args +
       '));'; 

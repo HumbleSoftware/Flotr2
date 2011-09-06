@@ -20,7 +20,7 @@ body {
   display: block;
   background: #eee;
   white-space : pre;
-  font-weight: 600;
+  font-weight: normal;
   margin: 0px 18px;
   overflow-x: auto;
 }
