@@ -60,9 +60,6 @@ Examples.prototype = {
     sourceNode.innerHTML = exampleString;
     labelNode.innerHTML = example.name;
 
-    console.log('this.current', this.current);
-    console.log('Flotr.Examples.current', Flotr.Examples.current);
-
     if (example.description) {
       markupNode.innerHTML = example.description;
     }
