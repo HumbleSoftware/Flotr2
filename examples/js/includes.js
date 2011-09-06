@@ -14,6 +14,7 @@ yepnope([
   '../lib/canvastext.js',
   'lib/google-code-prettify/prettify.js',
   'lib/beautify.js',
+  'lib/randomseed.js',
 
   // Flotr
   '../js/Flotr.js',

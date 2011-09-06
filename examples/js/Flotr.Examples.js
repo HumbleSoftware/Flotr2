@@ -27,15 +27,11 @@ Examples = function (o) {
   this.list = Flotr.ExampleList;
   this.current = null;
 
-  /*
   console.time(ID_EXAMPLES);
   console.profile();
-  */
   this.init();
-  /*
   console.profileEnd();
   console.timeEnd(ID_EXAMPLES);
-  */
 
 };
 
@@ -138,6 +134,7 @@ Examples.prototype = {
 
   executeCallback : function (example, node) {
     var args = (example.args ? [node].concat(example.args) : [node]);
+    Math.seedrandom(example.key);
     return example.callback.apply(this, args);
   },
 
