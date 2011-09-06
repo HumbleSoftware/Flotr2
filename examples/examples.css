@@ -25,16 +25,19 @@ body {
 
 }
 
+/* Chart no-select */
 
-/* Examples */
-
-#examples {
+#examples,
+#example-graph {
   -webkit-user-select: none;
   -khtml-user-select: none;
   -moz-user-select: none;
   -o-user-select: none;
   user-select: none;
 }
+
+/* Examples */
+
 #examples .example {
   display: inline-block;
   font-size : 11px;
