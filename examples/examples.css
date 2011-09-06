@@ -22,7 +22,37 @@ body {
   white-space : pre;
   font-weight: 600;
   margin: 0px 18px;
+  overflow-x: auto;
+}
 
+#example-source-container {
+  position: relative;
+}
+#example-buttons {
+  position: absolute;
+  top: 28px;
+  right: 24px;
+}
+#example-buttons button {
+  height: 26px;
+}
+
+#example-run {
+  display: none;
+}
+#example-run.example-edit {
+  display: inline-block;
+}
+
+#example-editor {
+  padding: 12px 12px;
+  position: absolute;
+  top: 41px;
+  left: 18px;
+  width: 738px;
+  display: none;
+  resize: none;
+  border: 1px solid black;
 }
 
 /* Chart no-select */

@@ -12,6 +12,9 @@ var
   ID_EXAMPLE_GRAPH      = 'example-graph',
   ID_EXAMPLE_SOURCE     = 'example-source',
   ID_EXAMPLE_MARKUP     = 'example-description',
+  ID_EXAMPLE_EDIT       = 'example-edit',
+  ID_EXAMPLE_EDITOR     = 'example-editor',
+  ID_EXAMPLE_RUN        = 'example-run',
   ID_EXAMPLE_HIGHLIGHT  = 'example-highlight',
   ID_EXAMPLES           = 'examples',
 
@@ -24,14 +27,15 @@ Examples = function (o) {
 
   if (_.isUndefined(Flotr.ExampleList)) throw "Flotr.ExampleList not defined.";
 
+  this.editMode = 'off';
   this.list = Flotr.ExampleList;
   this.current = null;
 
-  console.time(ID_EXAMPLES);
-  console.profile();
+  //console.time(ID_EXAMPLES);
+  //console.profile();
   this.init();
-  console.profileEnd();
-  console.timeEnd(ID_EXAMPLES);
+  //console.profileEnd();
+  //console.timeEnd(ID_EXAMPLES);
 
 };
 
@@ -40,6 +44,7 @@ Examples.prototype = {
   init : function () {
 
     this._initExamples();
+    this._initEditor();
 
   },
 
@@ -48,20 +53,25 @@ Examples.prototype = {
     var 
       exampleNode   = document.getElementById(ID_EXAMPLE),
       examplesNode  = document.getElementById(ID_EXAMPLES),
+      editorNode    = document.getElementById(ID_EXAMPLE_EDITOR),
       labelNode     = document.getElementById(ID_EXAMPLE_LABEL),
       graphNode     = document.getElementById(ID_EXAMPLE_GRAPH),
       sourceNode    = document.getElementById(ID_EXAMPLE_SOURCE),
       markupNode    = document.getElementById(ID_EXAMPLE_MARKUP),
-      exampleString = this.getExampleString(example);
+      exampleString = this._getExampleString(example);
 
     D.setStyles(exampleNode, { display: 'block' });
+    D.show(sourceNode);
+    this._editModeOff();
 
-    this.current = this.executeCallback(example, graphNode) || null;
+    this.current = this._executeCallback(example, graphNode) || null;
+    this.currentExample = example;
 
     window.location.hash = '!'+example.key;
 
     // Markup Changes
-    sourceNode.innerHTML = exampleString;
+    sourceNode.innerHTML = '<pre class="prettyprint javascript">'+exampleString+'</pre>';
+    editorNode.value = example.editorText || exampleString;
     labelNode.innerHTML = example.name;
     if (example.description) {
       markupNode.innerHTML = example.description;
@@ -86,11 +96,11 @@ Examples.prototype = {
       D.insert(link, node);
       D.insert(examplesNode, link);
 
-      this.executeCallback(example, node);
+      this._executeCallback(example, node);
 
       var mouseOverObserver = _.bind(function (e) {
         D.addClass(node, CN_HIGHLIGHT);
-        this.executeCallback(example, node);
+        this._executeCallback(example, node);
         D.setStyles(node, styles);
         E.stopObserving(node, MOUSEOVER, mouseOverObserver);
         setTimeout(function () {
@@ -100,7 +110,7 @@ Examples.prototype = {
 
       var mouseOutObserver = _.bind(function (e) {
         D.removeClass(node, CN_HIGHLIGHT);
-        this.executeCallback(example, node);
+        this._executeCallback(example, node);
         D.setStyles(node, styles);
         E.stopObserving(node, MOUSEOUT, mouseOutObserver);
         setTimeout(function () {
@@ -117,20 +127,20 @@ Examples.prototype = {
     }, this);
   },
 
-  executeCallback : function (example, node) {
+  _executeCallback : function (example, node) {
     var args = (example.args ? [node].concat(example.args) : [node]);
     Math.seedrandom(example.key);
     return example.callback.apply(this, args);
   },
 
-  getExampleString : function (example) {
+  _getExampleString : function (example) {
     var args = (example.args ? ', '+example.args.join(', ') : '');
     return '' +
-      '<pre class="prettyprint javascript">(' +
+      '(' +
       example.callback +
       ')(document.getElementById("' + ID_EXAMPLE_GRAPH + '"' +
       args +
-      '));</pre>';
+      '));'; 
   },
 
   _initExamples : function () {
@@ -151,6 +161,71 @@ Examples.prototype = {
         D.addClass(examplesNode, CN_COLLAPSED);
       }
     }
+  },
+
+  _initEditor : function () {
+
+    var
+      editNode    = document.getElementById(ID_EXAMPLE_EDIT),
+      editorNode  = document.getElementById(ID_EXAMPLE_EDITOR),
+      runNode     = document.getElementById(ID_EXAMPLE_RUN);
+
+    Flotr.EventAdapter.observe(editNode, CLICK, _.bind(function () {
+      if (this.editMode == 'off') {
+        this._editModeOn(); 
+      }
+      else {
+        this.example(this.currentExample);
+      }
+    }, this));
+
+    Flotr.EventAdapter.observe(runNode, CLICK, _.bind(function () {
+      try {
+        eval(editorNode.value);
+      } catch (e) { alert(e); }
+      editorNode.focus();
+      this.currentExample.editorText = editorNode.value;
+    }, this));
+  },
+
+  _editModeOn : function () {
+
+    var
+      editNode    = document.getElementById(ID_EXAMPLE_EDIT),
+      editorNode  = document.getElementById(ID_EXAMPLE_EDITOR),
+      runNode     = document.getElementById(ID_EXAMPLE_RUN),
+      sourceNode  = document.getElementById(ID_EXAMPLE_SOURCE),
+      size        = D.size(sourceNode);
+
+    D.setStyles(editorNode, { display: 'block', height: size.height+'px' });
+    D.addClass(runNode, 'example-edit');
+    D.hide(sourceNode);
+
+    editorNode.focus();
+    editNode.innerHTML = 'Source';
+
+    this.editMode = 'on';
+  },
+
+  _editModeOff : function () {
+
+    var
+      editNode    = document.getElementById(ID_EXAMPLE_EDIT),
+      editorNode  = document.getElementById(ID_EXAMPLE_EDITOR),
+      runNode     = document.getElementById(ID_EXAMPLE_RUN);
+
+    editNode.innerHTML = 'Edit';
+    if (this.currentExample) this.currentExample.editorText = editorNode.value;
+    D.removeClass(runNode, 'example-edit');
+
+    this._hideEditor();
+
+  },
+
+  _hideEditor : function () {
+    var editorNode = document.getElementById(ID_EXAMPLE_EDITOR);
+    D.setStyles(editorNode, { display: 'none' });
+    this.editMode = 'off';
   }
 }
 
