@@ -45,18 +45,19 @@ Examples.prototype = {
 
     var
       hash = window.location.hash,
-      examplesNode = document.getElementById(ID_EXAMPLES);
+      examplesNode = document.getElementById(ID_EXAMPLES),
+      example;
 
     this.examples();
 
     if (hash) {
       hash = hash.substring(2);
-      _.each(this.list, function (example) {
-        if (example.key == hash) {
-          this.example(example);
-        }
+      example = this.list.get(hash);
+
+      if (example) {
+        this.example(example);
         D.addClass(examplesNode, CN_COLLAPSED);
-      }, this);
+      }
     }
 
   },
@@ -65,6 +66,7 @@ Examples.prototype = {
 
     var 
       exampleNode   = document.getElementById(ID_EXAMPLE),
+      examplesNode  = document.getElementById(ID_EXAMPLES),
       labelNode     = document.getElementById(ID_EXAMPLE_LABEL),
       graphNode     = document.getElementById(ID_EXAMPLE_GRAPH),
       sourceNode    = document.getElementById(ID_EXAMPLE_SOURCE),
@@ -93,13 +95,16 @@ Examples.prototype = {
       examplesNode = document.getElementById(ID_EXAMPLES),
       highlightNode = document.getElementById(ID_EXAMPLE_HIGHLIGHT);
 
-    _.each(this.list, function (example) {
+    _.each(this.list.get(), function (example) {
 
       var
         node = D.node(T_EXAMPLE),
-        styles = {cursor : 'pointer'};
+        styles = {cursor : 'pointer'},
+        link = D.node('<a name="!'+example.key+'"></a>"');
 
-      D.insert(examplesNode, node);
+      D.insert(link, node);
+      D.insert(examplesNode, link);
+
       this.executeCallback(example, node);
 
       var mouseOverObserver = _.bind(function (e) {

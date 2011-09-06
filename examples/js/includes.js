@@ -45,6 +45,25 @@ yepnope([
   // Examples
   'js/Flotr.Examples.js',
   'js/Flotr.ExampleList.js',
+  'js/examples/basic.js',
+  'js/examples/basic-axis.js',
+  'js/examples/basic-bars.js',
+  'js/examples/basic-bars-stacked.js',
+  'js/examples/basic-pie.js',
+  'js/examples/basic-radar.js',
+  'js/examples/basic-bubble.js',
+  'js/examples/basic-candle.js',
+  'js/examples/basic-legend.js',
+  'js/examples/mouse-tracking.js',
+  'js/examples/mouse-zoom.js',
+  'js/examples/mouse-drag.js',
+  'js/examples/basic-time.js',
+  'js/examples/negative-values.js',
+  'js/examples/click-example.js',
+  'js/examples/download-image.js',
+  'js/examples/download-data.js',
+  'js/examples/advanced-titles.js',
+  'js/examples/color-gradients.js',
 
   { complete : function () { Examples = new Flotr.Examples(); } }
 ]);
