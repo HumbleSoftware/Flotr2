@@ -26,6 +26,12 @@ Flotr.Graph = function(el, data, options){
     this._initOptions(options);
     this._initGraphTypes();
     this._initCanvas();
+    this._text = new Flotr.Text({
+      element : this.el,
+      ctx : this.ctx,
+      html : this.options.HtmlText,
+      textEnabled : this.textEnabled
+    });
     E.fire(this.el, 'flotr:afterconstruct', [this]);
     this._initEvents();
   
@@ -101,31 +107,6 @@ Flotr.Graph.prototype = {
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
     return Flotr.Color.processColor(color, o);
-  },
-  /**
-   * Calculates a text box dimensions, wether it is drawn on the canvas or inserted into the DOM
-   * @param {String} text - The text in the box
-   * @param {Object} canvasStyle - An object containing the style for the text if drawn on the canvas
-   * @param {String} HtmlStyle - A CSS style for the text if inserted into the DOM
-   * @param {Object} className - A CSS className for the text if inserted into the DOM
-   */
-  getTextDimensions: function(text, canvasStyle, HtmlStyle, className) {
-    if (!text) return {width:0, height:0};
-    
-    if (!this.options.HtmlText && this.textEnabled) {
-      var bounds = this.ctx.getTextBounds(text, canvasStyle);
-      return {
-        width: bounds.width+2, 
-        height: bounds.height+6
-      };
-    }
-    else {
-      var dummyDiv = D.create('div');
-      D.setStyles(dummyDiv, {'position':'absolute', 'top':'-10000px'});
-      D.insert(dummyDiv, '<div style="'+HtmlStyle+'" class="'+className+' flotr-dummy-div">' + text + '</div>');
-      D.insert(this.el, dummyDiv);
-      return D.size(dummyDiv);
-    }
   },
   /**
    * Function determines the min and max values for the xaxis and yaxis.
@@ -261,6 +242,7 @@ Flotr.Graph.prototype = {
         options = this.options,
         series = this.series,
         margin = options.grid.labelMargin,
+        T = this._text,
         x = a.x,
         x2 = a.x2,
         y = a.y,
@@ -285,22 +267,41 @@ Flotr.Graph.prototype = {
           }
         }
       }
-      axis.maxLabel  = this.getTextDimensions(maxLabel, {size:options.fontSize, angle: Flotr.toRad(axis.options.labelsAngle)}, 'font-size:smaller;', 'flotr-grid-label');
-      axis.titleSize = this.getTextDimensions(axis.options.title, {size: options.fontSize*1.2, angle: Flotr.toRad(axis.options.titleAngle)}, 'font-weight:bold;', 'flotr-axis-title');
+
+      axis.maxLabel = T.dimensions(
+        maxLabel,
+        {size:options.fontSize, angle: Flotr.toRad(axis.options.labelsAngle)},
+        'font-size:smaller;',
+        'flotr-grid-label'
+      );
+
+      axis.titleSize = T.dimensions(
+        axis.options.title, 
+        {size: options.fontSize*1.2, angle: Flotr.toRad(axis.options.titleAngle)},
+        'font-weight:bold;',
+        'flotr-axis-title'
+      );
+
     }, this);
 
     // Title height
-    dim = this.getTextDimensions(options.title, {size: options.fontSize*1.5}, 'font-size:1em;font-weight:bold;', 'flotr-title');
+    dim = T.dimensions(
+      options.title,
+      {size: options.fontSize*1.5},
+      'font-size:1em;font-weight:bold;',
+      'flotr-title'
+    );
     this.titleHeight = dim.height;
 
     // Subtitle height
-    dim = this.getTextDimensions(options.subtitle, {size: options.fontSize}, 'font-size:smaller;', 'flotr-subtitle');
+    dim = T.dimensions(
+      options.subtitle,
+      {size: options.fontSize},
+      'font-size:smaller;',
+      'flotr-subtitle'
+    );
     this.subtitleHeight = dim.height;
 
-    // Grid outline line width.
-    if(options.show){
-      maxOutset = Math.max(maxOutset, options.points.radius + options.points.lineWidth/2);
-    }
     for(j = 0; j < options.length; ++j){
       if (series[j].points.show){
         maxOutset = Math.max(maxOutset, series[j].points.radius + series[j].points.lineWidth/2);

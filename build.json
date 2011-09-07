@@ -18,6 +18,7 @@
       "./js/EventAdapter.js",
       "./js/Color.js",
       "./js/Date.js",
+      "./js/Text.js",
       "./js/Graph.js",
       "./js/Axis.js",
       "./js/Series.js",

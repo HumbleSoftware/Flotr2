@@ -107,11 +107,11 @@ Flotr.addType('markers', {
   },
   plot: function(x, y, label, options) {
     var ctx = this.ctx,
-        dim = this.getTextDimensions(label, null, null),
         margin = 2,
         left = x,
-        top = y;
-        
+        top = y,
+        dim = this._text.canvas(label);
+
     dim.width = Math.floor(dim.width+margin*2);
     dim.height = Math.floor(dim.height+margin*2);
 

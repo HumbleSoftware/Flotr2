@@ -23,6 +23,7 @@ yepnope([
   '../js/Date.js',
   '../js/DOM.js',
   '../js/EventAdapter.js',
+  '../js/Text.js',
   '../js/Graph.js',
   '../js/Axis.js',
   '../js/Series.js',
