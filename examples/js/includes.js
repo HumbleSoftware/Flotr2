@@ -37,6 +37,7 @@ yepnope([
   '../js/plugins/download.js',
   '../js/plugins/selection.js',
   '../js/plugins/spreadsheet.js',
+  '../js/plugins/grid.js',
   '../js/plugins/hit.js',
   '../js/plugins/crosshair.js',
   '../js/plugins/labels.js',

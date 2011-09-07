@@ -32,6 +32,7 @@
       "./js/types/radar.js",
       "./js/plugins/crosshair.js",
       "./js/plugins/download.js",
+      "./js/plugins/grid.js",
       "./js/plugins/hit.js",
       "./js/plugins/selection.js",
       "./js/plugins/labels.js",
