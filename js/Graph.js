@@ -138,39 +138,16 @@ Flotr.Graph.prototype = {
       axis.calculateRange();
     });
 
-    this.extendRange(a.x, 'x');
-    if (a.x2.used) {
-      this.extendRange(a.x2, 'x');
-    }
+    var types = _.keys(Flotr.graphTypes);
 
-    this.extendRange(a.y, 'y');
-    if (a.y2.used) {
-      this.extendRange(a.y2, 'y');
-    }
-  },
-
-  extendRange: function(axis, type) {
-
-    var f = (type === 'y') ? 'extendYRange' : 'extendXRange',
-      extend,
-      i, t, s;
-
-    // For each graph type
-    for (t in Flotr.graphTypes) {
-      if (this.options[t] && this.options[t].show) {
-        if (this[t][f]) this[t][f](axis);
-      } else {
-        extend = false;
-        for (i = 0 ; i < this.series.length; i++){
-          s = this.series[i];
-          if (s[t] && s[t].show) {
-            extend = true;
-            break;
-            }
-          }
-        if (extend) if (this[t][f]) this[t][f](axis);
-      }
-    }
+    _.each(this.series, function (series) {
+      _.each(types, function (type) {
+        if (series[type] && series[type].show) {
+          if (this[type].extendYRange) this[type].extendYRange(series.yaxis);
+          if (this[type].extendXRange) this[type].extendXRange(series.xaxis);
+        }
+      }, this);
+    }, this);
   },
 
   /**
