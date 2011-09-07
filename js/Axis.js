@@ -57,6 +57,36 @@ Axis.prototype = {
     }
   },
 
+  calculateTextDimensions : function (T, options) {
+
+    var maxLabel = '',
+      length,
+      i;
+
+    if (this.options.showLabels) {
+      for (i = 0; i < this.ticks.length; ++i) {
+        length = this.ticks[i].label.length;
+        if (length > maxLabel.length){
+          maxLabel = this.ticks[i].label;
+        }
+      }
+    }
+
+    this.maxLabel = T.dimensions(
+      maxLabel,
+      {size:options.fontSize, angle: Flotr.toRad(this.options.labelsAngle)},
+      'font-size:smaller;',
+      'flotr-grid-label'
+    );
+
+    this.titleSize = T.dimensions(
+      this.options.title, 
+      {size:options.fontSize*1.2, angle: Flotr.toRad(this.options.titleAngle)},
+      'font-weight:bold;',
+      'flotr-axis-title'
+    );
+  },
+
   _cleanUserTicks : function (ticks, axisTicks) {
 
     var options = this.options,

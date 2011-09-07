@@ -253,36 +253,8 @@ Flotr.Graph.prototype = {
     // TODO post refactor, fix this
     _.each(a, function (axis) {
       axis.calculateTicks();
+      axis.calculateTextDimensions(T, options);
     });
-    
-    // Labels width and height
-    _.each([x, x2, y, y2], function(axis) {
-      var maxLabel = '';
-      
-      if (axis.options.showLabels) {
-        for(i = 0; i < axis.ticks.length; ++i){
-          l = axis.ticks[i].label.length;
-          if(l > maxLabel.length){
-            maxLabel = axis.ticks[i].label;
-          }
-        }
-      }
-
-      axis.maxLabel = T.dimensions(
-        maxLabel,
-        {size:options.fontSize, angle: Flotr.toRad(axis.options.labelsAngle)},
-        'font-size:smaller;',
-        'flotr-grid-label'
-      );
-
-      axis.titleSize = T.dimensions(
-        axis.options.title, 
-        {size: options.fontSize*1.2, angle: Flotr.toRad(axis.options.titleAngle)},
-        'font-weight:bold;',
-        'flotr-axis-title'
-      );
-
-    }, this);
 
     // Title height
     dim = T.dimensions(
@@ -344,7 +316,6 @@ Flotr.Graph.prototype = {
     x2.setScale();
     y.setScale();
     y2.setScale();
-    /**/
   },
   /**
    * Draws grid, labels, series and outline.
