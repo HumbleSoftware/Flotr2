@@ -10,7 +10,7 @@ Flotr.ExampleList.add({
       '<label><input type="radio" name="format" value="jpeg" /> JPEG</label>' +
       '<label><input type="radio" name="format" value="bmp" /> BMP</label>' +
 
-      '<button name="to-image" onclick="console.log(Examples.current); Examples.current.download.saveImage(this.form.format.value, null, null, true)">To Image</button>' +
+      '<button name="to-image" onclick="Examples.current.download.saveImage(this.form.format.value, null, null, true)">To Image</button>' +
       '<button name="download" onclick="Examples.current.download.saveImage(this.form.format.value)">Download</button>' +
       '<button name="reset" onclick="Examples.current.download.restoreCanvas()">Reset</button>' +
     '</form>'
