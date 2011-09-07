@@ -23,8 +23,6 @@ Text.prototype = {
 
   canvas : function (text, style) {
 
-    console.log(this.o.ctx);
-
     if (!this.o.textEnabled) return;
 
     var bounds = this.o.ctx.getTextBounds(text, style);
