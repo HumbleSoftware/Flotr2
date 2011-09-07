@@ -30,6 +30,7 @@ Examples = function (o) {
   this.editMode = 'off';
   this.list = Flotr.ExampleList;
   this.current = null;
+  this.single = false;
 
   //console.time(ID_EXAMPLES);
   //console.profile();
@@ -67,7 +68,7 @@ Examples.prototype = {
     this.current = this._executeCallback(example, graphNode) || null;
     this.currentExample = example;
 
-    window.location.hash = '!'+example.key;
+    window.location.hash = '!'+(this.single ? 'single/' : '')+example.key;
 
     // Markup Changes
     sourceNode.innerHTML = '<pre class="prettyprint javascript">'+exampleString+'</pre>';
@@ -155,18 +156,31 @@ Examples.prototype = {
     var
       hash = window.location.hash,
       examplesNode = document.getElementById(ID_EXAMPLES),
-      example;
-
-    this.examples();
+      example,
+      params;
 
     if (hash) {
       hash = hash.substring(2);
-      example = this.list.get(hash);
+      params = hash.split('/');
+
+      if (params.length == 1) {
+        example = this.list.get(hash);
+        this.examples();
+      }
+      else {
+        if (params[0] == 'single') {
+          this.single = true;
+          example = this.list.get(params[1]);
+        }
+      }
 
       if (example) {
         this.example(example);
         D.addClass(examplesNode, CN_COLLAPSED);
       }
+
+    } else {
+      this.examples();
     }
   },
 
