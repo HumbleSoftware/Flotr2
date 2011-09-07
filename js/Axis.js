@@ -35,31 +35,6 @@ Axis.prototype = {
     return (_.isUndefined(stacks[type]) ? stacks[type] = {} : stacks[type]);
   },
 
-  _setTranslations : function (logarithmic) {
-    this.d2p = (logarithmic ? d2pLog : d2p);
-    this.p2d = (logarithmic ? p2dLog : p2d);
-  },
-
-  _cleanUserTicks : function (ticks, axisTicks) {
-
-    var options = this.options,
-      v, i, label, tick;
-
-    if(_.isFunction(ticks)) ticks = ticks({min : axis.min, max : axis.max});
-
-    for(i = 0; i < ticks.length; ++i){
-      tick = ticks[i];
-      if(typeof(tick) === 'object'){
-        v = tick[0];
-        label = (tick.length > 1) ? tick[1] : options.tickFormatter(v);
-      } else {
-        v = tick;
-        label = options.tickFormatter(v);
-      }
-      axisTicks[i] = { v: v, label: label };
-    }
-  },
-
   calculateTicks : function () {
     var options = this.options;
 
@@ -79,6 +54,26 @@ Axis.prototype = {
       } else {
         this._calculateTicks();
       }
+    }
+  },
+
+  _cleanUserTicks : function (ticks, axisTicks) {
+
+    var options = this.options,
+      v, i, label, tick;
+
+    if(_.isFunction(ticks)) ticks = ticks({min : axis.min, max : axis.max});
+
+    for(i = 0; i < ticks.length; ++i){
+      tick = ticks[i];
+      if(typeof(tick) === 'object'){
+        v = tick[0];
+        label = (tick.length > 1) ? tick[1] : options.tickFormatter(v);
+      } else {
+        v = tick;
+        label = options.tickFormatter(v);
+      }
+      axisTicks[i] = { v: v, label: label };
     }
   },
 
@@ -171,8 +166,13 @@ Axis.prototype = {
         }
       }
     }
-  }
 
+  },
+
+  _setTranslations : function (logarithmic) {
+    this.d2p = (logarithmic ? d2pLog : d2p);
+    this.p2d = (logarithmic ? p2dLog : p2d);
+  }
 };
 
 
