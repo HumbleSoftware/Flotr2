@@ -144,22 +144,27 @@ Flotr.Graph.prototype = {
       this.calculateRange(a.y2, 'y');
     }
   },
+
   extendRange: function(axis, type) {
-    var f = (type === 'y') ? 'extendYRange' : 'extendXRange';
-    for (var t in Flotr.graphTypes) {
-      if(this.options[t] && this.options[t].show){
-        if (this[t][f])  this[t][f](axis);
+
+    var f = (type === 'y') ? 'extendYRange' : 'extendXRange',
+      extend,
+      i, t, s;
+
+    // For each graph type
+    for (t in Flotr.graphTypes) {
+      if (this.options[t] && this.options[t].show) {
+        if (this[t][f]) this[t][f](axis);
       } else {
-        var extend = false;
-        for (i =0 ; i<this.series.length; i++){
-          var serie = this.series[i];
-          if(serie[t] && serie[t].show){
+        extend = false;
+        for (i = 0 ; i < this.series.length; i++){
+          s = this.series[i];
+          if (s[t] && s[t].show) {
             extend = true;
             break;
             }
           }
-        if(extend)
-          if (this[t][f]) this[t][f](axis);
+        if (extend) if (this[t][f]) this[t][f](axis);
       }
     }
   },
@@ -214,7 +219,7 @@ Flotr.Graph.prototype = {
 
     axis.min = min;
     axis.max = max; //extendRange may use axis.min or axis.max, so it should be set before it is caled
-    
+
     this.extendRange(axis, type);//extendRange probably changed axis.min and axis.max
     
     // Autoscaling. @todo This probably fails with log scale. Find a testcase and fix it
