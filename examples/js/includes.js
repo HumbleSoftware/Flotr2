@@ -49,6 +49,7 @@ yepnope([
   // Examples
   'js/Flotr.Examples.js',
   'js/Flotr.ExampleList.js',
+  'js/Profile.js',
   'js/examples/basic.js',
   'js/examples/basic-axis.js',
   'js/examples/basic-bars.js',
@@ -68,6 +69,14 @@ yepnope([
   'js/examples/download-data.js',
   'js/examples/advanced-titles.js',
   'js/examples/color-gradients.js',
+  'js/examples/profile-bars.js',
 
-  { complete : function () { Examples = new Flotr.Examples(); } }
+  { complete : function () { 
+      if (Flotr.ExamplesCallback) {
+        Flotr.ExamplesCallback();
+      } else {
+        Examples = new Flotr.Examples();
+      }
+    }
+  }
 ]);
