@@ -59,23 +59,32 @@ Flotr.addType('bars', {
   plot: function(series, barWidth, offset, fill){
     if(series.data.length < 1) return;
     
-    var data = series.data,
-      xa = series.xaxis,
-      ya = series.yaxis,
-      ctx = this.ctx,
-      stack = this.bars.getStack(series),
-      shadowSize = this.options.shadowSize,
-      i, stackIndex, stackValue;
+    var
+      data            = series.data,
+      xa              = series.xaxis,
+      ya              = series.yaxis,
+      ctx             = this.ctx,
+      stack           = this.bars.getStack(series),
+      shadowSize      = this.options.shadowSize,
+      barOffset,
+      stackIndex,
+      stackValue,
+      stackOffsetPos,
+      stackOffsetNeg,
+      width, height,
+      xaLeft, xaRight, yaTop, yaBottom,
+      left, right, top, bottom,
+      i, x, y;
 
     for(i = 0; i < data.length; i++){
-      var x = data[i][0],
-          y = data[i][1];
+      x = data[i][0];
+      y = data[i][1];
       
       if (y === null) continue;
       
       // Stacked bars
-      var stackOffsetPos = 0;
-      var stackOffsetNeg = 0;
+      stackOffsetPos = 0;
+      stackOffsetNeg = 0;
 
       if (stack) {
 
@@ -99,50 +108,40 @@ Flotr.addType('bars', {
       
       // @todo: fix horizontal bars support
       // Horizontal bars
-      var barOffset = series.bars.centered ? barWidth/2 : 0;
+      barOffset = series.bars.centered ? barWidth/2 : 0;
       
       if(series.bars.horizontal){ 
         if (x > 0)
-          var left = stackOffsetPos, right = x + stackOffsetPos;
+          left = stackOffsetPos, right = x + stackOffsetPos;
         else
-          var right = stackOffsetNeg, left = x + stackOffsetNeg;
+          right = stackOffsetNeg, left = x + stackOffsetNeg;
           
-        var bottom = y - barOffset, top = y + barWidth - barOffset;
+        bottom = y - barOffset, top = y + barWidth - barOffset;
       }
       else {
         if (y > 0)
-          var bottom = stackOffsetPos, top = y + stackOffsetPos;
+          bottom = stackOffsetPos, top = y + stackOffsetPos;
         else
-          var top = stackOffsetNeg, bottom = y + stackOffsetNeg;
+          top = stackOffsetNeg, bottom = y + stackOffsetNeg;
           
-        var left = x - barOffset, right = x + barWidth - barOffset;
+        left = x - barOffset, right = x + barWidth - barOffset;
       }
       
-      if(right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
+      if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
         continue;
 
-      if (left < xa.min){
-        left = xa.min;
-      }
-
-      if(right > xa.max){
-        right = xa.max;
-      }
-
-      if(bottom < ya.min)
-        bottom = ya.min;
-
-      if(top > ya.max){
-        top = ya.max;
-      }
+      if (left    < xa.min) left    = xa.min;
+      if (right   > xa.max) right   = xa.max;
+      if (bottom  < ya.min) bottom  = ya.min;
+      if (top     > ya.max) top     = ya.max;
       
       // Cache d2p values
-      var xaLeft   = xa.d2p(left),
-          xaRight  = xa.d2p(right),
-          yaTop    = ya.d2p(top), 
-          yaBottom = ya.d2p(bottom);
-          width    = xaRight - xaLeft,
-          height   = yaBottom - yaTop;
+      xaLeft   = xa.d2p(left);
+      xaRight  = xa.d2p(right);
+      yaTop    = ya.d2p(top);
+      yaBottom = ya.d2p(bottom);
+      width    = xaRight - xaLeft;
+      height   = yaBottom - yaTop;
 
       if (fill){
         ctx.fillRect(xaLeft, yaTop, width, height);
