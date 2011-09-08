@@ -69,8 +69,7 @@ Flotr.addType('bars', {
 
     for(i = 0; i < data.length; i++){
       var x = data[i][0],
-          y = data[i][1],
-        drawLeft = true, drawTop = true, drawRight = true;
+          y = data[i][1];
       
       if (y === null) continue;
       
@@ -122,15 +121,12 @@ Flotr.addType('bars', {
       if(right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
         continue;
 
-      if(left < xa.min){
+      if (left < xa.min){
         left = xa.min;
-        drawLeft = false;
       }
 
       if(right > xa.max){
         right = xa.max;
-        if (xa.lastSerie != series && series.bars.horizontal)
-          drawTop = false;
       }
 
       if(bottom < ya.min)
@@ -138,8 +134,6 @@ Flotr.addType('bars', {
 
       if(top > ya.max){
         top = ya.max;
-        if (ya.lastSerie != series && !series.bars.horizontal)
-          drawTop = false;
       }
       
       // Cache d2p values
@@ -161,22 +155,8 @@ Flotr.addType('bars', {
         ctx.restore();
       }
 
-      /**
-       * Draw bar outline/border.
-       * @todo  Optimize this with rect method ?
-       * @todo  Can we move stroke, beginPath, closePath out of the main loop?
-       *        Not sure if rect screws this up.
-       */
-      if(series.bars.lineWidth != 0 && (drawLeft || drawRight || drawTop)){
-        ctx.beginPath();
-        ctx.moveTo(xaLeft, yaBottom + offset);
-        
-        ctx[drawLeft ?'lineTo':'moveTo'](xaLeft, yaTop + offset);
-        ctx[drawTop  ?'lineTo':'moveTo'](xaRight, yaTop + offset);
-        ctx[drawRight?'lineTo':'moveTo'](xaRight, yaBottom + offset);
-                 
-        ctx.stroke();
-        ctx.closePath();
+      if (series.bars.lineWidth != 0) {
+        ctx.strokeRect(xaLeft, yaTop, width, height);
       }
     }
   },
