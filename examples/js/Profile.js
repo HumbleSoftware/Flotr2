@@ -20,7 +20,7 @@ Profile = function (o) {
   this.init();
 };
 
-Profile.prototype = _.extend(Flotr.Examples.prototype, {
+Profile.prototype = _.extend({}, Flotr.Examples.prototype, {
 
   examples : function () {
     var
