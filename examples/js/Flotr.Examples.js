@@ -48,35 +48,8 @@ Examples.prototype = {
   },
 
   example : function (example) {
-
-    var 
-      exampleNode   = document.getElementById(ID_EXAMPLE),
-      examplesNode  = document.getElementById(ID_EXAMPLES),
-      editorNode    = document.getElementById(ID_EXAMPLE_EDITOR),
-      labelNode     = document.getElementById(ID_EXAMPLE_LABEL),
-      graphNode     = document.getElementById(ID_EXAMPLE_GRAPH),
-      sourceNode    = document.getElementById(ID_EXAMPLE_SOURCE),
-      markupNode    = document.getElementById(ID_EXAMPLE_MARKUP),
-      exampleString = this._getExampleString(example);
-
-    D.setStyles(exampleNode, { display: 'block' });
-    D.show(sourceNode);
-    this._editModeOff();
-
-    this.current = this._executeCallback(example, graphNode) || null;
-    this.currentExample = example;
-
-    window.location.hash = '!'+(this.single ? 'single/' : '')+example.key;
-
-    // Markup Changes
-    sourceNode.innerHTML = '<pre class="prettyprint javascript">'+exampleString+'</pre>';
-    editorNode.value = example.editorText || exampleString;
-    labelNode.innerHTML = example.name;
-    if (example.description) {
-      markupNode.innerHTML = example.description;
-    }
-
-    prettyPrint();
+    this._renderSource(example);
+    this._renderGraph(example);
   },
 
   examples : function () {
@@ -126,6 +99,39 @@ Examples.prototype = {
       }, this));
 
     }, this);
+  },
+
+  _renderSource : function (example) {
+
+    var
+      exampleNode   = document.getElementById(ID_EXAMPLE),
+      editorNode    = document.getElementById(ID_EXAMPLE_EDITOR),
+      labelNode     = document.getElementById(ID_EXAMPLE_LABEL),
+      sourceNode    = document.getElementById(ID_EXAMPLE_SOURCE),
+      markupNode    = document.getElementById(ID_EXAMPLE_MARKUP),
+      exampleString = this._getExampleString(example);
+
+    window.location.hash = '!'+(this.single ? 'single/' : '')+example.key;
+
+    D.setStyles(exampleNode, { display: 'block' });
+    D.show(sourceNode);
+    this._editModeOff();
+
+    sourceNode.innerHTML = '<pre class="prettyprint javascript">'+exampleString+'</pre>';
+    editorNode.value = example.editorText || exampleString;
+    labelNode.innerHTML = example.name;
+    if (example.description) {
+      markupNode.innerHTML = example.description;
+    }
+
+    prettyPrint();
+  },
+
+  _renderGraph : function (example) {
+    var 
+      graphNode = document.getElementById(ID_EXAMPLE_GRAPH);
+    this.current = this._executeCallback(example, graphNode) || null;
+    this.currentExample = example;
   },
 
   _executeCallback : function (example, node) {
