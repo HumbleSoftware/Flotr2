@@ -43,10 +43,8 @@ Examples = function (o) {
 Examples.prototype = {
 
   init : function () {
-
     this._initExamples();
     this._initEditor();
-
   },
 
   example : function (example) {
@@ -88,6 +86,8 @@ Examples.prototype = {
       highlightNode = document.getElementById(ID_EXAMPLE_HIGHLIGHT);
 
     _.each(this.list.get(), function (example) {
+
+      if (example.type === 'profile') return;
 
       var
         node = D.node(T_EXAMPLE),
