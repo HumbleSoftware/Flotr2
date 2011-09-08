@@ -15,6 +15,12 @@ ExampleList.prototype = {
 
   get : function (key) {
     return key ? (this.examples[key] || null) : this.examples;
+  },
+
+  getType : function (type) {
+    return _.select(this.examples, function (example) {
+      return (example.type === type);
+    });
   }
 }
 
