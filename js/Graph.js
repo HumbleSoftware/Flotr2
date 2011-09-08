@@ -446,6 +446,7 @@ Flotr.Graph.prototype = {
   },
 
   _initEvents: function () {
+
     this.
       _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
       _observe(this.el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
@@ -463,13 +464,15 @@ Flotr.Graph.prototype = {
     }, this));
 
     this._observe(this.overlay, 'touchmove', _.bind(function (e) {
+
       e.preventDefault();
+
       var pageX = e.touches[0].pageX,
         pageY = e.touches[0].pageY,
-        pos = { absX : pageX , absY : pageY };
+        pos = this.getEventPosition(e.touches[0]);
+
       this.lastMousePos.pageX = pageX;
       this.lastMousePos.pageY = pageY;  
-      //console.log(pageX);
       E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
     }, this));
   },
