@@ -20,6 +20,8 @@ Flotr.EventAdapter = {
   eventPointer: function(e) {
     if (!_.isUndefined(e.touches) && e.touches.length > 0) {
       return {x: e.touches[0].pageX, y: e.touches[0].pageY};
+    } else if (!_.isUndefined(e.changedTouches) && e.changedTouches.length > 0) {
+      return {x: e.changedTouches[0].pageX, y: e.changedTouches[0].pageY};
     } else if (Flotr.isIE && Flotr.isIE < 9) {
       return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
     } else {
