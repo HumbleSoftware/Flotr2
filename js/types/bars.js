@@ -1,5 +1,6 @@
 /** Bars **/
 Flotr.addType('bars', {
+
   options: {
     show: false,           // => setting to true will show bars, false will hide
     lineWidth: 2,          // => in pixels
@@ -11,6 +12,7 @@ Flotr.addType('bars', {
     stacked: false,        // => stacked bar charts
     centered: true         // => center the bars to their x axis value
   },
+
   /**
    * Draws bar series in the canvas element.
    * @param {Object} series - Series with options.bars.show = true.
@@ -38,6 +40,7 @@ Flotr.addType('bars', {
     this.bars.plot(series, bw, 0, series.bars.fill);
     ctx.restore();
   },
+
   getStack: function (series) {
     var stack = false;
     if(series.bars.stacked) {
@@ -52,6 +55,7 @@ Flotr.addType('bars', {
 
     return stack;
   },
+
   plot: function(series, barWidth, offset, fill){
     if(series.data.length < 1) return;
     
@@ -146,10 +150,7 @@ Flotr.addType('bars', {
           width    = xaRight - xaLeft,
           height   = yaBottom - yaTop;
 
-      /**
-       * Fill the bar.
-       */
-      if(fill){
+      if (fill){
         ctx.fillRect(xaLeft, yaTop, width, height);
       }
 
@@ -179,6 +180,7 @@ Flotr.addType('bars', {
       }
     }
   },
+
   extendXRange: function(axis) {
     if(axis.options.max == null){
       var newmin = axis.min,
@@ -230,6 +232,7 @@ Flotr.addType('bars', {
       axis.min = newmin;
     }
   },
+
   extendYRange: function(axis){
     if(axis.options.max == null){
       var newmax = axis.max,
@@ -282,6 +285,7 @@ Flotr.addType('bars', {
       axis.min = newmin;
     }
   },
+
   drawHit: function (n) {
     var octx = this.octx,
       s = n.series,
@@ -348,6 +352,7 @@ Flotr.addType('bars', {
     octx.closePath();
     octx.restore();
   },
+
   clearHit: function() {
     var prevHit = this.prevHit,
       plotOffset = this.plotOffset,
