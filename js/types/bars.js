@@ -161,95 +161,57 @@ Flotr.addType('bars', {
   },
 
   extendXRange: function(axis) {
-    if(axis.options.max == null){
-      var newmin = axis.min,
-          newmax = axis.max,
-          i, j, x, s, b,
-          stackedSumsPos = {},
-          stackedSumsNeg = {},
-          lastSerie = null;
-
-      for(i = 0; i < this.series.length; ++i){
-        s = this.series[i];
-        b = s.bars;
-        if(b.show && s.xaxis == axis) {
-          if (b.centered && !b.horizontal) {
-            newmax = Math.max(axis.datamax + 0.5, newmax);
-            newmin = Math.min(axis.datamin - 0.5, newmin);
-          }
-          
-          // For normal vertical bars
-          if (!b.horizontal && (b.barWidth + axis.datamax > newmax))
-            newmax = axis.max + (b.centered ? b.barWidth/2 : b.barWidth);
-
-          // For horizontal stacked bars
-          if(b.stacked && b.horizontal){
-            for (j = 0; j < s.data.length; j++) {
-              if (b.show && b.stacked) {
-                y = s.data[j][1]+'';
-                
-                if(s.data[j][0] > 0)
-                  stackedSumsPos[y] = (stackedSumsPos[y] || 0) + s.data[j][0];
-                else
-                  stackedSumsNeg[y] = (stackedSumsNeg[y] || 0) + s.data[j][0];
-                  
-                lastSerie = s;
-              }
-            }
-
-            for (j in stackedSumsPos) {
-              newmax = Math.max(stackedSumsPos[j], newmax);
-            }
-            for (j in stackedSumsNeg) {
-              newmin = Math.min(stackedSumsNeg[j], newmin);
-            }
-          }
-        }
-      }
-      axis.lastSerie = lastSerie;
-      axis.max = newmax;
-      axis.min = newmin;
-    }
+    this.bars._extendRange(axis);
   },
 
   extendYRange: function(axis){
+    this.bars._extendRange(axis);
+  },
+  _extendRange: function (axis, orientation) {
+
     if(axis.options.max == null){
-      var newmax = axis.max,
-          newmin = axis.min,
-          x, i, j, s, b,
+      var newmin = axis.min,
+          newmax = axis.max,
+          orientation = axis.orientation,
           stackedSumsPos = {},
           stackedSumsNeg = {},
-          lastSerie = null;
-                  
+          lastSerie = null,
+          value, index,
+          i, j, s, b;
+
       for(i = 0; i < this.series.length; ++i){
+
         s = this.series[i];
         b = s.bars;
-        if (b.show && !s.hide && s.yaxis == axis) {
-          if (b.centered && b.horizontal) {
-            newmax = Math.max(axis.datamax + 0.5, newmax);
-            newmin = Math.min(axis.datamin - 0.5, newmin);
+
+        if(b.show) {
+
+          if ((orientation == 1 && !b.horizontal) || (orientation == -1 && b.horizontal)) {
+            if (b.centered) {
+              newmax = Math.max(axis.datamax + 0.5, newmax);
+              newmin = Math.min(axis.datamin - 0.5, newmin);
+            }
+            if (b.barWidth + axis.datamax > newmax)
+              newmax = axis.max + (b.centered ? b.barWidth/2 : b.barWidth);
           }
-              
-          // For normal horizontal bars
-          if (b.horizontal && (b.barWidth + axis.datamax > newmax)){
-            newmax = axis.max + b.barWidth;
-          }
-          
-          // For vertical stacked bars
-          if(b.stacked && !b.horizontal){
+
+          if (b.stacked && 
+              ((orientation == 1 && b.horizontal) || (orientation == -1 && !b.horizontal))){
             for (j = 0; j < s.data.length; j++) {
-              if (s.bars.show && s.bars.stacked) {
-                x = s.data[j][0]+'';
-                
-                if(s.data[j][1] > 0)
-                  stackedSumsPos[x] = (stackedSumsPos[x] || 0) + s.data[j][1];
+              if (b.show && b.stacked) {
+                value = s.data[j][(orientation == 1 ? 1 : 0)]+'';
+
+                index = orientation == 1 ? 0 : 1;
+
+                if(s.data[j][index] > 0)
+                  stackedSumsPos[value] = (stackedSumsPos[value] || 0) + s.data[j][index];
                 else
-                  stackedSumsNeg[x] = (stackedSumsNeg[x] || 0) + s.data[j][1];
+                  stackedSumsNeg[value] = (stackedSumsNeg[value] || 0) + s.data[j][index];
                   
                 lastSerie = s;
               }
             }
-            
+
             for (j in stackedSumsPos) {
               newmax = Math.max(stackedSumsPos[j], newmax);
             }
@@ -259,6 +221,7 @@ Flotr.addType('bars', {
           }
         }
       }
+
       axis.lastSerie = lastSerie;
       axis.max = newmax;
       axis.min = newmin;
