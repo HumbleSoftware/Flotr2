@@ -47,8 +47,8 @@ yepnope([
   '../js/types/gantt.js',
 
   // Examples
-  'js/Flotr.Examples.js',
-  'js/Flotr.ExampleList.js',
+  'js/Examples.js',
+  'js/ExampleList.js',
   'js/Profile.js',
   'js/examples/basic.js',
   'js/examples/basic-axis.js',
