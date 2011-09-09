@@ -109,6 +109,7 @@ Examples.prototype = {
     D.setStyles(exampleNode, { display: 'block' });
     D.show(sourceNode);
 
+    if (this.currentExample) this.currentExample.editorText = this._editor.getSource();
     this._editor.off();
 
     sourceNode.innerHTML = '<pre class="prettyprint javascript">'+exampleString+'</pre>';

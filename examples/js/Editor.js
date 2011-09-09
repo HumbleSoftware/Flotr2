@@ -2,87 +2,84 @@
 
 var 
   D                     = Flotr.DOM,
-  CLICK                 = 'click',
-  ID_EXAMPLE_EDIT       = 'example-edit',
-  ID_EXAMPLE_EDITOR     = 'example-editor',
-  ID_EXAMPLE_RUN        = 'example-run',
-  ID_EXAMPLE_SOURCE     = 'example-source',
+
+  ID_EXAMPLE_EDIT       = '#example-edit',
+  ID_EXAMPLE_EDITOR     = '#example-editor',
+  ID_EXAMPLE_RUN        = '#example-run',
+  ID_EXAMPLE_SOURCE     = '#example-source',
+
+  CN_EXAMPLE_EDIT       = 'example-edit',
 
 Editor = function () {
   this.editMode = 'off';
+  this._initNodes();
   this._initEditor();
 };
 
 Editor.prototype = {
 
   setSource : function (source) {
-    var editorNode = document.getElementById(ID_EXAMPLE_EDITOR);
-    editorNode.value = source;
+    this._editorNode.val(source);
   },
 
-  _initEditor : function () {
-
-    var
-      editNode    = document.getElementById(ID_EXAMPLE_EDIT),
-      editorNode  = document.getElementById(ID_EXAMPLE_EDITOR),
-      runNode     = document.getElementById(ID_EXAMPLE_RUN);
-
-    Flotr.EventAdapter.observe(editNode, CLICK, _.bind(function () {
-      if (this.editMode == 'off') {
-        this.on(); 
-      }
-      else {
-        this.example(this.currentExample);
-      }
-    }, this));
-
-    Flotr.EventAdapter.observe(runNode, CLICK, _.bind(function () {
-      try {
-        eval(editorNode.value);
-      } catch (e) { alert(e); }
-      editorNode.focus();
-      this.currentExample.editorText = editorNode.value;
-    }, this));
+  getSource : function () {
+    return this._editorNode.val();
   },
 
   on : function () {
 
     var
-      editNode    = document.getElementById(ID_EXAMPLE_EDIT),
-      editorNode  = document.getElementById(ID_EXAMPLE_EDITOR),
-      runNode     = document.getElementById(ID_EXAMPLE_RUN),
-      sourceNode  = document.getElementById(ID_EXAMPLE_SOURCE),
-      size        = D.size(sourceNode);
+      editor = this._editorNode,
+      height = this._sourceNode.height();
 
-    D.setStyles(editorNode, { display: 'block', height: size.height+'px' });
-    D.addClass(runNode, 'example-edit');
-    D.hide(sourceNode);
+    editor.css({ display : 'block', height : height+'px' });
+    editor.focus();
 
-    editorNode.focus();
-    editNode.innerHTML = 'Source';
+    this._runNode.addClass(CN_EXAMPLE_EDIT);
+    this._sourceNode.hide();
+    this._editNode.text('Source');
 
     this.editMode = 'on';
   },
 
   off : function () {
-
-    var
-      editNode    = document.getElementById(ID_EXAMPLE_EDIT),
-      editorNode  = document.getElementById(ID_EXAMPLE_EDITOR),
-      runNode     = document.getElementById(ID_EXAMPLE_RUN);
-
-    editNode.innerHTML = 'Edit';
-    if (this.currentExample) this.currentExample.editorText = editorNode.value;
-    D.removeClass(runNode, 'example-edit');
-
+    this._editNode.text('Edit');
+    this._runNode.removeClass('example-edit');
+    this._sourceNode.show();
     this._hideEditor();
+  },
 
+  _initEditor : function () {
+    this._editNode.click(_.bind(this._handleEditClick, this));
+    this._runNode.click(_.bind(this._handleRunClick, this));
+  },
+
+  _initNodes : function () {
+    this._editNode    = $(ID_EXAMPLE_EDIT);
+    this._editorNode  = $(ID_EXAMPLE_EDITOR);
+    this._runNode     = $(ID_EXAMPLE_RUN);
+    this._sourceNode  = $(ID_EXAMPLE_SOURCE);
   },
 
   _hideEditor : function () {
-    var editorNode = document.getElementById(ID_EXAMPLE_EDITOR);
-    D.setStyles(editorNode, { display: 'none' });
+    this._editorNode.css({ display: 'none' });
     this.editMode = 'off';
+  },
+
+  _handleEditClick : function () {
+    if (this.editMode == 'off')
+      this.on(); 
+    else 
+      this.off();
+  },
+
+  _handleRunClick : function () {
+    var
+      editorNode  = this._editorNode;
+    try {
+      eval(editorNode.val());
+    } catch (e) { alert(e); }
+    editorNode.focus();
   }
 };
 
