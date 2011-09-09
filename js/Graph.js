@@ -249,6 +249,7 @@ Flotr.Graph.prototype = {
         }
       }
     
+      this.clip();
       E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
       after();
     }, this);
@@ -423,6 +424,31 @@ Flotr.Graph.prototype = {
     }
     else {
       D.hide(mt);
+    }
+  },
+
+  clip: function () {
+
+    var
+      ctx = this.ctx,
+      o   = this.plotOffset,
+      w   = this.canvasWidth,
+      h   = this.canvasHeight;
+
+    if (Flotr.isIE && Flotr.isIE < 9) {
+      // Clipping for excanvas :-(
+      ctx.save();
+      ctx.fillStyle = this.processColor(this.options.ieBackgroundColor);
+      ctx.fillRect(0, 0, w, o.top);
+      ctx.fillRect(0, 0, o.left, h);
+      ctx.fillRect(0, h - o.bottom, w, o.bottom);
+      ctx.fillRect(w - o.right, 0, o.right,h);
+      ctx.restore();
+    } else {
+      ctx.clearRect(0, 0, w, o.top);
+      ctx.clearRect(0, 0, o.left, h);
+      ctx.clearRect(0, h - o.bottom, w, o.bottom);
+      ctx.clearRect(w - o.right, 0, o.right,h);
     }
   },
 

@@ -3,6 +3,7 @@
  */
 Flotr.defaultOptions = {
   colors: ['#00A8F0', '#C0D800', '#CB4B4B', '#4DA74D', '#9440ED'], //=> The default colorscheme. When there are > 5 series, additional colors are generated.
+  ieBackgroundColor: '#FFFFFF', // Background color for excanvas clipping
   title: null,             // => The graph's title
   subtitle: null,          // => The graph's subtitle
   shadowSize: 4,           // => size of the 'fake' shadow
