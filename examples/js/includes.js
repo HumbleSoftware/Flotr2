@@ -15,6 +15,7 @@ yepnope([
   'lib/google-code-prettify/prettify.js',
   'lib/beautify.js',
   'lib/randomseed.js',
+  'lib/jquery-1.6.3.min.js',
 
   // Flotr
   '../js/Flotr.js',
