@@ -1,8 +1,6 @@
 (function () {
 
 var 
-  D                     = Flotr.DOM,
-
   ID_EXAMPLE_EDIT       = '#example-edit',
   ID_EXAMPLE_EDITOR     = '#example-editor',
   ID_EXAMPLE_RUN        = '#example-run',
