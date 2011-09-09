@@ -12,7 +12,6 @@ var
   ID_EXAMPLE_GRAPH      = 'example-graph',
   ID_EXAMPLE_SOURCE     = 'example-source',
   ID_EXAMPLE_MARKUP     = 'example-description',
-  ID_EXAMPLE_HIGHLIGHT  = 'example-highlight',
   ID_EXAMPLES           = 'examples',
 
   CN_COLLAPSED          = 'collapsed',
@@ -51,8 +50,7 @@ Examples.prototype = {
   examples : function () {
 
     var
-      examplesNode = document.getElementById(ID_EXAMPLES),
-      highlightNode = document.getElementById(ID_EXAMPLE_HIGHLIGHT);
+      examplesNode = document.getElementById(ID_EXAMPLES);
 
     _.each(this.list.get(), function (example) {
 
