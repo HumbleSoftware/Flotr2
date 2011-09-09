@@ -5,7 +5,7 @@ var D = Flotr.DOM;
 Flotr.addPlugin('labels', {
 
   callbacks : {
-    'flotr:beforedraw' : function () {
+    'flotr:afterdraw' : function () {
       this.labels.draw();
     }
   },

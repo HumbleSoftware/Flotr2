@@ -4,7 +4,7 @@ var D = Flotr.DOM;
 
 Flotr.addPlugin('titles', {
   callbacks: {
-    'flotr:beforedraw': function() {
+    'flotr:afterdraw': function() {
       this.titles.drawTitles();
     }
   },
