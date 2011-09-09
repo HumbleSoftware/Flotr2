@@ -64,11 +64,9 @@ Examples.prototype = {
 
       var
         node = D.node(T_EXAMPLE),
-        styles = {cursor : 'pointer'},
-        link = D.node('<a name="!'+example.key+'"></a>"');
+        styles = {cursor : 'pointer'};
 
-      D.insert(link, node);
-      D.insert(examplesNode, link);
+      D.insert(examplesNode, node);
 
       this._executeCallback(example, node);
 
