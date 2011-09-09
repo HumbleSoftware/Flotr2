@@ -12,9 +12,6 @@ var
   ID_EXAMPLE_GRAPH      = 'example-graph',
   ID_EXAMPLE_SOURCE     = 'example-source',
   ID_EXAMPLE_MARKUP     = 'example-description',
-  ID_EXAMPLE_EDIT       = 'example-edit',
-  ID_EXAMPLE_EDITOR     = 'example-editor',
-  ID_EXAMPLE_RUN        = 'example-run',
   ID_EXAMPLE_HIGHLIGHT  = 'example-highlight',
   ID_EXAMPLES           = 'examples',
 
@@ -27,7 +24,6 @@ Examples = function (o) {
 
   if (_.isUndefined(Flotr.ExampleList)) throw "Flotr.ExampleList not defined.";
 
-  this.editMode = 'off';
   this.list = Flotr.ExampleList;
   this.current = null;
   this.single = false;
@@ -43,8 +39,8 @@ Examples = function (o) {
 Examples.prototype = {
 
   init : function () {
+    this._editor = new Flotr.Examples.Editor();
     this._initExamples();
-    this._initEditor();
   },
 
   example : function (example) {
@@ -103,7 +99,6 @@ Examples.prototype = {
 
     var
       exampleNode   = document.getElementById(ID_EXAMPLE),
-      editorNode    = document.getElementById(ID_EXAMPLE_EDITOR),
       labelNode     = document.getElementById(ID_EXAMPLE_LABEL),
       sourceNode    = document.getElementById(ID_EXAMPLE_SOURCE),
       markupNode    = document.getElementById(ID_EXAMPLE_MARKUP),
@@ -113,10 +108,13 @@ Examples.prototype = {
 
     D.setStyles(exampleNode, { display: 'block' });
     D.show(sourceNode);
-    this._editModeOff();
+
+    this._editor.off();
 
     sourceNode.innerHTML = '<pre class="prettyprint javascript">'+exampleString+'</pre>';
-    editorNode.value = example.editorText || exampleString;
+
+    this._editor.setSource(example.editorText || exampleString);
+
     labelNode.innerHTML = example.name;
     if (example.description) {
       markupNode.innerHTML = example.description;
@@ -187,71 +185,6 @@ Examples.prototype = {
       this.examples();
     }
   },
-
-  _initEditor : function () {
-
-    var
-      editNode    = document.getElementById(ID_EXAMPLE_EDIT),
-      editorNode  = document.getElementById(ID_EXAMPLE_EDITOR),
-      runNode     = document.getElementById(ID_EXAMPLE_RUN);
-
-    Flotr.EventAdapter.observe(editNode, CLICK, _.bind(function () {
-      if (this.editMode == 'off') {
-        this._editModeOn(); 
-      }
-      else {
-        this.example(this.currentExample);
-      }
-    }, this));
-
-    Flotr.EventAdapter.observe(runNode, CLICK, _.bind(function () {
-      try {
-        eval(editorNode.value);
-      } catch (e) { alert(e); }
-      editorNode.focus();
-      this.currentExample.editorText = editorNode.value;
-    }, this));
-  },
-
-  _editModeOn : function () {
-
-    var
-      editNode    = document.getElementById(ID_EXAMPLE_EDIT),
-      editorNode  = document.getElementById(ID_EXAMPLE_EDITOR),
-      runNode     = document.getElementById(ID_EXAMPLE_RUN),
-      sourceNode  = document.getElementById(ID_EXAMPLE_SOURCE),
-      size        = D.size(sourceNode);
-
-    D.setStyles(editorNode, { display: 'block', height: size.height+'px' });
-    D.addClass(runNode, 'example-edit');
-    D.hide(sourceNode);
-
-    editorNode.focus();
-    editNode.innerHTML = 'Source';
-
-    this.editMode = 'on';
-  },
-
-  _editModeOff : function () {
-
-    var
-      editNode    = document.getElementById(ID_EXAMPLE_EDIT),
-      editorNode  = document.getElementById(ID_EXAMPLE_EDITOR),
-      runNode     = document.getElementById(ID_EXAMPLE_RUN);
-
-    editNode.innerHTML = 'Edit';
-    if (this.currentExample) this.currentExample.editorText = editorNode.value;
-    D.removeClass(runNode, 'example-edit');
-
-    this._hideEditor();
-
-  },
-
-  _hideEditor : function () {
-    var editorNode = document.getElementById(ID_EXAMPLE_EDITOR);
-    D.setStyles(editorNode, { display: 'none' });
-    this.editMode = 'off';
-  }
 }
 
 Flotr.Examples = Examples;
