@@ -7,11 +7,6 @@ var
   MOUSEOVER             = 'mouseover',
   MOUSEOUT              = 'mouseout',
 
-  ID_EXAMPLE            = 'example',
-  ID_EXAMPLE_LABEL      = 'example-label',
-  ID_EXAMPLE_GRAPH      = 'example-graph',
-  ID_EXAMPLE_SOURCE     = 'example-source',
-  ID_EXAMPLE_MARKUP     = 'example-description',
   ID_EXAMPLES           = 'examples',
 
   CN_COLLAPSED          = 'collapsed',
@@ -32,19 +27,13 @@ Examples = function (o) {
   this.init();
   //console.profileEnd();
   //console.timeEnd(ID_EXAMPLES);
-
 };
 
 Examples.prototype = {
 
   init : function () {
-    this._editor = new Flotr.Examples.Editor();
+    this._example = new Flotr.Examples.Example();
     this._initExamples();
-  },
-
-  example : function (example) {
-    this._renderSource(example);
-    this._renderGraph(example);
   },
 
   examples : function () {
@@ -62,11 +51,11 @@ Examples.prototype = {
 
       D.insert(examplesNode, node);
 
-      this._executeCallback(example, node);
+      this._example.executeCallback(example, node);
 
       var mouseOverObserver = _.bind(function (e) {
         D.addClass(node, CN_HIGHLIGHT);
-        this._executeCallback(example, node);
+        this._example.executeCallback(example, node);
         D.setStyles(node, styles);
         E.stopObserving(node, MOUSEOVER, mouseOverObserver);
         setTimeout(function () {
@@ -76,7 +65,7 @@ Examples.prototype = {
 
       var mouseOutObserver = _.bind(function (e) {
         D.removeClass(node, CN_HIGHLIGHT);
-        this._executeCallback(example, node);
+        this._example.executeCallback(example, node);
         D.setStyles(node, styles);
         E.stopObserving(node, MOUSEOUT, mouseOutObserver);
         setTimeout(function () {
@@ -85,78 +74,26 @@ Examples.prototype = {
       }, this);
 
       E.observe(node, MOUSEOVER, mouseOverObserver);
-      E.observe(node, CLICK, _.bind(function () {
-        this.example(example);
-        D.addClass(examplesNode, CN_COLLAPSED);
-      }, this));
+      E.observe(node, CLICK, _.bind(function () { this._loadExample(example) }, this));
 
     }, this);
   },
 
-  _renderSource : function (example) {
-
+  _loadExample : function (example) {
     var
-      exampleNode   = document.getElementById(ID_EXAMPLE),
-      labelNode     = document.getElementById(ID_EXAMPLE_LABEL),
-      sourceNode    = document.getElementById(ID_EXAMPLE_SOURCE),
-      markupNode    = document.getElementById(ID_EXAMPLE_MARKUP),
-      exampleString = this._getExampleString(example);
+      examplesNode = document.getElementById(ID_EXAMPLES);
 
-    window.location.hash = '!'+(this.single ? 'single/' : '')+example.key;
-
-    D.setStyles(exampleNode, { display: 'block' });
-    D.show(sourceNode);
-
-    if (this.currentExample) this.currentExample.editorText = this._editor.getSource();
-    this._editor.off();
-
-    sourceNode.innerHTML = '<pre class="prettyprint javascript">'+exampleString+'</pre>';
-
-    this._editor.setSource(example.editorText || exampleString);
-
-    labelNode.innerHTML = example.name;
-    if (example.description) {
-      markupNode.innerHTML = example.description;
+    if (example) {
+      window.location.hash = '!'+(this.single ? 'single/' : '')+example.key;
+      D.addClass(examplesNode, CN_COLLAPSED);
+      this._example.setExample(example);
     }
-
-    prettyPrint();
-  },
-
-  _renderGraph : function (example) {
-    var 
-      graphNode = document.getElementById(ID_EXAMPLE_GRAPH);
-    this.current = this._executeCallback(example, graphNode) || null;
-    this.currentExample = example;
-  },
-
-  _executeCallback : function (example, node) {
-    var args = (example.args ? [node].concat(example.args) : [node]);
-    Math.seedrandom(example.key);
-    return example.callback.apply(this, args);
-  },
-
-  _getExampleString : function (example) {
-
-    var
-      args = (example.args ? ', '+example.args.join(', ') : ''),
-      callback = example.callback + '';
-
-    if (navigator.userAgent.search(/firefox/i) !== -1)
-      callback = js_beautify(callback);
-
-    return '' +
-      '(' +
-      callback +
-      ')(document.getElementById("' + ID_EXAMPLE_GRAPH + '"' +
-      args +
-      '));'; 
   },
 
   _initExamples : function () {
 
     var
       hash = window.location.hash,
-      examplesNode = document.getElementById(ID_EXAMPLES),
       example,
       params;
 
@@ -175,10 +112,7 @@ Examples.prototype = {
         }
       }
 
-      if (example) {
-        this.example(example);
-        D.addClass(examplesNode, CN_COLLAPSED);
-      }
+      this._loadExample(example);
 
     } else {
       this.examples();

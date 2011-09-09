@@ -50,6 +50,7 @@ yepnope([
   // Examples
   'js/Examples.js',
   'js/ExampleList.js',
+  'js/Example.js',
   'js/Editor.js',
   'js/Profile.js',
   'js/examples/basic.js',
