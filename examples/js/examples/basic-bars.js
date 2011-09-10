@@ -19,24 +19,9 @@ function basic_bars (container, horizontal) {
     horizontal = (horizontal ? true : false), // Show horizontal bars
     d1 = [],                                  // First data series
     d2 = [],                                  // Second data series
-    markers,                                  // Marker data set
     point,                                    // Data point variable declaration
     i;
 
-  markers = {
-    data : [],
-    markers : {
-      show : true,
-      position : 'ct',
-      labelFormatter : function markerFomatter(obj) {
-        return obj.y+'%';
-      }
-    },
-    bars : {
-      show : false
-    }
-  };
-          
   for (i = 0; i < 4; i++) {
 
     if (horizontal) { 
@@ -46,7 +31,6 @@ function basic_bars (container, horizontal) {
     }
 
     d1.push(point);
-    markers.data.push(point);
         
     if (horizontal) { 
       point = [Math.ceil(Math.random()*10), i+0.5];
@@ -55,13 +39,12 @@ function basic_bars (container, horizontal) {
     }
 
     d2.push(point);
-    markers.data.push(point);
   };
               
   // Draw the graph
   Flotr.draw(
     container,
-    [d1, d2, markers],
+    [d1, d2],
     {
       bars : {
         show : true,
