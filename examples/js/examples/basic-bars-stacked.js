@@ -6,7 +6,14 @@ Flotr.ExampleList.add({
   callback : bars_stacked
 });
 
-function bars_stacked (container) {
+Flotr.ExampleList.add({
+  key : 'basic-stacked-horizontal',
+  name : 'Stacked Horizontal Bars',
+  args : [true],
+  callback : bars_stacked
+});
+
+function bars_stacked (container, horizontal) {
 
   var
     d1 = [],
@@ -15,19 +22,15 @@ function bars_stacked (container) {
     graph, i;
 
   for (i = -10; i < 10; i++) {
-    /*
     if (horizontal) {
       d1.push([Math.random(), i]);
       d2.push([Math.random(), i]);
       d3.push([Math.random(), i]);
     } else {
-    */
       d1.push([i, Math.random()]);
       d2.push([i, Math.random()]);
       d3.push([i, Math.random()]);
-      /*
     }
-    */
   }
 
   graph = Flotr.draw(container,[
@@ -41,13 +44,13 @@ function bars_stacked (container) {
     bars : {
       show : true,
       stacked : true,
-     // horizontal : horizontal,
+      horizontal : horizontal,
       barWidth : 0.6
     },
     grid : {
-      verticalLines : false
+      verticalLines : horizontal,
+      horizontalLines : !horizontal
     }
-    //spreadsheet : { show : true }
   });
 }
 
