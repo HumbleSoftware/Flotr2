@@ -54,6 +54,7 @@ Example.prototype = {
   },
 
   executeCallback : function (example, node) {
+    if (!_.isElement(node)) node = node[0];
     var args = (example.args ? [node].concat(example.args) : [node]);
     Math.seedrandom(example.key);
     return example.callback.apply(this, args);
@@ -119,7 +120,7 @@ Example.prototype = {
   },
 
   _renderGraph : function (example) {
-    this.current = this.executeCallback(example, this._graphNode[0]) || null;
+    this.current = this.executeCallback(example, this._graphNode) || null;
   }
 };
 
