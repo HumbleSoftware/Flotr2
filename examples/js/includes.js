@@ -78,7 +78,9 @@ yepnope([
       if (Flotr.ExamplesCallback) {
         Flotr.ExamplesCallback();
       } else {
-        Examples = new Flotr.Examples();
+        Examples = new Flotr.Examples({
+          node : document.getElementById('examples')
+        });
       }
     }
   }

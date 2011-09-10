@@ -3,6 +3,7 @@ body {
 }
 
 /* Example */
+
 .flotr-example {
   display: none;
   width: 800px;
@@ -47,10 +48,11 @@ body {
   margin-left: 6px;
 }
 
+
 /* Chart no-select */
 
-#examples,
-.flotr-example-graph {
+.flotr-example-graph,
+.flotr-examples-thumb {
   -webkit-user-select: none;
   -khtml-user-select: none;
   -moz-user-select: none;
@@ -58,9 +60,10 @@ body {
   user-select: none;
 }
 
+
 /* Examples */
 
-#examples .example {
+.flotr-examples-thumb {
   display: inline-block;
   font-size : 11px;
   width : 300px;
@@ -68,33 +71,23 @@ body {
   margin: 10px 15px;
   border: 2px solid transparent;
 }
-#examples .example.highlight{
+.flotr-examples-thumb.flotr-examples-highlight{
   font-size : 12px;
   width : 330px;
   height : 220px;
   margin: 0px 0px;
 }
-#examples .example .flotr-legend,
-#examples .example .flotr-legend,
-#examples .example .flotr-mouse-value {
+.flotr-examples-thumb .flotr-legend,
+.flotr-examples-thumb .flotr-mouse-value {
   display : none;
 }
-#examples.collapsed {
+.flotr-examples-collapsed .flotr-examples-thumbs {
   white-space: nowrap;
   overflow-x: scroll;
 }
 
-/* Highlight */
 
-#example-highlight {
-  background: #fff;
-  display: none;
-  position: absolute;
-  width: 330px;
-  height: 220px;
-  font-size : 12px;
-}
-
+/* Flotr Styles */
 
 .flotr-datagrid-container {
   border: 1px solid #999;
