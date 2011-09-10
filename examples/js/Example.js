@@ -2,11 +2,29 @@
 
 var 
 
-  ID_EXAMPLE            = '#example',
-  ID_EXAMPLE_LABEL      = '#example-label',
-  ID_EXAMPLE_GRAPH      = '#example-graph',
-  ID_EXAMPLE_SOURCE     = '#example-source',
-  ID_EXAMPLE_MARKUP     = '#example-description',
+  DOT           = '.',
+
+  CN_EXAMPLE    = 'flotr-example',
+  CN_LABEL      = 'flotr-example-label',
+  CN_TITLE      = 'flotr-example-title',
+  CN_GRAPH      = 'flotr-example-graph',
+  CN_MARKUP     = 'flotr-example-description',
+  CN_EDITOR     = 'flotr-example-editor',
+  CN_SOURCE     = 'flotr-example-source',
+  CN_CONTAINER  = 'flotr-example-source-container',
+
+  ID_GRAPH      = 'flotr-example-graph',
+
+  TEMPLATE      = '' +
+    '<div class="' + CN_EXAMPLE + '">' +
+      '<div class="' + CN_LABEL + ' ' + CN_TITLE + '"></div>' +
+      '<div id="' + ID_GRAPH + '" class="' + CN_GRAPH + '"></div>' +
+      '<div class="' + CN_MARKUP + '"></div>' +
+      '<div class="' + CN_CONTAINER + '">' +
+        '<div class="' + CN_LABEL+ '">Source:</div>' + 
+        '<div class="' + CN_SOURCE + '"></div>' +
+      '</div>' +
+    '</div>',
 
 Example = function (o) {
 
@@ -15,7 +33,10 @@ Example = function (o) {
 
   this._initNodes();
 
-  this._editor = new Flotr.Examples.Editor();
+  this._editor = new Flotr.Examples.Editor({
+    node : this._exampleNode.find(DOT+CN_CONTAINER),
+    sourceNode : this._sourceNode
+  });
 };
 
 Example.prototype = {
@@ -39,11 +60,18 @@ Example.prototype = {
   },
 
   _initNodes : function () {
-    this._exampleNode = $(ID_EXAMPLE);
-    this._labelNode   = $(ID_EXAMPLE_LABEL);
-    this._sourceNode  = $(ID_EXAMPLE_SOURCE);
-    this._markupNode  = $(ID_EXAMPLE_MARKUP);
-    this._graphNode   = $(ID_EXAMPLE_GRAPH);
+
+    var
+      node    = this.options.node,
+      example = $(TEMPLATE);
+
+    this._titleNode   = example.find(DOT+CN_TITLE);
+    this._sourceNode  = example.find(DOT+CN_SOURCE);
+    this._markupNode  = example.find(DOT+CN_MARKUP);
+    this._graphNode   = example.find(DOT+CN_GRAPH);
+    this._exampleNode = example;
+
+    node.append(example);
   },
 
   _renderSource : function (example) {
@@ -65,7 +93,7 @@ Example.prototype = {
     this._editor.setSource(example.editorText || exampleString);
 
     // Label
-    this._labelNode.html(example.name);
+    this._titleNode.html(example.name);
     this._markupNode.html(example.description || '');
 
     // Code Styling
@@ -85,7 +113,7 @@ Example.prototype = {
     return '' +
       '(' +
       callback +
-      ')(document.getElementById("' + ID_EXAMPLE_GRAPH.substr(1) + '"' +
+      ')(document.getElementById("' + ID_GRAPH + '"' +
       args +
       '));'; 
   },

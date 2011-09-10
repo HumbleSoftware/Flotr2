@@ -2,63 +2,55 @@ body {
   font-family : sans-serif;
 }
 
-
 /* Example */
-
-#example {
+.flotr-example {
   display: none;
   width: 800px;
   margin: 0px auto 48px auto;
 }
-#example-graph {
+.flotr-example-label {
+  font-size: 18px;
+  margin: 14px 0px;
+}
+.flotr-example-graph {
   height: 400px;
   width: 600px;
   margin: 0px auto;
 }
-#example-source pre {
-  padding: 12px 12px;
+.flotr-example-source {
+  margin : 0px 18px;
+}
+.flotr-example-source pre.prettyprint {
+  padding: 12px;
+  margin: 0px;
   display: block;
   background: #eee;
   white-space : pre;
   font-weight: normal;
-  margin: 0px 18px;
   overflow-x: auto;
 }
-
-#example-source-container {
+.flotr-example-source-container {
   position: relative;
 }
-#example-buttons {
+.flotr-example-editor-text {
+  padding: 12px;
   position: absolute;
-  top: 28px;
-  right: 24px;
-}
-#example-buttons button {
-  height: 26px;
-}
-
-#example-run {
-  display: none;
-}
-#example-run.example-edit {
-  display: inline-block;
-}
-
-#example-editor {
-  padding: 12px 12px;
-  position: absolute;
-  top: 41px;
-  left: 18px;
-  width: 738px;
-  display: none;
   resize: none;
-  border: 1px solid black;
+}
+.flotr-example-editor-controls {
+  top: 24px;
+  right: 24px;
+  position: absolute;
+}
+.flotr-example-editor-controls button {
+  height: 26px;
+  margin-left: 6px;
 }
 
 /* Chart no-select */
 
 #examples,
-#example-graph {
+.flotr-example-graph {
   -webkit-user-select: none;
   -khtml-user-select: none;
   -moz-user-select: none;

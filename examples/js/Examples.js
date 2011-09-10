@@ -32,7 +32,9 @@ Examples = function (o) {
 Examples.prototype = {
 
   init : function () {
-    this._example = new Flotr.Examples.Example();
+    this._example = new Flotr.Examples.Example({
+      node : $('#content')
+    });
     this._initExamples();
   },
 
