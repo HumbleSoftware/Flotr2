@@ -97,6 +97,7 @@ Examples.prototype = {
     if (example) {
       window.location.hash = '!'+(this.single ? 'single/' : '')+example.key;
       this._examplesNode.addClass(CN_COLLAPSED);
+      this._thumbsNode.height($(window).height());
       this._example.setExample(example);
     }
   },

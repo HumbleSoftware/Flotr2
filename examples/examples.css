@@ -82,8 +82,20 @@ body {
   display : none;
 }
 .flotr-examples-collapsed .flotr-examples-thumbs {
-  white-space: nowrap;
-  overflow-x: scroll;
+  position: fixed;
+  width: 400px;
+  left: 0px;
+  top: 0px;
+  overflow-y: auto;
+  background: #fff;
+}
+.flotr-examples-collapsed .flotr-examples-thumb {
+  display: block;
+  float: center;
+  margin: 10px auto;
+}
+.flotr-examples-collapsed .flotr-examples-container {
+  margin-left: 400px;
 }
 
 
