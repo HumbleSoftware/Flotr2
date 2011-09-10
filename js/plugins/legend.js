@@ -149,7 +149,7 @@ Flotr.addPlugin('legend', {
             D.insert(div, table);
             D.insert(this.el, div);
             
-            if(legend.backgroundOpacity !== 0.0)
+            if(legend.backgroundOpacity == 0.0)
               return;
             /**
              * Put in the transparent background separately to avoid blended labels and
@@ -160,7 +160,6 @@ Flotr.addPlugin('legend', {
               var tmp = (options.grid.backgroundColor) ? options.grid.backgroundColor : Flotr.Color.extract(div);
               c = this.processColor(tmp, null, {opacity: 1});
             }
-            c = '#ff00ff';
 
             _.extend(styles, D.size(div), {
               'backgroundColor': c,
