@@ -186,12 +186,17 @@ Flotr.addType('bars', {
 
         if(b.show) {
 
+          // Sides of bars
           if ((orientation == 1 && !b.horizontal) || (orientation == -1 && b.horizontal)) {
             if (b.centered) {
               newmax = Math.max(axis.datamax + 0.5, newmax);
               newmin = Math.min(axis.datamin - 0.5, newmin);
             }
-            if (b.barWidth + axis.datamax > newmax)
+          }
+
+          // End of bars
+          if ((orientation == 1 && b.horizontal) || (orientation == -1 && !b.horizontal)) {
+            if (b.barWidth + axis.datamax >= newmax)
               newmax = axis.max + (b.centered ? b.barWidth/2 : b.barWidth);
           }
 
