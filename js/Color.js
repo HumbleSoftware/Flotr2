@@ -149,24 +149,6 @@ _.extend(Flotr.Color, {
       gradient.addColorStop(stop, Flotr.Color.parse(c).scale(null, null, null, options.opacity));
     }
     return gradient;
-  },
-  
-  /**
-   * Extracts the background-color of the passed element.
-   * @param {Element} element - The element from what the background color is extracted
-   * @return {String} color string
-   */
-  extract: function(element){
-    var color;
-    // Loop until we find an element with a background color and stop when we hit the body element. 
-    do {
-      color = element.getStyle('background-color').toLowerCase();
-      if(!(color == '' || color == 'transparent')) break;
-      element = element.up();
-    } while(!element.nodeName.match(/^body$/i));
-
-    // Catch Safari's way of signaling transparent.
-    return new Flotr.Color(color == 'rgba(0, 0, 0, 0)' ? 'transparent' : color);
   }
 });
 })();

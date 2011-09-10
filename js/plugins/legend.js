@@ -151,15 +151,8 @@ Flotr.addPlugin('legend', {
             
             if(legend.backgroundOpacity == 0.0)
               return;
-            /**
-             * Put in the transparent background separately to avoid blended labels and
-             * label boxes.
-             */
-            var c = legend.backgroundColor;
-            if(!c){
-              var tmp = (options.grid.backgroundColor) ? options.grid.backgroundColor : Flotr.Color.extract(div);
-              c = this.processColor(tmp, null, {opacity: 1});
-            }
+
+            var c = legend.backgroundColor || options.grid.backgroundColor || '#ffffff';
 
             _.extend(styles, D.size(div), {
               'backgroundColor': c,
@@ -168,6 +161,7 @@ Flotr.addPlugin('legend', {
             styles.width += 'px';
             styles.height += 'px';
 
+             // Put in the transparent background separately to avoid blended labels and
             div = D.create('div');
             div.className = 'flotr-legend-bg';
             D.setStyles(div, styles);
