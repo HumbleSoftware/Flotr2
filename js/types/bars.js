@@ -1,5 +1,6 @@
 /** Bars **/
 Flotr.addType('bars', {
+
   options: {
     show: false,           // => setting to true will show bars, false will hide
     lineWidth: 2,          // => in pixels
@@ -11,6 +12,7 @@ Flotr.addType('bars', {
     stacked: false,        // => stacked bar charts
     centered: true         // => center the bars to their x axis value
   },
+
   /**
    * Draws bar series in the canvas element.
    * @param {Object} series - Series with options.bars.show = true.
@@ -38,6 +40,7 @@ Flotr.addType('bars', {
     this.bars.plot(series, bw, 0, series.bars.fill);
     ctx.restore();
   },
+
   getStack: function (series) {
     var stack = false;
     if(series.bars.stacked) {
@@ -52,27 +55,36 @@ Flotr.addType('bars', {
 
     return stack;
   },
+
   plot: function(series, barWidth, offset, fill){
     if(series.data.length < 1) return;
     
-    var data = series.data,
-      xa = series.xaxis,
-      ya = series.yaxis,
-      ctx = this.ctx,
-      stack = this.bars.getStack(series),
-      shadowSize = this.options.shadowSize,
-      i, stackIndex, stackValue;
+    var
+      data            = series.data,
+      xa              = series.xaxis,
+      ya              = series.yaxis,
+      ctx             = this.ctx,
+      stack           = this.bars.getStack(series),
+      shadowSize      = this.options.shadowSize,
+      barOffset,
+      stackIndex,
+      stackValue,
+      stackOffsetPos,
+      stackOffsetNeg,
+      width, height,
+      xaLeft, xaRight, yaTop, yaBottom,
+      left, right, top, bottom,
+      i, x, y;
 
     for(i = 0; i < data.length; i++){
-      var x = data[i][0],
-          y = data[i][1],
-        drawLeft = true, drawTop = true, drawRight = true;
+      x = data[i][0];
+      y = data[i][1];
       
       if (y === null) continue;
       
       // Stacked bars
-      var stackOffsetPos = 0;
-      var stackOffsetNeg = 0;
+      stackOffsetPos = 0;
+      stackOffsetNeg = 0;
 
       if (stack) {
 
@@ -96,60 +108,42 @@ Flotr.addType('bars', {
       
       // @todo: fix horizontal bars support
       // Horizontal bars
-      var barOffset = series.bars.centered ? barWidth/2 : 0;
+      barOffset = series.bars.centered ? barWidth/2 : 0;
       
       if(series.bars.horizontal){ 
         if (x > 0)
-          var left = stackOffsetPos, right = x + stackOffsetPos;
+          left = stackOffsetPos, right = x + stackOffsetPos;
         else
-          var right = stackOffsetNeg, left = x + stackOffsetNeg;
+          right = stackOffsetNeg, left = x + stackOffsetNeg;
           
-        var bottom = y - barOffset, top = y + barWidth - barOffset;
+        bottom = y - barOffset, top = y + barWidth - barOffset;
       }
       else {
         if (y > 0)
-          var bottom = stackOffsetPos, top = y + stackOffsetPos;
+          bottom = stackOffsetPos, top = y + stackOffsetPos;
         else
-          var top = stackOffsetNeg, bottom = y + stackOffsetNeg;
+          top = stackOffsetNeg, bottom = y + stackOffsetNeg;
           
-        var left = x - barOffset, right = x + barWidth - barOffset;
+        left = x - barOffset, right = x + barWidth - barOffset;
       }
       
-      if(right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
+      if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
         continue;
 
-      if(left < xa.min){
-        left = xa.min;
-        drawLeft = false;
-      }
-
-      if(right > xa.max){
-        right = xa.max;
-        if (xa.lastSerie != series && series.bars.horizontal)
-          drawTop = false;
-      }
-
-      if(bottom < ya.min)
-        bottom = ya.min;
-
-      if(top > ya.max){
-        top = ya.max;
-        if (ya.lastSerie != series && !series.bars.horizontal)
-          drawTop = false;
-      }
+      if (left    < xa.min) left    = xa.min;
+      if (right   > xa.max) right   = xa.max;
+      if (bottom  < ya.min) bottom  = ya.min;
+      if (top     > ya.max) top     = ya.max;
       
       // Cache d2p values
-      var xaLeft   = xa.d2p(left),
-          xaRight  = xa.d2p(right),
-          yaTop    = ya.d2p(top), 
-          yaBottom = ya.d2p(bottom);
-          width    = xaRight - xaLeft,
-          height   = yaBottom - yaTop;
+      xaLeft   = xa.d2p(left);
+      xaRight  = xa.d2p(right);
+      yaTop    = ya.d2p(top);
+      yaBottom = ya.d2p(bottom);
+      width    = xaRight - xaLeft;
+      height   = yaBottom - yaTop;
 
-      /**
-       * Fill the bar.
-       */
-      if(fill){
+      if (fill){
         ctx.fillRect(xaLeft, yaTop, width, height);
       }
 
@@ -160,57 +154,64 @@ Flotr.addType('bars', {
         ctx.restore();
       }
 
-      /**
-       * Draw bar outline/border.
-       * @todo  Optimize this with rect method ?
-       * @todo  Can we move stroke, beginPath, closePath out of the main loop?
-       *        Not sure if rect screws this up.
-       */
-      if(series.bars.lineWidth != 0 && (drawLeft || drawRight || drawTop)){
-        ctx.beginPath();
-        ctx.moveTo(xaLeft, yaBottom + offset);
-        
-        ctx[drawLeft ?'lineTo':'moveTo'](xaLeft, yaTop + offset);
-        ctx[drawTop  ?'lineTo':'moveTo'](xaRight, yaTop + offset);
-        ctx[drawRight?'lineTo':'moveTo'](xaRight, yaBottom + offset);
-                 
-        ctx.stroke();
-        ctx.closePath();
+      if (series.bars.lineWidth != 0) {
+        ctx.strokeRect(xaLeft, yaTop, width, height);
       }
     }
   },
+
   extendXRange: function(axis) {
+    this.bars._extendRange(axis);
+  },
+
+  extendYRange: function(axis){
+    this.bars._extendRange(axis);
+  },
+  _extendRange: function (axis, orientation) {
+
     if(axis.options.max == null){
       var newmin = axis.min,
           newmax = axis.max,
-          i, j, x, s, b,
+          orientation = axis.orientation,
           stackedSumsPos = {},
           stackedSumsNeg = {},
-          lastSerie = null;
+          lastSerie = null,
+          value, index,
+          i, j, s, b;
 
       for(i = 0; i < this.series.length; ++i){
+
         s = this.series[i];
         b = s.bars;
-        if(b.show && s.xaxis == axis) {
-          if (b.centered && !b.horizontal) {
-            newmax = Math.max(axis.datamax + 0.5, newmax);
-            newmin = Math.min(axis.datamin - 0.5, newmin);
-          }
-          
-          // For normal vertical bars
-          if (!b.horizontal && (b.barWidth + axis.datamax > newmax))
-            newmax = axis.max + (b.centered ? b.barWidth/2 : b.barWidth);
 
-          // For horizontal stacked bars
-          if(b.stacked && b.horizontal){
+        if(b.show) {
+
+          // Sides of bars
+          if ((orientation == 1 && !b.horizontal) || (orientation == -1 && b.horizontal)) {
+            if (b.centered) {
+              newmax = Math.max(axis.datamax + 0.5, newmax);
+              newmin = Math.min(axis.datamin - 0.5, newmin);
+            }
+          }
+
+          // End of bars
+          if ((orientation == 1 && b.horizontal) || (orientation == -1 && !b.horizontal)) {
+            if (b.barWidth + axis.datamax >= newmax)
+              newmax = axis.max + (b.centered ? b.barWidth/2 : b.barWidth);
+          }
+
+          if (b.stacked && 
+              ((orientation == 1 && b.horizontal) || (orientation == -1 && !b.horizontal))){
             for (j = 0; j < s.data.length; j++) {
               if (b.show && b.stacked) {
-                y = s.data[j][1]+'';
-                
-                if(s.data[j][0] > 0)
-                  stackedSumsPos[y] = (stackedSumsPos[y] || 0) + s.data[j][0];
+                value = s.data[j][(orientation == 1 ? 1 : 0)]+'';
+
+                index = orientation == 1 ? 0 : 1;
+
+                if(s.data[j][index] > 0)
+                  stackedSumsPos[value] = (stackedSumsPos[value] || 0) + s.data[j][index];
                 else
-                  stackedSumsNeg[y] = (stackedSumsNeg[y] || 0) + s.data[j][0];
+                  stackedSumsNeg[value] = (stackedSumsNeg[value] || 0) + s.data[j][index];
                   
                 lastSerie = s;
               }
@@ -225,63 +226,13 @@ Flotr.addType('bars', {
           }
         }
       }
+
       axis.lastSerie = lastSerie;
       axis.max = newmax;
       axis.min = newmin;
     }
   },
-  extendYRange: function(axis){
-    if(axis.options.max == null){
-      var newmax = axis.max,
-          newmin = axis.min,
-          x, i, j, s, b,
-          stackedSumsPos = {},
-          stackedSumsNeg = {},
-          lastSerie = null;
-                  
-      for(i = 0; i < this.series.length; ++i){
-        s = this.series[i];
-        b = s.bars;
-        if (b.show && !s.hide && s.yaxis == axis) {
-          if (b.centered && b.horizontal) {
-            newmax = Math.max(axis.datamax + 0.5, newmax);
-            newmin = Math.min(axis.datamin - 0.5, newmin);
-          }
-              
-          // For normal horizontal bars
-          if (b.horizontal && (b.barWidth + axis.datamax > newmax)){
-            newmax = axis.max + b.barWidth;
-          }
-          
-          // For vertical stacked bars
-          if(b.stacked && !b.horizontal){
-            for (j = 0; j < s.data.length; j++) {
-              if (s.bars.show && s.bars.stacked) {
-                x = s.data[j][0]+'';
-                
-                if(s.data[j][1] > 0)
-                  stackedSumsPos[x] = (stackedSumsPos[x] || 0) + s.data[j][1];
-                else
-                  stackedSumsNeg[x] = (stackedSumsNeg[x] || 0) + s.data[j][1];
-                  
-                lastSerie = s;
-              }
-            }
-            
-            for (j in stackedSumsPos) {
-              newmax = Math.max(stackedSumsPos[j], newmax);
-            }
-            for (j in stackedSumsNeg) {
-              newmin = Math.min(stackedSumsNeg[j], newmin);
-            }
-          }
-        }
-      }
-      axis.lastSerie = lastSerie;
-      axis.max = newmax;
-      axis.min = newmin;
-    }
-  },
+
   drawHit: function (n) {
     var octx = this.octx,
       s = n.series,
@@ -348,6 +299,7 @@ Flotr.addType('bars', {
     octx.closePath();
     octx.restore();
   },
+
   clearHit: function() {
     var prevHit = this.prevHit,
       plotOffset = this.plotOffset,

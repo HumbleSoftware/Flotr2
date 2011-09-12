@@ -31,19 +31,19 @@ Flotr.addPlugin('legend', {
     if(!this.options.legend.show)
       return;
 
-    var series = this.series,
-      plotOffset = this.plotOffset,
-      options = this.options,
-      legend = options.legend,
-      fragments = [],
-      rowStarted = false, 
-      ctx = this.ctx,
-      noLegendItems = _.filter(series, function(s) {return (s.label && !s.hide);}).length,
-      p = legend.position, 
-      m = legend.margin,
+    var series      = this.series,
+      plotOffset    = this.plotOffset,
+      options       = this.options,
+      legend        = options.legend,
+      fragments     = [],
+      rowStarted    = false, 
+      ctx           = this.ctx,
+      itemCount     = _.filter(series, function(s) {return (s.label && !s.hide);}).length,
+      p             = legend.position, 
+      m             = legend.margin,
       i, label, color;
 
-    if (noLegendItems) {
+    if (itemCount) {
       if (!options.HtmlText && this.textEnabled && !legend.container) {
         var style = {
           size: options.fontSize*1.1,
@@ -65,7 +65,7 @@ Flotr.addPlugin('legend', {
         }
         
         var legendWidth  = Math.round(lbw + lbm*3 + labelMaxWidth),
-            legendHeight = Math.round(noLegendItems*(lbm+lbh) + lbm);
+            legendHeight = Math.round(itemCount*(lbm+lbh) + lbm);
         
         if(p.charAt(0) == 's') offsetY = plotOffset.top + this.plotHeight - (m + legendHeight);
         if(p.charAt(1) == 'e') offsetX = plotOffset.left + this.plotWidth - (m + legendWidth);
@@ -149,18 +149,10 @@ Flotr.addPlugin('legend', {
             D.insert(div, table);
             D.insert(this.el, div);
             
-            if(legend.backgroundOpacity !== 0.0)
+            if(legend.backgroundOpacity == 0.0)
               return;
-            /**
-             * Put in the transparent background separately to avoid blended labels and
-             * label boxes.
-             */
-            var c = legend.backgroundColor;
-            if(!c){
-              var tmp = (options.grid.backgroundColor) ? options.grid.backgroundColor : Flotr.Color.extract(div);
-              c = this.processColor(tmp, null, {opacity: 1});
-            }
-            c = '#ff00ff';
+
+            var c = legend.backgroundColor || options.grid.backgroundColor || '#ffffff';
 
             _.extend(styles, D.size(div), {
               'backgroundColor': c,
@@ -169,6 +161,7 @@ Flotr.addPlugin('legend', {
             styles.width += 'px';
             styles.height += 'px';
 
+             // Put in the transparent background separately to avoid blended labels and
             div = D.create('div');
             div.className = 'flotr-legend-bg';
             D.setStyles(div, styles);

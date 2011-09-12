@@ -14,17 +14,20 @@ yepnope([
   '../lib/canvastext.js',
   'lib/google-code-prettify/prettify.js',
   'lib/beautify.js',
+  'lib/randomseed.js',
+  'lib/jquery-1.6.3.min.js',
 
   // Flotr
   '../js/Flotr.js',
-  '../js/Flotr.defaultOptions.js',
-  '../js/Flotr.Color.js',
-  '../js/Flotr.Date.js',
-  '../js/Flotr.DOM.js',
-  '../js/Flotr.EventAdapter.js',
-  '../js/Flotr.Graph.js',
-  '../js/Flotr.Axis.js',
-  '../js/Flotr.Series.js',
+  '../js/DefaultOptions.js',
+  '../js/Color.js',
+  '../js/Date.js',
+  '../js/DOM.js',
+  '../js/EventAdapter.js',
+  '../js/Text.js',
+  '../js/Graph.js',
+  '../js/Axis.js',
+  '../js/Series.js',
   '../js/types/lines.js',
   '../js/types/bars.js',
   '../js/types/points.js',
@@ -33,8 +36,10 @@ yepnope([
   '../js/types/markers.js',
   '../js/types/radar.js',
   '../js/types/bubbles.js',
+  '../js/plugins/download.js',
   '../js/plugins/selection.js',
   '../js/plugins/spreadsheet.js',
+  '../js/plugins/grid.js',
   '../js/plugins/hit.js',
   '../js/plugins/crosshair.js',
   '../js/plugins/labels.js',
@@ -43,8 +48,40 @@ yepnope([
   '../js/types/gantt.js',
 
   // Examples
-  'js/Flotr.Examples.js',
-  'js/Flotr.ExampleList.js',
+  'js/Examples.js',
+  'js/ExampleList.js',
+  'js/Example.js',
+  'js/Editor.js',
+  'js/Profile.js',
+  'js/examples/basic.js',
+  'js/examples/basic-axis.js',
+  'js/examples/basic-bars.js',
+  'js/examples/basic-bars-stacked.js',
+  'js/examples/basic-pie.js',
+  'js/examples/basic-radar.js',
+  'js/examples/basic-bubble.js',
+  'js/examples/basic-candle.js',
+  'js/examples/basic-legend.js',
+  'js/examples/mouse-tracking.js',
+  'js/examples/mouse-zoom.js',
+  'js/examples/mouse-drag.js',
+  'js/examples/basic-time.js',
+  'js/examples/negative-values.js',
+  'js/examples/click-example.js',
+  'js/examples/download-image.js',
+  'js/examples/download-data.js',
+  'js/examples/advanced-titles.js',
+  'js/examples/color-gradients.js',
+  'js/examples/profile-bars.js',
 
-  { complete : function () { new Flotr.Examples(); } }
+  { complete : function () { 
+      if (Flotr.ExamplesCallback) {
+        Flotr.ExamplesCallback();
+      } else {
+        Examples = new Flotr.Examples({
+          node : document.getElementById('examples')
+        });
+      }
+    }
+  }
 ]);

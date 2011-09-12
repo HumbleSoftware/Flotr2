@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Flotr Example Index Page</title>
+  <link rel="stylesheet" href="examples.css" type="text/css" />
+  <link rel="stylesheet" href="lib/google-code-prettify/prettify.css" type="text/css" />
+</head>
+
+<body>
+
+<div id="body-container">
+
+  <div id="content-container">
+    <div id="content">
+
+      <h2>Examples:</h2>
+      <div id="examples"></div>
+      <div id="example-highlight"></div>
+
+      <div id="example">
+        <h3 id="example-label">Example:</h3>
+        <div id="example-graph"></div>
+        <div id="example-description"></div>
+
+        <div id="example-profile-container">
+          <h3>Profile:</h3>
+          <div id="example-profile"></div>
+        </div>
+
+        <div id="example-source-container">
+          <h3>Source:</h3>
+          <div id="example-source"></div>
+          <textarea id="example-editor"></textarea>
+          <div id="example-buttons">
+            <button id="example-run">Run</button>
+            <button id="example-edit">Edit</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+
+
+</body>
+
+<script>
+  Flotr = {};
+  Flotr.ExamplesCallback = function () {
+    Profile = new Flotr.Profile();
+  };
+</script>
+
+<script type="text/javascript" src="../lib/yepnope.js"></script>
+<script type="text/javascript" src="js/includes.js"></script>
+
+</html>

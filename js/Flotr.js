@@ -1,3 +1,4 @@
+(function () {
 /** 
  * @projectDescription Flotr is a javascript plotting library based on the Prototype Javascript Framework.
  * @author Bas Wenneker
@@ -5,7 +6,9 @@
  * @version 0.2.0
  */
 
-var Flotr = {
+if (typeof (Flotr) == 'undefined') Flotr = {};
+
+_.extend(Flotr, {
   version: "0.2.0-alpha",
   revision: ('$Revision: 192 $'.match(/(\d+)/) || [null,null])[1],
   author: ['Bas Wenneker', 'Fabien Ménager'],
@@ -244,4 +247,6 @@ var Flotr = {
   getTextAngleFromAlign: function(style) {
     return Flotr.alignTable[style.textAlign+' '+style.textBaseline] || 0;
   }
-};
+});
+
+})();
