@@ -31,6 +31,7 @@
       "./js/types/pie.js",
       "./js/types/points.js",
       "./js/types/radar.js",
+      "./js/types/timeline.js",
       "./js/plugins/crosshair.js",
       "./js/plugins/download.js",
       "./js/plugins/grid.js",
