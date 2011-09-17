@@ -102,7 +102,6 @@ Flotr.addType('markers', {
 
       this.markers.plot(xPos, yPos, label, options);
     }
-    
     ctx.restore();
   },
   plot: function(x, y, label, options) {
@@ -110,7 +109,12 @@ Flotr.addType('markers', {
         margin = 2,
         left = x,
         top = y,
-        dim = this._text.canvas(label);
+        dim;
+
+    if (label instanceof Image)
+      dim = {height : label.height, width: label.width};
+    else
+      dim = this._text.canvas(label);
 
     dim.width = Math.floor(dim.width+margin*2);
     dim.height = Math.floor(dim.height+margin*2);
@@ -130,6 +134,9 @@ Flotr.addType('markers', {
     if(options.stroke)
       ctx.strokeRect(left, top, dim.width, dim.height);
     
-    Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize});
+    if (label instanceof Image)
+      ctx.drawImage(label, left+margin, top+margin);
+    else
+      Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize});
   }
 });
