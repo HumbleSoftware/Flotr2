@@ -75,6 +75,7 @@ yepnope([
   'js/examples/color-gradients.js',
   'js/examples/profile-bars.js',
   'js/examples/basic-timeline.js',
+  'js/examples/advanced-markers.js',
 
   { complete : function () { 
       if (Flotr.ExamplesCallback) {
