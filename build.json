@@ -14,10 +14,10 @@
     "flotr2": [
       "./js/Flotr.js",
       "./js/DefaultOptions.js",
-      "./js/DOM.js",
-      "./js/EventAdapter.js",
       "./js/Color.js",
       "./js/Date.js",
+      "./js/DOM.js",
+      "./js/EventAdapter.js",
       "./js/Text.js",
       "./js/Graph.js",
       "./js/Axis.js",
