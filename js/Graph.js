@@ -143,6 +143,7 @@ Flotr.Graph.prototype = {
     _.each(this.series, function (series) {
       _.each(types, function (type) {
         if (series[type] && series[type].show) {
+          if (this[type].extendRange) this[type].extendRange(series);
           if (this[type].extendYRange) this[type].extendYRange(series.yaxis);
           if (this[type].extendXRange) this[type].extendXRange(series.xaxis);
         }
