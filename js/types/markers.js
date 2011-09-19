@@ -105,6 +105,20 @@ Flotr.addType('markers', {
     ctx.restore();
   },
   plot: function(x, y, label, options) {
+    if (label instanceof Image && !label.complete) {
+      Flotr.EventAdapter.observe(label, 'load', _.bind(function () {
+        var ctx = this.ctx;
+        ctx.save();
+        ctx.translate(this.plotOffset.left, this.plotOffset.top);
+        this.markers._plot(x, y, label, options);
+        ctx.restore();
+      }, this));
+    } else {
+      this.markers._plot(x, y, label, options);
+    }
+  },
+
+  _plot: function(x, y, label, options) {
     var ctx = this.ctx,
         margin = 2,
         left = x,
