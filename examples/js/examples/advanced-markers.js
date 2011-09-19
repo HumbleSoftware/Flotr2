@@ -40,30 +40,25 @@ function advanced_markers (container) {
     markers.data.push(point);
   }
 
-  
-  var f = _.after(2, function () {
-    graph = Flotr.draw(
-      container,
-      [bars, markers], {
-        yaxis: {
-          min: 0,
-          max: 11
-        },
-        xaxis: {
-          min: -0.5,
-          max: 7.5
-        },
-        grid: {
-          verticalLines: false
-        }
-      }
-    );
-  });
-
-  xmark.onload = f;
-  checkmark.onload = f;
   xmark.src = 'images/xmark.png';
   checkmark.src = 'images/checkmark.png';
+  
+  graph = Flotr.draw(
+    container,
+    [bars, markers], {
+      yaxis: {
+        min: 0,
+        max: 11
+      },
+      xaxis: {
+        min: -0.5,
+        max: 7.5
+      },
+      grid: {
+        verticalLines: false
+      }
+    }
+  );
 
 };
 
