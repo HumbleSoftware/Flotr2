@@ -13,7 +13,7 @@ Flotr.addType('markers', {
     show: false,           // => setting to true will show markers, false will hide
     lineWidth: 1,          // => line width of the rectangle around the marker
     fill: false,           // => fill or not the marekers' rectangles
-    fillColor: "#FFFFFF",  // => fill color
+    fillColor: "#000000",  // => fill color
     fillOpacity: 0.4,      // => fill opacity
     stroke: false,         // => draw the rectangle around the markers
     position: 'ct',        // => the markers position (vertical align: b, m, t, horizontal align: l, c, r)
@@ -137,6 +137,6 @@ Flotr.addType('markers', {
     if (label instanceof Image)
       ctx.drawImage(label, left+margin, top+margin);
     else
-      Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize});
+      Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.fillColor});
   }
 });
