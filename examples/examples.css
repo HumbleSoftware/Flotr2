@@ -63,6 +63,17 @@ body {
 
 /* Examples */
 
+.flotr-examples-reset {
+  cursor: pointer;
+  text-decoration: underline;
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: none;
+}
+.flotr-examples-collapsed .flotr-examples-reset {
+  display: block;
+}
 .flotr-examples-thumb {
   display: inline-block;
   font-size : 11px;

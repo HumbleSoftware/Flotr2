@@ -13,6 +13,7 @@ var
 
   CN_EXAMPLES   = 'flotr-examples',
   CN_CONTAINER  = 'flotr-examples-container',
+  CN_RESET      = 'flotr-examples-reset',
   CN_THUMBS     = 'flotr-examples-thumbs',
   CN_THUMB      = 'flotr-examples-thumb',
   CN_COLLAPSED  = 'flotr-examples-collapsed',
@@ -22,6 +23,7 @@ var
 
   TEMPLATE      = '' +
     '<div class="' + CN_EXAMPLES + '">' +
+      '<div class="' + CN_RESET + '">View All</div>' +
       '<div class="' + CN_THUMBS + '"></div>' +
       '<div class="' + CN_CONTAINER + '"></div>' +
     '</div>'
@@ -90,21 +92,35 @@ Examples.prototype = {
   _loadExample : function (example) {
     if (example) {
       window.location.hash = '!'+(this.single ? 'single/' : '')+example.key;
+      this._exampleNode.show();
       this._examplesNode.addClass(CN_COLLAPSED);
       this._thumbsNode.height($(window).height());
       this._example.setExample(example);
     }
   },
 
+  _reset : function () {
+    window.location.hash = ''//'!'+(this.single ? 'single/' : '')+example.key;
+    this._examplesNode.removeClass(CN_COLLAPSED);
+    this._thumbsNode.height('');//$(window).height());
+    this._exampleNode.hide();
+  },
+
   _initNodes : function () {
 
     var
       node = $(this.options.node),
+      that = this,
       examplesNode = $(TEMPLATE);
 
-    this._exampleNode   = examplesNode.find(DOT+CN_CONTAINER);
-    this._thumbsNode    = examplesNode.find(DOT+CN_THUMBS);
-    this._examplesNode  = examplesNode;
+    that._resetNode     = examplesNode.find(DOT+CN_RESET);
+    that._exampleNode   = examplesNode.find(DOT+CN_CONTAINER);
+    that._thumbsNode    = examplesNode.find(DOT+CN_THUMBS);
+    that._examplesNode  = examplesNode;
+
+    that._resetNode.click(function () {
+      that._reset();
+    });
 
     node.append(examplesNode);
   },
