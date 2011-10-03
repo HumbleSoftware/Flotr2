@@ -318,10 +318,11 @@ Flotr.Graph.prototype = {
    */
   getEventPosition: function (e){
 
-    var offset = D.position(this.overlay),
+    var d = document,
+        r = this.overlay.getBoundingClientRect();
         pointer = E.eventPointer(e),
-        rx = (pointer.x - offset.left - this.plotOffset.left),
-        ry = (pointer.y - offset.top - this.plotOffset.top),
+        rx = e.clientX - d.body.scrollLeft - d.documentElement.scrollLeft - r.left - this.plotOffset.left,
+        ry = e.clientY - d.body.scrollTop - d.documentElement.scrollTop - r.top - this.plotOffset.top,
         dx = pointer.x - this.lastMousePos.pageX,
         dy = pointer.y - this.lastMousePos.pageY;
 
