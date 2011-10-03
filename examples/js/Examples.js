@@ -5,8 +5,9 @@ var
   E             = Flotr.EventAdapter,
 
   CLICK         = 'click',
-  MOUSEOVER     = 'mouseover',
-  MOUSEOUT      = 'mouseout',
+  EXAMPLE       = 'example',
+  MOUSEENTER    = 'mouseenter',
+  MOUSELEAVE    = 'mouseleave',
 
   DOT           = '.',
 
@@ -39,11 +40,11 @@ Examples = function (o) {
     node : this._exampleNode
   });
 
-  //console.time(ID_EXAMPLES);
+  //console.time(EXAMPLE);
   //console.profile();
     this._initExamples();
   //console.profileEnd();
-  //console.timeEnd(ID_EXAMPLES);
+  //console.timeEnd(EXAMPLE);
 };
 
 Examples.prototype = {
@@ -51,46 +52,39 @@ Examples.prototype = {
   examples : function () {
 
     var
-      thumbsNode = this._thumbsNode;
+      styles = {cursor : 'pointer'},
+      thumbsNode = this._thumbsNode,
+      that = this;
 
     _.each(this.list.get(), function (example) {
 
       if (example.type === 'profile') return;
 
-      var
-        node = $(T_THUMB),
-        styles = {cursor : 'pointer'};
-
+      var node = $(T_THUMB);
+      node.data('example', example);
       thumbsNode.append(node);
+      that._example.executeCallback(example, node);
+    });
 
-      this._example.executeCallback(example, node);
+    function zoomHandler (e) {
+      var
+        node        = $(e.currentTarget),
+        example     = node.data('example'),
+        orientation = e.data.orientation;
+      if (orientation ^ node.hasClass(CN_HIGHLIGHT)) {
+        node.toggleClass(CN_HIGHLIGHT).css(styles);
+        that._example.executeCallback(example, node);
+      }
+    }
 
-      var mouseOverObserver = _.bind(function (e) {
-
-        node.addClass(CN_HIGHLIGHT).css(styles);
-        this._example.executeCallback(example, node);
-        node.css(styles);
-
-        E.stopObserving(node[0], MOUSEOVER, mouseOverObserver);
-        setTimeout(function () {
-          E.observe(node[0], MOUSEOUT, mouseOutObserver);
-        }, 25);
-      }, this);
-
-      var mouseOutObserver = _.bind(function (e) {
-        node.removeClass(CN_HIGHLIGHT);
-        this._example.executeCallback(example, node);
-        node.css(styles);
-        E.stopObserving(node[0], MOUSEOUT, mouseOutObserver);
-        setTimeout(function () {
-          E.observe(node[0], MOUSEOVER, mouseOverObserver);
-        }, 25);
-      }, this);
-
-      E.observe(node[0], MOUSEOVER, mouseOverObserver);
-      E.observe(node[0], CLICK, _.bind(function () { this._loadExample(example) }, this));
-
-    }, this);
+    thumbsNode.delegate(DOT + CN_THUMB, 'mouseenter', {orientation : true}, zoomHandler);
+    thumbsNode.delegate(DOT + CN_THUMB, 'mouseleave', {orientation : false}, zoomHandler);
+    thumbsNode.delegate(DOT + CN_THUMB, CLICK, function (e) {
+      var
+        node    = $(e.currentTarget),
+        example = node.data(EXAMPLE);
+      that._loadExample(example);
+    });
   },
 
   _loadExample : function (example) {
