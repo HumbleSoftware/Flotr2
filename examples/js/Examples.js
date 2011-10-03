@@ -57,13 +57,13 @@ Examples.prototype = {
       that = this;
 
     _.each(this.list.get(), function (example) {
-
-      if (example.type === 'profile') return;
-
-      var node = $(T_THUMB);
-      node.data('example', example);
-      thumbsNode.append(node);
-      that._example.executeCallback(example, node);
+      _.defer(function () {
+        if (example.type === 'profile') return;
+        var node = $(T_THUMB);
+        node.data('example', example);
+        thumbsNode.append(node);
+        that._example.executeCallback(example, node);
+      });
     });
 
     function zoomHandler (e) {
