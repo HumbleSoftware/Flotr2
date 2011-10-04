@@ -18,6 +18,10 @@ var
   CN_THUMB      = 'flotr-examples-thumb',
   CN_COLLAPSED  = 'flotr-examples-collapsed',
   CN_HIGHLIGHT  = 'flotr-examples-highlight',
+  CN_LARGE      = 'flotr-examples-large',
+  CN_MEDIUM     = 'flotr-examples-medium',
+  CN_SMALL      = 'flotr-examples-small',
+  CN_MOBILE     = 'flotr-examples-mobile',
 
   T_THUMB       = '<div class="' + CN_THUMB + '"></div>',
 
@@ -89,15 +93,15 @@ Examples.prototype = {
       window.location.hash = '!'+(this.single ? 'single/' : '')+example.key;
       this._exampleNode.show();
       this._examplesNode.addClass(CN_COLLAPSED);
-      this._thumbsNode.height($(window).height());
       this._example.setExample(example);
+      this._resize();
     }
   },
 
   _reset : function () {
-    window.location.hash = ''//'!'+(this.single ? 'single/' : '')+example.key;
+    window.location.hash = '';
     this._examplesNode.removeClass(CN_COLLAPSED);
-    this._thumbsNode.height('');//$(window).height());
+    this._thumbsNode.height('');
     this._exampleNode.hide();
   },
 
@@ -118,8 +122,49 @@ Examples.prototype = {
     });
 
     node.append(examplesNode);
+
+    this._initResizer();
   },
 
+  _initResizer : function () {
+
+    var
+      that = this,
+      node = that._examplesNode,
+      page = $(window),
+      currentClass;
+
+    $(window).resize(applySize);
+    applySize();
+
+    function applySize () {
+
+      var
+        height = page.height(),
+        width = page.width(),
+        newClass;
+
+      if (width > 1640) {
+        newClass = CN_LARGE;
+        that._thumbsNode.height(height);
+      } else if (width > 1000) {
+        newClass = CN_MEDIUM;
+        that._thumbsNode.height(height);
+      } else {
+        newClass = CN_SMALL;
+        that._thumbsNode.height('');
+      }
+
+      if (currentClass !== newClass) {
+        if (currentClass)
+          that._examplesNode.removeClass(currentClass);
+        that._examplesNode.addClass(newClass);
+        currentClass = newClass;
+      }
+    }
+
+    this._resize = applySize;
+  },
   _initExamples : function () {
 
     var

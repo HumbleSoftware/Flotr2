@@ -1,25 +1,27 @@
 body {
   font-family : sans-serif;
+  padding: 0px;
+  margin: 0px;
 }
 
 /* Example */
 
 .flotr-example {
   display: none;
-  width: 800px;
   margin: 0px auto 48px auto;
+  position: relative;
 }
 .flotr-example-label {
   font-size: 18px;
-  margin: 14px 0px;
+  padding: 14px 0px;
 }
 .flotr-example-graph {
   height: 400px;
   width: 600px;
-  margin: 0px auto;
 }
+.flotr-example-editor,
 .flotr-example-source {
-  margin : 0px 18px;
+  width: 600px;
 }
 .flotr-example-source pre.prettyprint {
   padding: 12px;
@@ -30,8 +32,9 @@ body {
   font-weight: normal;
   overflow-x: auto;
 }
-.flotr-example-source-container {
-  position: relative;
+.flotr-example-editor {
+  position: absolute;
+  top: 0px;
 }
 .flotr-example-editor-text {
   padding: 12px;
@@ -39,8 +42,8 @@ body {
   resize: none;
 }
 .flotr-example-editor-controls {
-  top: 24px;
-  right: 24px;
+  top: 38px;
+  right: 16px;
   position: absolute;
 }
 .flotr-example-editor-controls button {
@@ -64,6 +67,7 @@ body {
 /* Examples */
 
 .flotr-examples-reset {
+  z-index: 100;
   cursor: pointer;
   text-decoration: underline;
   position: absolute;
@@ -92,21 +96,17 @@ body {
 .flotr-examples-thumb .flotr-mouse-value {
   display : none;
 }
-.flotr-examples-collapsed .flotr-examples-thumbs {
-  position: fixed;
-  width: 400px;
-  left: 0px;
-  top: 0px;
-  overflow-y: auto;
-  background: #fff;
-}
-.flotr-examples-collapsed .flotr-examples-thumb {
-  display: block;
-  float: center;
-  margin: 10px auto;
-}
+
 .flotr-examples-collapsed .flotr-examples-container {
-  margin-left: 400px;
+  margin-top: 20px;
+  position: relative;
+  margin: 0px auto;
+}
+
+.flotr-examples-collapsed .flotr-examples-thumbs {
+  position: relative;
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
 
@@ -178,3 +178,49 @@ body {
   background: #ccc;
 }
 
+/* Large */
+.flotr-examples-large .flotr-example {
+  width: 1240px;
+  margin: 0px auto;
+  position: relative;
+}
+.flotr-examples-large .flotr-example-source-container {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+}
+
+/* Medium */
+
+/* Veritical Thumbs */
+.flotr-examples-large.flotr-examples-collapsed .flotr-examples-thumbs,
+.flotr-examples-medium.flotr-examples-collapsed .flotr-examples-thumbs {
+  position: fixed;
+  width: 400px;
+  left: 0px;
+  top: 0px;
+  overflow-y: auto;
+  background: #fff;
+}
+.flotr-examples-large.flotr-examples-collapsed .flotr-examples-thumb,
+.flotr-examples-medium.flotr-examples-collapsed .flotr-examples-thumb {
+  display: block;
+  float: center;
+  margin: 10px auto;
+}
+
+.flotr-examples-large.flotr-examples-collapsed .flotr-examples-container,
+.flotr-examples-medium.flotr-examples-collapsed .flotr-examples-container {
+  margin-left: 400px;
+}
+
+/* Vertical Example */
+
+.flotr-examples-small .flotr-example,
+.flotr-examples-medium .flotr-example {
+  width: 600px;
+}
+.flotr-examples-small .flotr-example-source-container,
+.flotr-examples-medium .flotr-example-source-container {
+  position: relative;
+}
