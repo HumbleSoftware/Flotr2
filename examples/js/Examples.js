@@ -65,6 +65,7 @@ Examples.prototype = {
         node.data('example', example);
         thumbsNode.append(node);
         that._example.executeCallback(example, node);
+        node.click(function () {that._loadExample(example)});
       });
     });
 
@@ -81,12 +82,6 @@ Examples.prototype = {
 
     thumbsNode.delegate(DOT + CN_THUMB, 'mouseenter', {orientation : true}, zoomHandler);
     thumbsNode.delegate(DOT + CN_THUMB, 'mouseleave', {orientation : false}, zoomHandler);
-    thumbsNode.delegate(DOT + CN_THUMB, CLICK, function (e) {
-      var
-        node    = $(e.currentTarget),
-        example = node.data(EXAMPLE);
-      that._loadExample(example);
-    });
   },
 
   _loadExample : function (example) {
