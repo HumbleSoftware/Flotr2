@@ -90,9 +90,23 @@ Examples.prototype = {
 
   _loadExample : function (example) {
     if (example) {
+
       window.location.hash = '!'+(this.single ? 'single/' : '')+example.key;
-      this._exampleNode.show();
+
+      if (!scroller) {
+        this._thumbsNode.css({
+          position: 'absolute',
+          height: '0px',
+          overflow: 'hidden',
+          width: '0px'
+        });
+        this._resetNode.css({
+          top: '16px'
+        });
+      }
+
       this._examplesNode.addClass(CN_COLLAPSED);
+      this._exampleNode.show();
       this._example.setExample(example);
       this._resize();
     }
@@ -100,6 +114,16 @@ Examples.prototype = {
 
   _reset : function () {
     window.location.hash = '';
+
+    if (!scroller) {
+      this._thumbsNode.css({
+        position: '',
+        height: '',
+        overflow: '',
+        width: ''
+      });
+    }
+
     this._examplesNode.removeClass(CN_COLLAPSED);
     this._thumbsNode.height('');
     this._exampleNode.hide();
@@ -194,6 +218,20 @@ Examples.prototype = {
     }
   },
 }
+
+var scroller = (function () {
+
+  var
+    mobile = !!(
+      navigator.userAgent.match(/Android/i) ||
+      navigator.userAgent.match(/webOS/i) ||
+      navigator.userAgent.match(/iPhone/i) ||
+      navigator.userAgent.match(/iPod/i)
+    ),
+    mozilla = !!$.browser.mozilla;
+
+  return (!mobile || mozilla);
+})();
 
 Flotr.Examples = Examples;
 
