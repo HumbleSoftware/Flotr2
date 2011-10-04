@@ -165,7 +165,7 @@ Flotr.Graph.prototype = {
         x2 = a.x2,
         y = a.y,
         y2 = a.y2,
-        maxOutset = 2,
+        maxOutset = options.grid.outlineWidth,
         i, j, l, dim;
 
     // TODO post refactor, fix this
@@ -203,22 +203,21 @@ Flotr.Graph.prototype = {
       p.bottom = 0;
       p.top    = 0;
     } else {
-      p.bottom += (options.grid.circular ? 0 : (x.options.showLabels ?  (x.maxLabel.height + margin) : 0)) + 
-                  (x.options.title ? (x.titleSize.height + margin) : 0) + maxOutset;
+      p.bottom += (options.grid.circular ? 0 : (x.used && x.options.showLabels ?  (x.maxLabel.height + margin) : 0)) + 
+                  (x.used && x.options.title ? (x.titleSize.height + margin) : 0) + maxOutset;
     
-      p.top    += (options.grid.circular ? 0 : (x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) + 
-                  (x2.options.title ? (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset;
+      p.top    += (options.grid.circular ? 0 : (x2.used && x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) + 
+                  (x2.used && x2.options.title ? (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset;
     }
-    
     if (y.options.margin === false) {
       p.left  = 0;
       p.right = 0;
     } else {
-      p.left   += (options.grid.circular ? 0 : (y.options.showLabels ?  (y.maxLabel.width + margin) : 0)) + 
-                  (y.options.title ? (y.titleSize.width + margin) : 0) + maxOutset;
+      p.left   += (options.grid.circular ? 0 : (y.used && y.options.showLabels ?  (y.maxLabel.width + margin) : 0)) + 
+                  (y.used && y.options.title ? (y.titleSize.width + margin) : 0) + maxOutset;
     
-      p.right  += (options.grid.circular ? 0 : (y2.options.showLabels ? (y2.maxLabel.width + margin) : 0)) + 
-                  (y2.options.title ? (y2.titleSize.width + margin) : 0) + maxOutset;
+      p.right  += (options.grid.circular ? 0 : (y2.used && y2.options.showLabels ? (y2.maxLabel.width + margin) : 0)) + 
+                  (y2.used && y2.options.title ? (y2.titleSize.width + margin) : 0) + maxOutset;
     }
     
     p.top = Math.floor(p.top); // In order the outline not to be blured
