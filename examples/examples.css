@@ -71,7 +71,7 @@ body {
   cursor: pointer;
   text-decoration: underline;
   position: absolute;
-  top: 24px;
+  top: 260px;
   right: 24px;
   display: none;
 }
@@ -190,9 +190,13 @@ body {
   right: 0px;
 }
 
-/* Medium */
-
 /* Veritical Thumbs */
+
+.flotr-examples-large.flotr-examples-collapsed .flotr-examples-reset,
+.flotr-examples-medium.flotr-examples-collapsed .flotr-examples-reset {
+  top: 16px;
+}
+
 .flotr-examples-large.flotr-examples-collapsed .flotr-examples-thumbs,
 .flotr-examples-medium.flotr-examples-collapsed .flotr-examples-thumbs {
   position: fixed;
