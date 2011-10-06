@@ -51,9 +51,10 @@ Flotr.DOM = {
   position: function(element, p){
     if (!element.offsetParent)
       return {left: (element.offsetLeft || 0), top: (element.offsetTop || 0)};
+
     p = this.position(element.offsetParent);
-    p.left += element.offsetLeft;
-    p.top += element.offsetTop;
+    p.left  += element.offsetLeft;
+    p.top   += element.offsetTop;
     return p;
   },
   removeClass: function(element, name) {

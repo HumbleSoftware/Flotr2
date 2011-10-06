@@ -143,6 +143,7 @@ Flotr.Graph.prototype = {
     _.each(this.series, function (series) {
       _.each(types, function (type) {
         if (series[type] && series[type].show) {
+          if (this[type].extendRange) this[type].extendRange(series);
           if (this[type].extendYRange) this[type].extendYRange(series.yaxis);
           if (this[type].extendXRange) this[type].extendXRange(series.xaxis);
         }
@@ -164,7 +165,7 @@ Flotr.Graph.prototype = {
         x2 = a.x2,
         y = a.y,
         y2 = a.y2,
-        maxOutset = 2,
+        maxOutset = options.grid.outlineWidth,
         i, j, l, dim;
 
     // TODO post refactor, fix this
@@ -202,22 +203,21 @@ Flotr.Graph.prototype = {
       p.bottom = 0;
       p.top    = 0;
     } else {
-      p.bottom += (options.grid.circular ? 0 : (x.options.showLabels ?  (x.maxLabel.height + margin) : 0)) + 
-                  (x.options.title ? (x.titleSize.height + margin) : 0) + maxOutset;
+      p.bottom += (options.grid.circular ? 0 : (x.used && x.options.showLabels ?  (x.maxLabel.height + margin) : 0)) + 
+                  (x.used && x.options.title ? (x.titleSize.height + margin) : 0) + maxOutset;
     
-      p.top    += (options.grid.circular ? 0 : (x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) + 
-                  (x2.options.title ? (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset;
+      p.top    += (options.grid.circular ? 0 : (x2.used && x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) + 
+                  (x2.used && x2.options.title ? (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset;
     }
-    
     if (y.options.margin === false) {
       p.left  = 0;
       p.right = 0;
     } else {
-      p.left   += (options.grid.circular ? 0 : (y.options.showLabels ?  (y.maxLabel.width + margin) : 0)) + 
-                  (y.options.title ? (y.titleSize.width + margin) : 0) + maxOutset;
+      p.left   += (options.grid.circular ? 0 : (y.used && y.options.showLabels ?  (y.maxLabel.width + margin) : 0)) + 
+                  (y.used && y.options.title ? (y.titleSize.width + margin) : 0) + maxOutset;
     
-      p.right  += (options.grid.circular ? 0 : (y2.options.showLabels ? (y2.maxLabel.width + margin) : 0)) + 
-                  (y2.options.title ? (y2.titleSize.width + margin) : 0) + maxOutset;
+      p.right  += (options.grid.circular ? 0 : (y2.used && y2.options.showLabels ? (y2.maxLabel.width + margin) : 0)) + 
+                  (y2.used && y2.options.title ? (y2.titleSize.width + margin) : 0) + maxOutset;
     }
     
     p.top = Math.floor(p.top); // In order the outline not to be blured
@@ -317,10 +317,11 @@ Flotr.Graph.prototype = {
    */
   getEventPosition: function (e){
 
-    var offset = D.position(this.overlay),
+    var d = document,
+        r = this.overlay.getBoundingClientRect();
         pointer = E.eventPointer(e),
-        rx = (pointer.x - offset.left - this.plotOffset.left),
-        ry = (pointer.y - offset.top - this.plotOffset.top),
+        rx = e.clientX - d.body.scrollLeft - d.documentElement.scrollLeft - r.left - this.plotOffset.left,
+        ry = e.clientY - d.body.scrollTop - d.documentElement.scrollTop - r.top - this.plotOffset.top,
         dx = pointer.x - this.lastMousePos.pageX,
         dy = pointer.y - this.lastMousePos.pageY;
 

@@ -12,6 +12,7 @@ Flotr.addType('markers', {
   options: {
     show: false,           // => setting to true will show markers, false will hide
     lineWidth: 1,          // => line width of the rectangle around the marker
+    color: '#000000',      // => text color
     fill: false,           // => fill or not the marekers' rectangles
     fillColor: "#FFFFFF",  // => fill color
     fillOpacity: 0.4,      // => fill opacity
@@ -102,15 +103,33 @@ Flotr.addType('markers', {
 
       this.markers.plot(xPos, yPos, label, options);
     }
-    
     ctx.restore();
   },
   plot: function(x, y, label, options) {
+    if (label instanceof Image && !label.complete) {
+      Flotr.EventAdapter.observe(label, 'load', _.bind(function () {
+        var ctx = this.ctx;
+        ctx.save();
+        ctx.translate(this.plotOffset.left, this.plotOffset.top);
+        this.markers._plot(x, y, label, options);
+        ctx.restore();
+      }, this));
+    } else {
+      this.markers._plot(x, y, label, options);
+    }
+  },
+
+  _plot: function(x, y, label, options) {
     var ctx = this.ctx,
         margin = 2,
         left = x,
         top = y,
-        dim = this._text.canvas(label);
+        dim;
+
+    if (label instanceof Image)
+      dim = {height : label.height, width: label.width};
+    else
+      dim = this._text.canvas(label);
 
     dim.width = Math.floor(dim.width+margin*2);
     dim.height = Math.floor(dim.height+margin*2);
@@ -130,6 +149,9 @@ Flotr.addType('markers', {
     if(options.stroke)
       ctx.strokeRect(left, top, dim.width, dim.height);
     
-    Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize});
+    if (label instanceof Image)
+      ctx.drawImage(label, left+margin, top+margin);
+    else
+      Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
   }
 });

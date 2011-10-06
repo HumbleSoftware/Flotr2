@@ -5,22 +5,29 @@ var
   E             = Flotr.EventAdapter,
 
   CLICK         = 'click',
-  MOUSEOVER     = 'mouseover',
-  MOUSEOUT      = 'mouseout',
+  EXAMPLE       = 'example',
+  MOUSEENTER    = 'mouseenter',
+  MOUSELEAVE    = 'mouseleave',
 
   DOT           = '.',
 
   CN_EXAMPLES   = 'flotr-examples',
   CN_CONTAINER  = 'flotr-examples-container',
+  CN_RESET      = 'flotr-examples-reset',
   CN_THUMBS     = 'flotr-examples-thumbs',
   CN_THUMB      = 'flotr-examples-thumb',
   CN_COLLAPSED  = 'flotr-examples-collapsed',
   CN_HIGHLIGHT  = 'flotr-examples-highlight',
+  CN_LARGE      = 'flotr-examples-large',
+  CN_MEDIUM     = 'flotr-examples-medium',
+  CN_SMALL      = 'flotr-examples-small',
+  CN_MOBILE     = 'flotr-examples-mobile',
 
   T_THUMB       = '<div class="' + CN_THUMB + '"></div>',
 
   TEMPLATE      = '' +
     '<div class="' + CN_EXAMPLES + '">' +
+      '<div class="' + CN_RESET + '">View All</div>' +
       '<div class="' + CN_THUMBS + '"></div>' +
       '<div class="' + CN_CONTAINER + '"></div>' +
     '</div>'
@@ -39,11 +46,11 @@ Examples = function (o) {
     node : this._exampleNode
   });
 
-  //console.time(ID_EXAMPLES);
+  //console.time(EXAMPLE);
   //console.profile();
     this._initExamples();
   //console.profileEnd();
-  //console.timeEnd(ID_EXAMPLES);
+  //console.timeEnd(EXAMPLE);
 };
 
 Examples.prototype = {
@@ -51,70 +58,137 @@ Examples.prototype = {
   examples : function () {
 
     var
-      thumbsNode = this._thumbsNode;
+      styles = {cursor : 'pointer'},
+      thumbsNode = this._thumbsNode,
+      that = this;
 
     _.each(this.list.get(), function (example) {
+      _.defer(function () {
+        if (example.type === 'profile') return;
+        var node = $(T_THUMB);
+        node.data('example', example);
+        thumbsNode.append(node);
+        that._example.executeCallback(example, node);
+        node.click(function () {that._loadExample(example)});
+      });
+    });
 
-      if (example.type === 'profile') return;
-
+    function zoomHandler (e) {
       var
-        node = $(T_THUMB),
-        styles = {cursor : 'pointer'};
+        node        = $(e.currentTarget),
+        example     = node.data('example'),
+        orientation = e.data.orientation;
+      if (orientation ^ node.hasClass(CN_HIGHLIGHT)) {
+        node.toggleClass(CN_HIGHLIGHT).css(styles);
+        that._example.executeCallback(example, node);
+      }
+    }
 
-      thumbsNode.append(node);
-
-      this._example.executeCallback(example, node);
-
-      var mouseOverObserver = _.bind(function (e) {
-
-        node.addClass(CN_HIGHLIGHT).css(styles);
-        this._example.executeCallback(example, node);
-        node.css(styles);
-
-        E.stopObserving(node[0], MOUSEOVER, mouseOverObserver);
-        setTimeout(function () {
-          E.observe(node[0], MOUSEOUT, mouseOutObserver);
-        }, 25);
-      }, this);
-
-      var mouseOutObserver = _.bind(function (e) {
-        node.removeClass(CN_HIGHLIGHT);
-        this._example.executeCallback(example, node);
-        node.css(styles);
-        E.stopObserving(node[0], MOUSEOUT, mouseOutObserver);
-        setTimeout(function () {
-          E.observe(node[0], MOUSEOVER, mouseOverObserver);
-        }, 25);
-      }, this);
-
-      E.observe(node[0], MOUSEOVER, mouseOverObserver);
-      E.observe(node[0], CLICK, _.bind(function () { this._loadExample(example) }, this));
-
-    }, this);
+    thumbsNode.delegate(DOT + CN_THUMB, 'mouseenter', {orientation : true}, zoomHandler);
+    thumbsNode.delegate(DOT + CN_THUMB, 'mouseleave', {orientation : false}, zoomHandler);
   },
 
   _loadExample : function (example) {
     if (example) {
+
       window.location.hash = '!'+(this.single ? 'single/' : '')+example.key;
+
+      if (!scroller) {
+        this._thumbsNode.css({
+          position: 'absolute',
+          height: '0px',
+          overflow: 'hidden',
+          width: '0px'
+        });
+        this._resetNode.css({
+          top: '16px'
+        });
+      }
+
       this._examplesNode.addClass(CN_COLLAPSED);
-      this._thumbsNode.height($(window).height());
+      this._exampleNode.show();
       this._example.setExample(example);
+      this._resize();
     }
+  },
+
+  _reset : function () {
+    window.location.hash = '';
+
+    if (!scroller) {
+      this._thumbsNode.css({
+        position: '',
+        height: '',
+        overflow: '',
+        width: ''
+      });
+    }
+
+    this._examplesNode.removeClass(CN_COLLAPSED);
+    this._thumbsNode.height('');
+    this._exampleNode.hide();
   },
 
   _initNodes : function () {
 
     var
       node = $(this.options.node),
+      that = this,
       examplesNode = $(TEMPLATE);
 
-    this._exampleNode   = examplesNode.find(DOT+CN_CONTAINER);
-    this._thumbsNode    = examplesNode.find(DOT+CN_THUMBS);
-    this._examplesNode  = examplesNode;
+    that._resetNode     = examplesNode.find(DOT+CN_RESET);
+    that._exampleNode   = examplesNode.find(DOT+CN_CONTAINER);
+    that._thumbsNode    = examplesNode.find(DOT+CN_THUMBS);
+    that._examplesNode  = examplesNode;
+
+    that._resetNode.click(function () {
+      that._reset();
+    });
 
     node.append(examplesNode);
+
+    this._initResizer();
   },
 
+  _initResizer : function () {
+
+    var
+      that = this,
+      node = that._examplesNode,
+      page = $(window),
+      currentClass;
+
+    $(window).resize(applySize);
+    applySize();
+
+    function applySize () {
+
+      var
+        height = page.height(),
+        width = page.width(),
+        newClass;
+
+      if (width > 1640) {
+        newClass = CN_LARGE;
+        that._thumbsNode.height(height);
+      } else if (width > 1000) {
+        newClass = CN_MEDIUM;
+        that._thumbsNode.height(height);
+      } else {
+        newClass = CN_SMALL;
+        that._thumbsNode.height('');
+      }
+
+      if (currentClass !== newClass) {
+        if (currentClass)
+          that._examplesNode.removeClass(currentClass);
+        that._examplesNode.addClass(newClass);
+        currentClass = newClass;
+      }
+    }
+
+    this._resize = applySize;
+  },
   _initExamples : function () {
 
     var
@@ -144,6 +218,20 @@ Examples.prototype = {
     }
   },
 }
+
+var scroller = (function () {
+
+  var
+    mobile = !!(
+      navigator.userAgent.match(/Android/i) ||
+      navigator.userAgent.match(/webOS/i) ||
+      navigator.userAgent.match(/iPhone/i) ||
+      navigator.userAgent.match(/iPod/i)
+    ),
+    mozilla = !!$.browser.mozilla;
+
+  return (!mobile || mozilla);
+})();
 
 Flotr.Examples = Examples;
 

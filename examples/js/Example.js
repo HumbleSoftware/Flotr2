@@ -120,6 +120,7 @@ Example.prototype = {
   },
 
   _renderGraph : function (example) {
+    Flotr.EventAdapter.stopObserving(this._graphNode[0]);
     this.current = this.executeCallback(example, this._graphNode) || null;
   }
 };

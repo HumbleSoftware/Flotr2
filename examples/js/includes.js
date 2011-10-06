@@ -36,6 +36,8 @@ yepnope([
   '../js/types/markers.js',
   '../js/types/radar.js',
   '../js/types/bubbles.js',
+  '../js/types/gantt.js',
+  '../js/types/timeline.js',
   '../js/plugins/download.js',
   '../js/plugins/selection.js',
   '../js/plugins/spreadsheet.js',
@@ -45,7 +47,6 @@ yepnope([
   '../js/plugins/labels.js',
   '../js/plugins/legend.js',
   '../js/plugins/titles.js',
-  '../js/types/gantt.js',
 
   // Examples
   'js/Examples.js',
@@ -73,6 +74,8 @@ yepnope([
   'js/examples/advanced-titles.js',
   'js/examples/color-gradients.js',
   'js/examples/profile-bars.js',
+  'js/examples/basic-timeline.js',
+  'js/examples/advanced-markers.js',
 
   { complete : function () { 
       if (Flotr.ExamplesCallback) {
