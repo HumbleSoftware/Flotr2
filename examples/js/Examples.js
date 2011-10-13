@@ -1,8 +1,8 @@
 (function () {
 
 var
-
   E             = Flotr.EventAdapter,
+  _             = Flotr._,
 
   CLICK         = 'click',
   EXAMPLE       = 'example',

@@ -21,15 +21,15 @@ function basic_timeline (container) {
     i, graph, point;
 
   // Timeline
-  _.each([d1, d2, d3, d4, d5], function (d) {
+  Flotr._.each([d1, d2, d3, d4, d5], function (d) {
     data.push({
       data : d,
-      timeline : _.clone(timeline)
+      timeline : Flotr._.clone(timeline)
     });
   });
 
   // Markers
-  _.each([d1, d2, d3, d4, d5], function (d) {
+  Flotr._.each([d1, d2, d3, d4, d5], function (d) {
     point = d[0];
     markers.push([point[0], point[1]]);
   });

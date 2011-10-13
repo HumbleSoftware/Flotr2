@@ -4,6 +4,11 @@
  * @param {Object} slice - Slice object
  * @return {String} Formatted pie label string
  */
+(function () {
+
+var
+  _ = Flotr._;
+
 Flotr.defaultPieLabelFormatter = function(slice) {
   return (slice.fraction*100).toFixed(2)+'%';
 };
@@ -293,3 +298,4 @@ Flotr.addType('pie', {
     });
   }
 });
+})();

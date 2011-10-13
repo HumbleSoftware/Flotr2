@@ -40,7 +40,7 @@ Flotr.addType('timeline', {
       ctx   = this.ctx,
       i;
 
-    _.each(data, function (timeline) {
+    Flotr._.each(data, function (timeline) {
 
       var 
         x   = timeline[0],
@@ -78,7 +78,7 @@ Flotr.addType('timeline', {
       var
         max = xa.max;
 
-      _.each(data, function (timeline) {
+      Flotr._.each(data, function (timeline) {
         max = Math.max(max, timeline[0] + timeline[2]);
       }, this);
 

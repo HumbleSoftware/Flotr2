@@ -4,6 +4,9 @@
 
 (function () {
 
+var
+  _ = Flotr._;
+
 // Constructor
 Flotr.Color = function(r, g, b, a){
   this.rgba = ['r','g','b','a'];

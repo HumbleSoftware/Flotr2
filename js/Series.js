@@ -4,6 +4,9 @@
 
 (function () {
 
+var
+  _ = Flotr._;
+
 function Series (o) {
   _.extend(this, o);
 };
