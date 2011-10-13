@@ -1805,9 +1805,8 @@ if (CanvasText.proto) {
  * @version 0.2.0
  */
 
-if (typeof (Flotr) == 'undefined') Flotr = {};
-
-_.extend(Flotr, {
+Flotr = {
+  _: _,
   version: "0.2.0-alpha",
   revision: ('$Revision: 192 $'.match(/(\d+)/) || [null,null])[1],
   author: ['Bas Wenneker', 'Fabien Ménager'],
@@ -1872,7 +1871,7 @@ _.extend(Flotr, {
     var i, v, result = dest || {};
     for(i in src){
       v = src[i];
-      result[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !_.isElement(v)) ? Flotr.merge(v, (dest ? dest[i] : undefined)) : result[i] = v;
+      result[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !this._.isElement(v)) ? Flotr.merge(v, (dest ? dest[i] : undefined)) : result[i] = v;
     }
     return result;
   },
@@ -1887,7 +1886,7 @@ _.extend(Flotr, {
     var i, v, clone = {};
     for(i in object){
       v = object[i];
-      clone[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !_.isElement(v)) ? Flotr.clone(v) : v;
+      clone[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !this._.isElement(v)) ? Flotr.clone(v) : v;
     }
     return clone;
   },
@@ -1983,7 +1982,7 @@ _.extend(Flotr, {
       return;
     }
     
-    style = _.extend({
+    style = this._.extend({
       size: Flotr.defaultOptions.fontSize,
       color: '#000000',
       textAlign: 'left',
@@ -2007,7 +2006,7 @@ _.extend(Flotr, {
       return {width: ctx.measure(text, style)};
     }
     
-    style = _.extend({
+    style = this._.extend({
       size: Flotr.defaultOptions.fontSize,
       weight: 1,
       angle: 0
@@ -2046,7 +2045,7 @@ _.extend(Flotr, {
   getTextAngleFromAlign: function(style) {
     return Flotr.alignTable[style.textAlign+' '+style.textBaseline] || 0;
   }
-});
+};
 
 })();
 
@@ -2150,6 +2149,9 @@ Flotr.defaultOptions = {
  */
 
 (function () {
+
+var
+  _ = Flotr._;
 
 // Constructor
 Flotr.Color = function(r, g, b, a){
@@ -2441,6 +2443,10 @@ Flotr.Date = {
   monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 };
 
+(function () {
+
+var _ = Flotr._;
+
 Flotr.DOM = {
   addClass: function(element, name){
     var classList = (element.className ? element.className : '');
@@ -2524,6 +2530,8 @@ Flotr.DOM = {
   }
 };
 
+})();
+
 /**
  * Flotr Event Adapter
  */
@@ -2544,9 +2552,9 @@ Flotr.EventAdapter = {
     return this;
   },
   eventPointer: function(e) {
-    if (!_.isUndefined(e.touches) && e.touches.length > 0) {
+    if (!Flotr._.isUndefined(e.touches) && e.touches.length > 0) {
       return {x: e.touches[0].pageX, y: e.touches[0].pageY};
-    } else if (!_.isUndefined(e.changedTouches) && e.changedTouches.length > 0) {
+    } else if (!Flotr._.isUndefined(e.changedTouches) && e.changedTouches.length > 0) {
       return {x: e.changedTouches[0].pageX, y: e.changedTouches[0].pageY};
     } else if (Flotr.isIE && Flotr.isIE < 9) {
       return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
@@ -2612,8 +2620,10 @@ Flotr.Text = Text;
  */
 (function () {
 
-  var D = Flotr.DOM,
-    E = Flotr.EventAdapter;
+var
+  D = Flotr.DOM,
+  E = Flotr.EventAdapter,
+  _ = Flotr._;
 
 /**
  * Flotr Graph constructor.
@@ -3296,7 +3306,9 @@ Flotr.Graph.prototype = {
 
 (function () {
 
-var LOGARITHMIC = 'logarithmic';
+var
+  _ = Flotr._,
+  LOGARITHMIC = 'logarithmic';
 
 function Axis (o) {
 
@@ -3622,6 +3634,9 @@ Flotr.Axis = Axis;
 
 (function () {
 
+var
+  _ = Flotr._;
+
 function Series (o) {
   _.extend(this, o);
 };
@@ -3735,7 +3750,7 @@ Flotr.addType('lines', {
     var stack = false;
     if(series.lines.stacked) {
       stack = series.xaxis.getStack('bars');
-      if (_.isEmpty(stack)) {
+      if (Flotr._.isEmpty(stack)) {
         stack.values = [];
       }
     }
@@ -3907,7 +3922,7 @@ Flotr.addType('bars', {
     var stack = false;
     if(series.bars.stacked) {
       stack = (series.bars.horizontal ? series.yaxis : series.xaxis).getStack('bars');
-      if (_.isEmpty(stack)) {
+      if (Flotr._.isEmpty(stack)) {
         stack.positive = [];
         stack.negative = [];
         stack._positive = []; // Shadow
@@ -4772,7 +4787,7 @@ Flotr.addType('markers', {
     var stack = false;
     if(series.bars.stacked) {
       stack = (series.bars.horizontal ? series.yaxis : series.xaxis).getStack('bars');
-      if (_.isEmpty(stack)) {
+      if (Flotr._.isEmpty(stack)) {
         stack.positive = [];
         stack.negative = [];
         stack.values = [];
@@ -4851,7 +4866,7 @@ Flotr.addType('markers', {
   },
   plot: function(x, y, label, options) {
     if (label instanceof Image && !label.complete) {
-      Flotr.EventAdapter.observe(label, 'load', _.bind(function () {
+      Flotr.EventAdapter.observe(label, 'load', Flotr._.bind(function () {
         var ctx = this.ctx;
         ctx.save();
         ctx.translate(this.plotOffset.left, this.plotOffset.top);
@@ -4906,6 +4921,11 @@ Flotr.addType('markers', {
  * @param {Object} slice - Slice object
  * @return {String} Formatted pie label string
  */
+(function () {
+
+var
+  _ = Flotr._;
+
 Flotr.defaultPieLabelFormatter = function(slice) {
   return (slice.fraction*100).toFixed(2)+'%';
 };
@@ -5195,6 +5215,7 @@ Flotr.addType('pie', {
     });
   }
 });
+})();
 
 /** Points **/
 Flotr.addType('points', {
@@ -5414,7 +5435,7 @@ Flotr.addType('timeline', {
       ctx   = this.ctx,
       i;
 
-    _.each(data, function (timeline) {
+    Flotr._.each(data, function (timeline) {
 
       var 
         x   = timeline[0],
@@ -5452,7 +5473,7 @@ Flotr.addType('timeline', {
       var
         max = xa.max;
 
-      _.each(data, function (timeline) {
+      Flotr._.each(data, function (timeline) {
         max = Math.max(max, timeline[0] + timeline[2]);
       }, this);
 
@@ -5544,7 +5565,9 @@ Flotr.addPlugin('crosshair', {
 
 (function() {
 
-var D = Flotr.DOM;
+var
+  D = Flotr.DOM,
+  _ = Flotr._;
 
 Flotr.addPlugin('download', {
 
@@ -5778,7 +5801,9 @@ Flotr.addPlugin('graphGrid', {
 
 (function () {
 
-var D = Flotr.DOM;
+var
+  D = Flotr.DOM,
+  _ = Flotr._;
 
 Flotr.addPlugin('hit', {
   callbacks: {
@@ -6086,8 +6111,11 @@ function boundY(y, graph) {
   return Math.min(Math.max(0, y), graph.plotHeight);
 }
 
-var D = Flotr.DOM,
-  E = Flotr.EventAdapter;
+var
+  D = Flotr.DOM,
+  E = Flotr.EventAdapter,
+  _ = Flotr._;
+
 
 Flotr.addPlugin('selection', {
 
@@ -6616,7 +6644,9 @@ Flotr.addPlugin('labels', {
 
 (function () {
 
-var D = Flotr.DOM;
+var
+  D = Flotr.DOM,
+  _ = Flotr._;
 
 Flotr.addPlugin('legend', {
   options: {
@@ -6795,7 +6825,9 @@ Flotr.addPlugin('legend', {
 /** Spreadsheet **/
 (function() {
 
-  var D = Flotr.DOM;
+var
+  D = Flotr.DOM,
+  _ = Flotr._;
 
 Flotr.addPlugin('spreadsheet', {
   options: {
