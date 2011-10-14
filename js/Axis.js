@@ -4,7 +4,9 @@
 
 (function () {
 
-var LOGARITHMIC = 'logarithmic';
+var
+  _ = Flotr._,
+  LOGARITHMIC = 'logarithmic';
 
 function Axis (o) {
 

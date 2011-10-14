@@ -2,6 +2,8 @@
 
 var 
 
+  _             = Flotr._,
+
   DOT           = '.',
 
   CN_EXAMPLE    = 'flotr-example',

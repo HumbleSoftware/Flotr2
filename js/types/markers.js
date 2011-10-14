@@ -28,7 +28,7 @@ Flotr.addType('markers', {
     var stack = false;
     if(series.bars.stacked) {
       stack = (series.bars.horizontal ? series.yaxis : series.xaxis).getStack('bars');
-      if (_.isEmpty(stack)) {
+      if (Flotr._.isEmpty(stack)) {
         stack.positive = [];
         stack.negative = [];
         stack.values = [];
@@ -107,7 +107,7 @@ Flotr.addType('markers', {
   },
   plot: function(x, y, label, options) {
     if (label instanceof Image && !label.complete) {
-      Flotr.EventAdapter.observe(label, 'load', _.bind(function () {
+      Flotr.EventAdapter.observe(label, 'load', Flotr._.bind(function () {
         var ctx = this.ctx;
         ctx.save();
         ctx.translate(this.plotOffset.left, this.plotOffset.top);

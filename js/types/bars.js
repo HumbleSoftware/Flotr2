@@ -45,7 +45,7 @@ Flotr.addType('bars', {
     var stack = false;
     if(series.bars.stacked) {
       stack = (series.bars.horizontal ? series.yaxis : series.xaxis).getStack('bars');
-      if (_.isEmpty(stack)) {
+      if (Flotr._.isEmpty(stack)) {
         stack.positive = [];
         stack.negative = [];
         stack._positive = []; // Shadow

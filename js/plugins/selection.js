@@ -21,8 +21,11 @@ function boundY(y, graph) {
   return Math.min(Math.max(0, y), graph.plotHeight);
 }
 
-var D = Flotr.DOM,
-  E = Flotr.EventAdapter;
+var
+  D = Flotr.DOM,
+  E = Flotr.EventAdapter,
+  _ = Flotr._;
+
 
 Flotr.addPlugin('selection', {
 

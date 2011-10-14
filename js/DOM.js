@@ -1,3 +1,7 @@
+(function () {
+
+var _ = Flotr._;
+
 Flotr.DOM = {
   addClass: function(element, name){
     var classList = (element.className ? element.className : '');
@@ -80,3 +84,5 @@ Flotr.DOM = {
       width: element.scrollWidth };
   }
 };
+
+})();

@@ -49,7 +49,7 @@ Flotr.addType('lines', {
     var stack = false;
     if(series.lines.stacked) {
       stack = series.xaxis.getStack('bars');
-      if (_.isEmpty(stack)) {
+      if (Flotr._.isEmpty(stack)) {
         stack.values = [];
       }
     }

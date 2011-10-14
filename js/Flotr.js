@@ -6,9 +6,8 @@
  * @version 0.2.0
  */
 
-if (typeof (Flotr) == 'undefined') Flotr = {};
-
-_.extend(Flotr, {
+Flotr = {
+  _: _,
   version: "0.2.0-alpha",
   revision: ('$Revision: 192 $'.match(/(\d+)/) || [null,null])[1],
   author: ['Bas Wenneker', 'Fabien Ménager'],
@@ -73,7 +72,7 @@ _.extend(Flotr, {
     var i, v, result = dest || {};
     for(i in src){
       v = src[i];
-      result[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !_.isElement(v)) ? Flotr.merge(v, (dest ? dest[i] : undefined)) : result[i] = v;
+      result[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !this._.isElement(v)) ? Flotr.merge(v, (dest ? dest[i] : undefined)) : result[i] = v;
     }
     return result;
   },
@@ -88,7 +87,7 @@ _.extend(Flotr, {
     var i, v, clone = {};
     for(i in object){
       v = object[i];
-      clone[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !_.isElement(v)) ? Flotr.clone(v) : v;
+      clone[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !this._.isElement(v)) ? Flotr.clone(v) : v;
     }
     return clone;
   },
@@ -184,7 +183,7 @@ _.extend(Flotr, {
       return;
     }
     
-    style = _.extend({
+    style = this._.extend({
       size: Flotr.defaultOptions.fontSize,
       color: '#000000',
       textAlign: 'left',
@@ -208,7 +207,7 @@ _.extend(Flotr, {
       return {width: ctx.measure(text, style)};
     }
     
-    style = _.extend({
+    style = this._.extend({
       size: Flotr.defaultOptions.fontSize,
       weight: 1,
       angle: 0
@@ -247,6 +246,6 @@ _.extend(Flotr, {
   getTextAngleFromAlign: function(style) {
     return Flotr.alignTable[style.textAlign+' '+style.textBaseline] || 0;
   }
-});
+};
 
 })();

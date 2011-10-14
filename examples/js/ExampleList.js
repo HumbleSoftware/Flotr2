@@ -18,7 +18,7 @@ ExampleList.prototype = {
   },
 
   getType : function (type) {
-    return _.select(this.examples, function (example) {
+    return Flotr._.select(this.examples, function (example) {
       return (example.type === type);
     });
   }

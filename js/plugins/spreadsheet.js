@@ -1,7 +1,9 @@
 /** Spreadsheet **/
 (function() {
 
-  var D = Flotr.DOM;
+var
+  D = Flotr.DOM,
+  _ = Flotr._;
 
 Flotr.addPlugin('spreadsheet', {
   options: {

@@ -31,7 +31,7 @@ function mouse_drag (container) {
   function drawGraph (opts) {
 
     // Clone the options, so the 'options' variable always keeps intact.
-    var o = _.extend(_.clone(options), opts || {});
+    var o = Flotr._.extend(Flotr._.clone(options), opts || {});
 
     // Return a new graph.
     return Flotr.draw(

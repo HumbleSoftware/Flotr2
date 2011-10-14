@@ -3,6 +3,7 @@
 var
   D                     = Flotr.DOM,
   E                     = Flotr.EventAdapter,
+  _                     = Flotr._,
   CLICK                 = 'click',
 
   ID_EXAMPLE_PROFILE    = 'example-profile',
