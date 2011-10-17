@@ -163,7 +163,7 @@ Axis.prototype = {
 
   _cleanUserTicks : function (ticks, axisTicks) {
 
-    var options = this.options,
+    var axis = this, options = this.options,
       v, i, label, tick;
 
     if(_.isFunction(ticks)) ticks = ticks({min : axis.min, max : axis.max});
