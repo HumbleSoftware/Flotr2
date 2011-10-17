@@ -2753,6 +2753,10 @@ Flotr.Graph.prototype = {
       }
     }, this);
 
+    // Check for empty data, no data case (none used)
+    if (!a.x.used && !a.x2.used) a.x.used = true;
+    if (!a.y.used && !a.y2.used) a.y.used = true;
+
     _.each(a, function (axis) {
       axis.calculateRange();
     });
@@ -3772,7 +3776,7 @@ Flotr.addType('lines', {
       stack = this.lines.getStack(series),
       x1, x2, y1, y2, stack1, stack2, i;
       
-    if(length < 2) return;
+    if(length < 1) return;
 
     ctx.beginPath();
 
