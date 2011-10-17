@@ -172,10 +172,10 @@ Axis.prototype = {
       tick = ticks[i];
       if(typeof(tick) === 'object'){
         v = tick[0];
-        label = (tick.length > 1) ? tick[1] : options.tickFormatter(v);
+        label = (tick.length > 1) ? tick[1] : options.tickFormatter(v, {min : axis.min, max : axis.max});
       } else {
         v = tick;
-        label = options.tickFormatter(v);
+        label = options.tickFormatter(v, {min : this.min, max : this.max});
       }
       axisTicks[i] = { v: v, label: label };
     }
@@ -226,14 +226,14 @@ Axis.prototype = {
       var decadeEnd = decadeStart * ((o.base == Math.E) ? Math.exp(axis.tickSize) : Math.pow(o.base, axis.tickSize));
       var stepSize = (decadeEnd - decadeStart) / o.minorTickFreq;
       
-      axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart)});
+      axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart, {min : axis.min, max : axis.max})});
       for (v = decadeStart + stepSize; v < decadeEnd; v += stepSize)
-        axis.minorTicks.push({v: v, label: o.tickFormatter(v)});
+        axis.minorTicks.push({v: v, label: o.tickFormatter(v, {min : axis.min, max : axis.max})});
     }
     
     // Always show the value at the would-be start of next decade (end of this decade)
     var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
-    axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart)});
+    axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart, {min : axis.min, max : axis.max})});
   },
 
   _calculateTicks : function () {
@@ -261,12 +261,12 @@ Axis.prototype = {
       if (decimals < 0) decimals = 0;
       
       v = v.toFixed(decimals);
-      axis.ticks.push({ v: v, label: o.tickFormatter(v) });
+      axis.ticks.push({ v: v, label: o.tickFormatter(v, {min : axis.min, max : axis.max}) });
 
       if (o.minorTickFreq) {
         for (j = 0; j < o.minorTickFreq && (i * tickSize + j * minorTickSize) < max; ++j) {
           v = (v2 + j * minorTickSize).toFixed(decimals);
-          axis.minorTicks.push({ v: v, label: o.tickFormatter(v) });
+          axis.minorTicks.push({ v: v, label: o.tickFormatter(v, {min : axis.min, max : axis.max}) });
         }
       }
     }
