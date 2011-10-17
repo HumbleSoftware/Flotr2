@@ -117,9 +117,10 @@ Flotr = {
   /**
    * Default tick formatter.
    * @param {String, Integer} val - tick value integer
+   * @param {Object} axisOpts - the axis' options
    * @return {String} formatted tick string
    */
-  defaultTickFormatter: function(val){
+  defaultTickFormatter: function(val, axisOpts){
     return val+'';
   },
   
