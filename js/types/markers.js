@@ -4,6 +4,8 @@
  * @param {Object} obj - Marker value Object {x:..,y:..}
  * @return {String} Formatted marker string
  */
+(function () {
+
 Flotr.defaultMarkerFormatter = function(obj){
   return (Math.round(obj.y*100)/100)+'';
 };
@@ -106,7 +108,7 @@ Flotr.addType('markers', {
     ctx.restore();
   },
   plot: function(x, y, label, options) {
-    if (label instanceof Image && !label.complete) {
+    if ( isImage(label) && !label.complete) {
       Flotr.EventAdapter.observe(label, 'load', Flotr._.bind(function () {
         var ctx = this.ctx;
         ctx.save();
@@ -126,7 +128,7 @@ Flotr.addType('markers', {
         top = y,
         dim;
 
-    if (label instanceof Image)
+    if (isImage(label))
       dim = {height : label.height, width: label.width};
     else
       dim = this._text.canvas(label);
@@ -149,9 +151,15 @@ Flotr.addType('markers', {
     if(options.stroke)
       ctx.strokeRect(left, top, dim.width, dim.height);
     
-    if (label instanceof Image)
+    if (isImage(label))
       ctx.drawImage(label, left+margin, top+margin);
     else
       Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
   }
 });
+
+function isImage (i) {
+  return typeof i === 'object' && i.constructor && i.constructor === Image;
+}
+
+})();
