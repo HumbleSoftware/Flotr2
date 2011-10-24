@@ -18,7 +18,7 @@ Series.prototype = {
     var data = this.data,
       length = data.length,
       xmin = ymin = Number.MAX_VALUE,
-      xmax = ymax = Number.MIN_VALUE,
+      xmax = ymax = -Number.MAX_VALUE,
       xused, yused,
       x, y, i;
 
