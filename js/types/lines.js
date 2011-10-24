@@ -69,6 +69,7 @@ Flotr.addType('lines', {
       prevx = null,
       prevy = null,
       stack = this.lines.getStack(series),
+      zero = ya.d2p(0),
       x1, x2, y1, y2, stack1, stack2, i;
       
     if(length < 1) return;
@@ -125,8 +126,9 @@ Flotr.addType('lines', {
     // TODO stacked lines
     if(!shadowOffset && series.lines.fill){
       ctx.fillStyle = this.processColor(series.lines.fillColor || series.color, {opacity: series.lines.fillOpacity});
-      ctx.lineTo(this.plotWidth, ya.d2p(0));
-      ctx.lineTo(0, ya.d2p(0));
+      ctx.lineTo(x2, zero);
+      ctx.lineTo(xa.d2p(data[0][0]), zero);
+      ctx.lineTo(xa.d2p(data[0][0]), ya.d2p(data[0][1]));
       ctx.fill();
     }
 
