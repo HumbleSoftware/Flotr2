@@ -64,12 +64,12 @@
     ],
     "examples": [
       "./examples/js/Examples.js",
-      "./examples/js/ExampleList.js",
       "./examples/js/Example.js",
       "./examples/js/Editor.js",
       "./examples/js/Profile.js"
     ],
     "examples-types": [
+      "./examples/js/ExampleList.js",
       "./examples/js/examples/basic.js",
       "./examples/js/examples/basic-axis.js",
       "./examples/js/examples/basic-bars.js",
