@@ -19,50 +19,33 @@ describe('Plots', function () {
     a = b = null;
   });
 
-  it('should draw a line graph', function () {
-    Flotr = StableFlotr;
-    basic(nodeA);
-    a = nodeA.graph.ctx;
+  _.each(TestFlotr.ExampleList.examples, function (example, key) {
 
-    Flotr = TestFlotr;
-    basic(nodeB);
-    b = nodeB.graph.ctx;
+    it('should draw a `' + example.name + '`line graph', function () {
 
-    expect(b).toImageDiffEqual(a);
+      a = executeExampleTest(example, StableFlotr, nodeA);
+      b = executeExampleTest(example, TestFlotr, nodeB);
+
+      expect(b).toImageDiffEqual(a);
+    });
   });
+
+  function executeExampleTest (example, flotr, node) {
+    Math.seedrandom(example.key);
+    Flotr = flotr;
+    example.callback(node);
+    return node.graph.ctx;
+  }
 
   function buildNode () {
     var node = document.createElement('div');
     document.body.appendChild(node);
-    node.style.width = '640px';
-    node.style.height = '480px';
+    node.style.width = '320px';
+    node.style.height = '240px';
     return node;
   }
 
   function destroyNode (node) {
     document.body.removeChild(node);
-  }
-
-  function basic(container) {
-
-    var
-      d1 = [[0, 3], [4, 8], [8, 5], [9, 13]], // First data series
-      d2 = [],                                // Second data series
-      i, graph;
-
-    // Generate first data set
-    for (i = 0; i < 14; i += 0.5) {
-      d2.push([i, Math.sin(i)]);
-    }
-
-    // Draw Graph
-    graph = Flotr.draw(container, [ d1, d2 ], {
-      xaxis: {
-        minorTickFreq: 4
-      }, 
-      grid: {
-        minorVerticalLines: true
-      }
-    });
   }
 });

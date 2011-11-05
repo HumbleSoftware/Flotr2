@@ -10,6 +10,7 @@
   <script type="text/javascript" src="../lib/jasmine/jasmine.js"></script>
   <script type="text/javascript" src="../lib/jasmine/jasmine-html.js"></script>
   <script type="text/javascript" src="../lib/imagediff.js"></script>
+  <script type="text/javascript" src="../examples/lib/randomseed.js"></script>
 
   <!-- include source files here... -->
   <script type="text/javascript" src="js/flotr2.stable.js"></script>
@@ -18,6 +19,10 @@
   </script>
 
   <script type="text/javascript" src="../flotr2.js"></script>
+  <script type="text/javascript" src="../flotr2.examples.types.js"></script>
+  <script type="text/javascript">
+    var TestFlotr = Flotr.noConflict();
+  </script>
 
   <!-- include spec files here... 
   <script type="text/javascript" src="ImageDiff.js"></script>
@@ -30,7 +35,6 @@
 <body>
 </body>
 <script type="text/javascript">
-var TestFlotr = Flotr.noConflict();
 (function() {
   var jasmineEnv = jasmine.getEnv();
   jasmineEnv.updateInterval = 1000;
