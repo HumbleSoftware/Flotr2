@@ -111,20 +111,29 @@ Flotr.addType('bars', {
       barOffset = series.bars.centered ? barWidth/2 : 0;
       
       if(series.bars.horizontal){ 
-        if (x > 0)
-          left = stackOffsetPos, right = x + stackOffsetPos;
-        else
-          right = stackOffsetNeg, left = x + stackOffsetNeg;
-          
-        bottom = y - barOffset, top = y + barWidth - barOffset;
+        if (x > 0){
+          left = stackOffsetPos;
+          right = x + stackOffsetPos;
+        }
+        else {
+          right = stackOffsetNeg;
+          left = x + stackOffsetNeg;
+        }
+        bottom = y - barOffset;
+        top = y + barWidth - barOffset;
       }
       else {
-        if (y > 0)
-          bottom = stackOffsetPos, top = y + stackOffsetPos;
-        else
-          top = stackOffsetNeg, bottom = y + stackOffsetNeg;
+        if (y > 0){
+          bottom = stackOffsetPos;
+          top = y + stackOffsetPos;
+        }
+        else{
+          top = stackOffsetNeg;
+          bottom = y + stackOffsetNeg;
+        }
           
-        left = x - barOffset, right = x + barWidth - barOffset;
+        left = x - barOffset;
+        right = x + barWidth - barOffset;
       }
       
       if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
@@ -167,7 +176,7 @@ Flotr.addType('bars', {
   extendYRange: function(axis){
     this.bars._extendRange(axis);
   },
-  _extendRange: function (axis, orientation) {
+  _extendRange: function (axis) {
 
     if(axis.options.max == null){
       var newmin = axis.min,
@@ -237,7 +246,8 @@ Flotr.addType('bars', {
     var octx = this.octx,
       s = n.series,
       xa = n.xaxis,
-      ya = n.yaxis;
+      ya = n.yaxis,
+      lx, rx, ly, uy;
 
     octx.save();
     octx.translate(this.plotOffset.left, this.plotOffset.top);
@@ -253,18 +263,18 @@ Flotr.addType('bars', {
         x = xa.d2p(n.x);
         
       if(!s.bars.horizontal){ //vertical bars (default)
-        var ly = ya.d2p(ya.min<0? 0 : ya.min); //lower vertex y value (in points)
+        ly = ya.d2p(ya.min<0? 0 : ya.min); //lower vertex y value (in points)
         
         if(s.bars.centered){
-          var lx = xa.d2p(n.x-(bw/2)),
-            rx = xa.d2p(n.x+(bw/2));
+          lx = xa.d2p(n.x-(bw/2));
+          rx = xa.d2p(n.x+(bw/2));
         
           octx.moveTo(lx, ly);
           octx.lineTo(lx, y);
           octx.lineTo(rx, y);
           octx.lineTo(rx, ly);
         } else {
-          var rx = xa.d2p(n.x+bw); //right vertex x value (in points)
+          rx = xa.d2p(n.x+bw); //right vertex x value (in points)
           
           octx.moveTo(x, ly);
           octx.lineTo(x, y);
@@ -272,18 +282,18 @@ Flotr.addType('bars', {
           octx.lineTo(rx, ly);
         }
       } else { //horizontal bars
-        var lx = xa.d2p(xa.min<0? 0 : xa.min); //left vertex y value (in points)
+        lx = xa.d2p(xa.min<0? 0 : xa.min); //left vertex y value (in points)
           
         if(s.bars.centered){
-          var ly = ya.d2p(n.y-(bw/2)),
-            uy = ya.d2p(n.y+(bw/2));
+          ly = ya.d2p(n.y-(bw/2));
+          uy = ya.d2p(n.y+(bw/2));
                        
           octx.moveTo(lx, ly);
           octx.lineTo(x, ly);
           octx.lineTo(x, uy);
           octx.lineTo(lx, uy);
         } else {
-          var uy = ya.d2p(n.y+bw); //upper vertex y value (in points)
+          uy = ya.d2p(n.y+bw); //upper vertex y value (in points)
         
           octx.moveTo(lx, y);
           octx.lineTo(x, y);
