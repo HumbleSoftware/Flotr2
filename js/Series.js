@@ -9,7 +9,7 @@ var
 
 function Series (o) {
   _.extend(this, o);
-};
+}
 
 Series.prototype = {
 
@@ -17,8 +17,8 @@ Series.prototype = {
 
     var data = this.data,
       length = data.length,
-      xmin = ymin = Number.MAX_VALUE,
-      xmax = ymax = -Number.MAX_VALUE,
+      xmin = Number.MAX_VALUE, ymin = Number.MAX_VALUE,
+      xmax = -Number.MAX_VALUE, ymax = -Number.MAX_VALUE,
       xused, yused,
       x, y, i;
 
