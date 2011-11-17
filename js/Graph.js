@@ -305,12 +305,12 @@ Flotr.Graph.prototype = {
     series = series || this.series;
     
     var drawn = false;
-    for(type in Flotr.graphTypes){
-      if(series[type] && series[type].show){
+    _.each(Flotr.graphTypes, function(handler, name) {
+      if(series[name] && series[name].show){
         drawn = true;
-        this[type].draw(series);
+        handler.draw.call(this, series);
       }
-    }
+    }, this);
     
     if(!drawn){
       this[this.options.defaultType].draw(series);
@@ -324,7 +324,7 @@ Flotr.Graph.prototype = {
   getEventPosition: function (e){
 
     var d = document,
-        r = this.overlay.getBoundingClientRect();
+        r = this.overlay.getBoundingClientRect(),
         pointer = E.eventPointer(e),
         rx = e.clientX - d.body.scrollLeft - d.documentElement.scrollLeft - r.left - this.plotOffset.left,
         ry = e.clientY - d.body.scrollTop - d.documentElement.scrollTop - r.top - this.plotOffset.top,
@@ -468,14 +468,14 @@ Flotr.Graph.prototype = {
   },
 
   _initGraphTypes: function() {
-    var type, p;
-    for (type in Flotr.graphTypes) {
-      this[type] = _.clone(Flotr.graphTypes[type]);
-      for (p in this[type]) {
-        if (_.isFunction(this[type][p]))
-          this[type][p] = _.bind(this[type][p], this);
-      }
-    }
+    _.each(Flotr.graphTypes, function(handler, graphType){
+      this[graphType] = _.clone(handler);
+      _.each(handler, function(fn, name){
+        if (_.isFunction(fn))
+          this[graphType][name] = _.bind(fn, this);
+      }, this);
+    }, this);
+
   },
 
   _initEvents: function () {
@@ -566,18 +566,16 @@ Flotr.Graph.prototype = {
 
   _initPlugins: function(){
     // TODO Should be moved to Flotr and mixed in.
-    var name, plugin, c;
-    for (name in Flotr.plugins) {
-      plugin = Flotr.plugins[name];
-      for (c in plugin.callbacks) {
-        this._observe(this.el, c, _.bind(plugin.callbacks[c], this));
-      }
+    _.each(Flotr.plugins, function(plugin, name){
+      _.each(plugin.callbacks, function(fn, c){
+        this._observe(this.el, c, _.bind(fn, this));
+      }, this);
       this[name] = _.clone(plugin);
-      for (p in this[name]) {
-        if (_.isFunction(this[name][p]))
-          this[name][p] = _.bind(this[name][p], this);
-      }
-    }
+      _.each(this[name], function(fn, p){
+        if (_.isFunction(fn))
+          this[name][p] = _.bind(fn, this);
+      }, this);
+    }, this);
   },
 
   /**
@@ -684,5 +682,5 @@ Flotr.Graph.prototype = {
 
     this.el.graph = this;
   }
-}
+};
 })();
