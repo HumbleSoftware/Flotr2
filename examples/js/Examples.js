@@ -109,6 +109,7 @@ Examples.prototype = {
       this._exampleNode.show();
       this._example.setExample(example);
       this._resize();
+      $(document).scrollTop(0);
     }
   },
 
