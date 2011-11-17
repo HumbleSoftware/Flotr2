@@ -17,7 +17,7 @@ function Axis (o) {
   _.extend(this, o);
 
   this._setTranslations();
-};
+}
 
 
 // Prototype
@@ -210,7 +210,8 @@ Axis.prototype = {
 
     var axis = this,
       o = axis.options,
-      v;
+      v,
+      decadeStart;
 
     var max = Math.log(axis.max);
     if (o.base != Math.E) max /= Math.log(o.base);
@@ -221,7 +222,7 @@ Axis.prototype = {
     min = Math.ceil(min);
     
     for (i = min; i < max; i += axis.tickSize) {
-      var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
+      decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
       // Next decade begins here:
       var decadeEnd = decadeStart * ((o.base == Math.E) ? Math.exp(axis.tickSize) : Math.pow(o.base, axis.tickSize));
       var stepSize = (decadeEnd - decadeStart) / o.minorTickFreq;
@@ -232,7 +233,7 @@ Axis.prototype = {
     }
     
     // Always show the value at the would-be start of next decade (end of this decade)
-    var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
+    decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
     axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart, {min : axis.min, max : axis.max})});
   },
 

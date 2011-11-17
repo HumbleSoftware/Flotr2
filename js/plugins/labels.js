@@ -16,7 +16,8 @@ Flotr.addPlugin('labels', {
         xBoxWidth, i, html, tick, left, top,
         options = this.options,
         ctx = this.ctx,
-        a = this.axes;
+        a = this.axes,
+        style;
     
     for(i = 0; i < a.x.ticks.length; ++i){
       if (a.x.ticks[i].label) {
@@ -31,9 +32,10 @@ Flotr.addPlugin('labels', {
       var radius = this.plotHeight*options.radar.radiusRatio/2 + options.fontSize,
           sides = this.axes.x.ticks.length,
           coeff = 2*(Math.PI/sides),
-          angle = -Math.PI/2;
+          angle = -Math.PI/2,
+          x, y;
       
-      var style = {
+      style = {
         size: options.fontSize
       };
 
@@ -45,8 +47,8 @@ Flotr.addPlugin('labels', {
         tick.label += '';
         if(!tick.label || tick.label.length == 0) continue;
         
-        var x = Math.cos(i*coeff+angle) * radius, 
-            y = Math.sin(i*coeff+angle) * radius;
+        x = Math.cos(i*coeff+angle) * radius; 
+        y = Math.sin(i*coeff+angle) * radius;
             
         style.angle = Flotr.toRad(axis.options.labelsAngle);
         style.textBaseline = 'middle';
@@ -59,8 +61,8 @@ Flotr.addPlugin('labels', {
         tick.label += '';
         if(!tick.label || tick.label.length == 0) continue;
       
-        var x = Math.cos(i*coeff+angle) * radius, 
-            y = Math.sin(i*coeff+angle) * radius;
+        x = Math.cos(i*coeff+angle) * radius;
+        y = Math.sin(i*coeff+angle) * radius;
             
         style.angle = Flotr.toRad(axis.options.labelsAngle);
         style.textBaseline = 'middle';
@@ -99,7 +101,7 @@ Flotr.addPlugin('labels', {
     }
     
     if (!options.HtmlText && this.textEnabled) {
-      var style = {
+      style = {
         size: options.fontSize
       };
   
