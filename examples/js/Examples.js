@@ -164,7 +164,7 @@ Examples.prototype = {
     function applySize () {
 
       var
-        height = page.height(),
+        height = page.height() - (that.options.thumbPadding || 0),
         width = page.width(),
         newClass;
 
