@@ -8,7 +8,7 @@ var
   _ = Flotr._;
 
 // Constructor
-Flotr.Color = function(r, g, b, a){
+function Color (r, g, b, a) {
   this.rgba = ['r','g','b','a'];
   var x = 4;
   while(-1<--x){
@@ -30,7 +30,7 @@ var COLOR_NAMES = {
   violet:[128,0,128],red:[255,0,0],silver:[192,192,192],white:[255,255,255],yellow:[255,255,0]
 };
 
-Flotr.Color.prototype = {
+Color.prototype = {
   scale: function(rf, gf, bf, af){
     var x = 4;
     while(-1<--x){
@@ -45,7 +45,7 @@ Flotr.Color.prototype = {
     return this.normalize();
   },
   clone: function(){
-    return new Flotr.Color(this.r, this.b, this.g, this.a);
+    return new Color(this.r, this.b, this.g, this.a);
   },
   limit: function(val,minVal,maxVal){
     return Math.max(Math.min(val, maxVal), minVal);
@@ -60,7 +60,7 @@ Flotr.Color.prototype = {
   },
   distance: function(color){
     if (!color) return;
-    color = new Flotr.Color.parse(color);
+    color = new Color.parse(color);
     var dist = 0, x = 3;
     while(-1<--x){
       dist += Math.abs(this[this.rgba[x]] - color[this.rgba[x]]);
@@ -72,7 +72,7 @@ Flotr.Color.prototype = {
   }
 };
 
-_.extend(Flotr.Color, {
+_.extend(Color, {
   /**
    * Parses a color string and returns a corresponding Color.
    * The different tests are in order of probability to improve speed.
@@ -80,9 +80,9 @@ _.extend(Flotr.Color, {
    * @return {Color} returns a Color object or false
    */
   parse: function(color){
-    if (color instanceof Flotr.Color) return color;
+    if (color instanceof Color) return color;
 
-    var result, Color = Flotr.Color;
+    var result;
 
     // #a0b1c2
     if((result = /#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(color)))
@@ -123,14 +123,14 @@ _.extend(Flotr.Color, {
 
     var opacity = options.opacity;
     if (!color) return 'rgba(0, 0, 0, 0)';
-    if (color instanceof Flotr.Color) return color.alpha(opacity).toString();
-    if (_.isString(color)) return Flotr.Color.parse(color).alpha(opacity).toString();
+    if (color instanceof Color) return color.alpha(opacity).toString();
+    if (_.isString(color)) return Color.parse(color).alpha(opacity).toString();
     
     var grad = color.colors ? color : {colors: color};
     
     if (!options.ctx) {
       if (!_.isArray(grad.colors)) return 'rgba(0, 0, 0, 0)';
-      return Flotr.Color.parse(_.isArray(grad.colors[0]) ? grad.colors[0][1] : grad.colors[0]).alpha(opacity).toString();
+      return Color.parse(_.isArray(grad.colors[0]) ? grad.colors[0][1] : grad.colors[0]).alpha(opacity).toString();
     }
     grad = _.extend({start: 'top', end: 'bottom'}, grad); 
     
@@ -147,9 +147,12 @@ _.extend(Flotr.Color, {
         c = c[1];
       }
       else stop = i / (grad.colors.length-1);
-      gradient.addColorStop(stop, Flotr.Color.parse(c).alpha(opacity));
+      gradient.addColorStop(stop, Color.parse(c).alpha(opacity));
     }
     return gradient;
   }
 });
+
+Flotr.Color = Color;
+
 })();
