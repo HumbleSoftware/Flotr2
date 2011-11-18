@@ -2934,12 +2934,12 @@ Flotr.Graph.prototype = {
     series = series || this.series;
     
     var drawn = false;
-    _.each(Flotr.graphTypes, function(handler, name) {
-      if(series[name] && series[name].show){
+    for(type in Flotr.graphTypes){
+      if(series[type] && series[type].show){
         drawn = true;
-        handler.draw.call(this, series);
+        this[type].draw(series);
       }
-    }, this);
+    }
     
     if(!drawn){
       this[this.options.defaultType].draw(series);
@@ -2953,7 +2953,7 @@ Flotr.Graph.prototype = {
   getEventPosition: function (e){
 
     var d = document,
-        r = this.overlay.getBoundingClientRect(),
+        r = this.overlay.getBoundingClientRect();
         pointer = E.eventPointer(e),
         rx = e.clientX - d.body.scrollLeft - d.documentElement.scrollLeft - r.left - this.plotOffset.left,
         ry = e.clientY - d.body.scrollTop - d.documentElement.scrollTop - r.top - this.plotOffset.top,
@@ -3097,14 +3097,14 @@ Flotr.Graph.prototype = {
   },
 
   _initGraphTypes: function() {
-    _.each(Flotr.graphTypes, function(handler, graphType){
-      this[graphType] = _.clone(handler);
-      _.each(handler, function(fn, name){
-        if (_.isFunction(fn))
-          this[graphType][name] = _.bind(fn, this);
-      }, this);
-    }, this);
-
+    var type, p;
+    for (type in Flotr.graphTypes) {
+      this[type] = _.clone(Flotr.graphTypes[type]);
+      for (p in this[type]) {
+        if (_.isFunction(this[type][p]))
+          this[type][p] = _.bind(this[type][p], this);
+      }
+    }
   },
 
   _initEvents: function () {
@@ -3195,16 +3195,18 @@ Flotr.Graph.prototype = {
 
   _initPlugins: function(){
     // TODO Should be moved to Flotr and mixed in.
-    _.each(Flotr.plugins, function(plugin, name){
-      _.each(plugin.callbacks, function(fn, c){
-        this._observe(this.el, c, _.bind(fn, this));
-      }, this);
+    var name, plugin, c;
+    for (name in Flotr.plugins) {
+      plugin = Flotr.plugins[name];
+      for (c in plugin.callbacks) {
+        this._observe(this.el, c, _.bind(plugin.callbacks[c], this));
+      }
       this[name] = _.clone(plugin);
-      _.each(this[name], function(fn, p){
-        if (_.isFunction(fn))
-          this[name][p] = _.bind(fn, this);
-      }, this);
-    }, this);
+      for (p in this[name]) {
+        if (_.isFunction(this[name][p]))
+          this[name][p] = _.bind(this[name][p], this);
+      }
+    }
   },
 
   /**
@@ -3311,7 +3313,7 @@ Flotr.Graph.prototype = {
 
     this.el.graph = this;
   }
-};
+}
 })();
 
 /**
@@ -3333,7 +3335,7 @@ function Axis (o) {
   _.extend(this, o);
 
   this._setTranslations();
-}
+};
 
 
 // Prototype
@@ -3526,8 +3528,7 @@ Axis.prototype = {
 
     var axis = this,
       o = axis.options,
-      v,
-      decadeStart;
+      v;
 
     var max = Math.log(axis.max);
     if (o.base != Math.E) max /= Math.log(o.base);
@@ -3538,7 +3539,7 @@ Axis.prototype = {
     min = Math.ceil(min);
     
     for (i = min; i < max; i += axis.tickSize) {
-      decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
+      var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
       // Next decade begins here:
       var decadeEnd = decadeStart * ((o.base == Math.E) ? Math.exp(axis.tickSize) : Math.pow(o.base, axis.tickSize));
       var stepSize = (decadeEnd - decadeStart) / o.minorTickFreq;
@@ -3549,7 +3550,7 @@ Axis.prototype = {
     }
     
     // Always show the value at the would-be start of next decade (end of this decade)
-    decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
+    var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
     axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart, {min : axis.min, max : axis.max})});
   },
 
@@ -3654,7 +3655,7 @@ var
 
 function Series (o) {
   _.extend(this, o);
-}
+};
 
 Series.prototype = {
 
@@ -3662,8 +3663,8 @@ Series.prototype = {
 
     var data = this.data,
       length = data.length,
-      xmin = Number.MAX_VALUE, ymin = Number.MAX_VALUE,
-      xmax = -Number.MAX_VALUE, ymax = -Number.MAX_VALUE,
+      xmin = ymin = Number.MAX_VALUE,
+      xmax = ymax = -Number.MAX_VALUE,
       xused, yused,
       x, y, i;
 
@@ -4005,29 +4006,20 @@ Flotr.addType('bars', {
       barOffset = series.bars.centered ? barWidth/2 : 0;
       
       if(series.bars.horizontal){ 
-        if (x > 0){
-          left = stackOffsetPos;
-          right = x + stackOffsetPos;
-        }
-        else {
-          right = stackOffsetNeg;
-          left = x + stackOffsetNeg;
-        }
-        bottom = y - barOffset;
-        top = y + barWidth - barOffset;
+        if (x > 0)
+          left = stackOffsetPos, right = x + stackOffsetPos;
+        else
+          right = stackOffsetNeg, left = x + stackOffsetNeg;
+          
+        bottom = y - barOffset, top = y + barWidth - barOffset;
       }
       else {
-        if (y > 0){
-          bottom = stackOffsetPos;
-          top = y + stackOffsetPos;
-        }
-        else{
-          top = stackOffsetNeg;
-          bottom = y + stackOffsetNeg;
-        }
+        if (y > 0)
+          bottom = stackOffsetPos, top = y + stackOffsetPos;
+        else
+          top = stackOffsetNeg, bottom = y + stackOffsetNeg;
           
-        left = x - barOffset;
-        right = x + barWidth - barOffset;
+        left = x - barOffset, right = x + barWidth - barOffset;
       }
       
       if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
@@ -4070,7 +4062,7 @@ Flotr.addType('bars', {
   extendYRange: function(axis){
     this.bars._extendRange(axis);
   },
-  _extendRange: function (axis) {
+  _extendRange: function (axis, orientation) {
 
     if(axis.options.max == null){
       var newmin = axis.min,
@@ -4140,8 +4132,7 @@ Flotr.addType('bars', {
     var octx = this.octx,
       s = n.series,
       xa = n.xaxis,
-      ya = n.yaxis,
-      lx, rx, ly, uy;
+      ya = n.yaxis;
 
     octx.save();
     octx.translate(this.plotOffset.left, this.plotOffset.top);
@@ -4157,18 +4148,18 @@ Flotr.addType('bars', {
         x = xa.d2p(n.x);
         
       if(!s.bars.horizontal){ //vertical bars (default)
-        ly = ya.d2p(ya.min<0? 0 : ya.min); //lower vertex y value (in points)
+        var ly = ya.d2p(ya.min<0? 0 : ya.min); //lower vertex y value (in points)
         
         if(s.bars.centered){
-          lx = xa.d2p(n.x-(bw/2));
-          rx = xa.d2p(n.x+(bw/2));
+          var lx = xa.d2p(n.x-(bw/2)),
+            rx = xa.d2p(n.x+(bw/2));
         
           octx.moveTo(lx, ly);
           octx.lineTo(lx, y);
           octx.lineTo(rx, y);
           octx.lineTo(rx, ly);
         } else {
-          rx = xa.d2p(n.x+bw); //right vertex x value (in points)
+          var rx = xa.d2p(n.x+bw); //right vertex x value (in points)
           
           octx.moveTo(x, ly);
           octx.lineTo(x, y);
@@ -4176,18 +4167,18 @@ Flotr.addType('bars', {
           octx.lineTo(rx, ly);
         }
       } else { //horizontal bars
-        lx = xa.d2p(xa.min<0? 0 : xa.min); //left vertex y value (in points)
+        var lx = xa.d2p(xa.min<0? 0 : xa.min); //left vertex y value (in points)
           
         if(s.bars.centered){
-          ly = ya.d2p(n.y-(bw/2));
-          uy = ya.d2p(n.y+(bw/2));
+          var ly = ya.d2p(n.y-(bw/2)),
+            uy = ya.d2p(n.y+(bw/2));
                        
           octx.moveTo(lx, ly);
           octx.lineTo(x, ly);
           octx.lineTo(x, uy);
           octx.lineTo(lx, uy);
         } else {
-          uy = ya.d2p(n.y+bw); //upper vertex y value (in points)
+          var uy = ya.d2p(n.y+bw); //upper vertex y value (in points)
         
           octx.moveTo(lx, y);
           octx.lineTo(x, y);
@@ -6378,8 +6369,7 @@ Flotr.addPlugin('labels', {
         xBoxWidth, i, html, tick, left, top,
         options = this.options,
         ctx = this.ctx,
-        a = this.axes,
-        style;
+        a = this.axes;
     
     for(i = 0; i < a.x.ticks.length; ++i){
       if (a.x.ticks[i].label) {
@@ -6394,10 +6384,9 @@ Flotr.addPlugin('labels', {
       var radius = this.plotHeight*options.radar.radiusRatio/2 + options.fontSize,
           sides = this.axes.x.ticks.length,
           coeff = 2*(Math.PI/sides),
-          angle = -Math.PI/2,
-          x, y;
+          angle = -Math.PI/2;
       
-      style = {
+      var style = {
         size: options.fontSize
       };
 
@@ -6409,8 +6398,8 @@ Flotr.addPlugin('labels', {
         tick.label += '';
         if(!tick.label || tick.label.length == 0) continue;
         
-        x = Math.cos(i*coeff+angle) * radius; 
-        y = Math.sin(i*coeff+angle) * radius;
+        var x = Math.cos(i*coeff+angle) * radius, 
+            y = Math.sin(i*coeff+angle) * radius;
             
         style.angle = Flotr.toRad(axis.options.labelsAngle);
         style.textBaseline = 'middle';
@@ -6423,8 +6412,8 @@ Flotr.addPlugin('labels', {
         tick.label += '';
         if(!tick.label || tick.label.length == 0) continue;
       
-        x = Math.cos(i*coeff+angle) * radius;
-        y = Math.sin(i*coeff+angle) * radius;
+        var x = Math.cos(i*coeff+angle) * radius, 
+            y = Math.sin(i*coeff+angle) * radius;
             
         style.angle = Flotr.toRad(axis.options.labelsAngle);
         style.textBaseline = 'middle';
@@ -6463,7 +6452,7 @@ Flotr.addPlugin('labels', {
     }
     
     if (!options.HtmlText && this.textEnabled) {
-      style = {
+      var style = {
         size: options.fontSize
       };
   
