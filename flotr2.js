@@ -7,8 +7,15 @@
   * dperini: https://github.com/dperini/nwevents
   * the entire mootools team: github.com/mootools/mootools-core
   */
-!function (context) {
-  var __uid = 1, registry = {}, collected = {},
+!function (name, definition) {
+  if (typeof module != 'undefined') module.exports = definition();
+  else if (typeof define == 'function' && typeof define.amd  == 'object') define(definition);
+  else this[name] = definition();
+}('bean', function () {
+  var win = window,
+      __uid = 1,
+      registry = {},
+      collected = {},
       overOut = /over|out/,
       namespace = /[^\.]*(?=\..*)\.|.*/,
       stripName = /\..*/,
@@ -16,7 +23,7 @@
       attachEvent = 'attachEvent',
       removeEvent = 'removeEventListener',
       detachEvent = 'detachEvent',
-      doc = context.document || {},
+      doc = document || {},
       root = doc.documentElement || {},
       W3C_MODEL = root[addEvent],
       eventSupport = W3C_MODEL ? addEvent : attachEvent,
@@ -32,7 +39,7 @@
   },
 
   retrieveUid = function (obj, uid) {
-    return (obj.__uid = uid || obj.__uid || __uid++);
+    return (obj.__uid = uid && (uid + '::' + __uid++) || obj.__uid || __uid++);
   },
 
   retrieveEvents = function (element) {
@@ -43,21 +50,24 @@
   listener = W3C_MODEL ? function (element, type, fn, add) {
     element[add ? addEvent : removeEvent](type, fn, false);
   } : function (element, type, fn, add, custom) {
-    custom && add && (element['_on' + custom] = element['_on' + custom] || 0);
+    if (custom && add && element['_on' + custom] === null) {
+      element['_on' + custom] = 0;
+    }
     element[add ? attachEvent : detachEvent]('on' + type, fn);
   },
 
   nativeHandler = function (element, fn, args) {
     return function (event) {
-      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || context).event);
+      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event);
       return fn.apply(element, [event].concat(args));
     };
   },
 
   customHandler = function (element, fn, type, condition, args) {
-    return function (e) {
-      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : e && e.propertyName == '_on' + type || !e) {
-        fn.apply(element, Array.prototype.slice.call(arguments, e ? 0 : 1).concat(args));
+    return function (event) {
+      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event) {
+        event = event ? fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event) : null;
+        fn.apply(element, Array.prototype.slice.call(arguments, event ? 0 : 1).concat(args));
       }
     };
   },
@@ -93,15 +103,20 @@
   },
 
   removeListener = function (element, orgType, handler) {
-    var uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
+    var uid = element.__uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
+
     if (!events || !events[type]) {
       return element;
     }
+
     names = orgType.replace(namespace, '');
     uids = names ? names.split('.') : [handler.__uid];
-    for (i = uids.length; i--;) {
-      uid = uids[i];
+
+    function destroyHandler(uid) {
       handler = events[type][uid];
+      if (!handler) {
+        return;
+      }
       delete events[type][uid];
       if (element[eventSupport]) {
         type = customEvents[type] ? customEvents[type].base : type;
@@ -109,6 +124,19 @@
         listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
       }
     }
+
+    destroyHandler(names); //get combos
+    for (i = uids.length; i--; destroyHandler(uids[i])) {} //get singles
+
+    if (isEmpty(events[type])) {
+      delete events[type];
+    }
+
+    if (isEmpty(registry[uid])) {
+      delete registry[uid];
+      delete collected[uid];
+    }
+
     return element;
   },
 
@@ -141,11 +169,12 @@
   },
 
   remove = function (element, orgEvents, fn) {
-    var k, type, events, i,
+    var k, m, type, events, i,
         isString = typeof(orgEvents) == 'string',
         names = isString && orgEvents.replace(namespace, ''),
         rm = removeListener,
         attached = retrieveEvents(element);
+    names = names && names.split('.');
     if (isString && /\s/.test(orgEvents)) {
       orgEvents = orgEvents.split(' ');
       i = orgEvents.length - 1;
@@ -153,12 +182,14 @@
       return element;
     }
     events = isString ? orgEvents.replace(stripName, '') : orgEvents;
-    if (!attached || (isString && !attached[events])) {
-      if (attached && names) {
-        for (k in attached) {
-          if (attached.hasOwnProperty(k)) {
-            for (i in attached[k]) {
-              attached[k].hasOwnProperty(i) && i === names && rm(element, [k, names].join('.'));
+    if (!attached || names || (isString && !attached[events])) {
+      for (k in attached) {
+        if (attached.hasOwnProperty(k)) {
+          for (i in attached[k]) {
+            for (m = names.length; m--;) {
+              attached[k].hasOwnProperty(i)
+                && new RegExp('^' + names[m] + '::\\d*(\\..*)?$').test(i)
+                && rm(element, [k, i].join('.'));
             }
           }
         }
@@ -184,7 +215,7 @@
   },
 
   fire = function (element, type, args) {
-    var evt, k, i, types = type.split(' ');
+    var evt, k, i, m, types = type.split(' ');
     for (i = types.length; i--;) {
       type = types[i].replace(stripName, '');
       var isNative = nativeEvents[type],
@@ -193,7 +224,9 @@
       if (isNamespace) {
         isNamespace = isNamespace.split('.');
         for (k = isNamespace.length; k--;) {
-          handlers && handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, [false].concat(args));
+          for (m in handlers) {
+            handlers.hasOwnProperty(m) && new RegExp('^' + isNamespace[k] + '::\\d*(\\..*)?$').test(m) && handlers[m].apply(element, [false].concat(args));
+          }
         }
       } else if (!args && element[eventSupport]) {
         fireListener(isNative, type, element);
@@ -208,7 +241,7 @@
 
   fireListener = W3C_MODEL ? function (isNative, type, element) {
     evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
-    evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, context, 1);
+    evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1);
     element.dispatchEvent(evt);
   } : function (isNative, type, element) {
     isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
@@ -253,7 +286,14 @@
       }
     }
     return result;
-  };
+  },
+
+  isEmpty = function (obj) {
+    for (var prop in obj) {
+      if (obj.hasOwnProperty(prop)) return false;
+    }
+    return true;
+  }
 
   fixEvent.preventDefault = function (e) {
     return function () {
@@ -311,26 +351,23 @@
     }
   };
 
-  if (context[attachEvent]) {
-    add(context, 'unload', function () {
+  if (win[attachEvent]) {
+    add(win, 'unload', function () {
       for (var k in collected) {
         collected.hasOwnProperty(k) && clean(collected[k]);
       }
-      context.CollectGarbage && CollectGarbage();
+      win.CollectGarbage && CollectGarbage();
     });
   }
 
-  var oldBean = context.bean;
   bean.noConflict = function () {
-    context.bean = oldBean;
+    context.bean = old;
     return this;
   };
 
-  (typeof module !== 'undefined' && module.exports) ?
-    (module.exports = bean) :
-    (context['bean'] = bean);
+  return bean;
 
-}(this);
+});
 //     Underscore.js 1.1.7
 //     (c) 2011 Jeremy Ashkenas, DocumentCloud Inc.
 //     Underscore is freely distributable under the MIT license.
@@ -2166,7 +2203,7 @@ var
   _ = Flotr._;
 
 // Constructor
-Flotr.Color = function(r, g, b, a){
+function Color (r, g, b, a) {
   this.rgba = ['r','g','b','a'];
   var x = 4;
   while(-1<--x){
@@ -2188,25 +2225,22 @@ var COLOR_NAMES = {
   violet:[128,0,128],red:[255,0,0],silver:[192,192,192],white:[255,255,255],yellow:[255,255,0]
 };
 
-Flotr.Color.prototype = {
-  adjust: function(rd, gd, bd, ad) {
-    var x = 4;
-    while(-1<--x){
-      if(arguments[x] != null)
-        this[this.rgba[x]] += arguments[x];
-    }
-    return this.normalize();
-  },
+Color.prototype = {
   scale: function(rf, gf, bf, af){
     var x = 4;
     while(-1<--x){
-      if(arguments[x] != null)
-        this[this.rgba[x]] *= arguments[x];
+      if(arguments[x] != null) this[this.rgba[x]] *= arguments[x];
+    }
+    return this.normalize();
+  },
+  alpha: function(alpha) {
+    if (!_.isUndefined(alpha) && !_.isNull(alpha)) {
+      this.a = alpha;
     }
     return this.normalize();
   },
   clone: function(){
-    return new Flotr.Color(this.r, this.b, this.g, this.a);
+    return new Color(this.r, this.b, this.g, this.a);
   },
   limit: function(val,minVal,maxVal){
     return Math.max(Math.min(val, maxVal), minVal);
@@ -2221,7 +2255,7 @@ Flotr.Color.prototype = {
   },
   distance: function(color){
     if (!color) return;
-    color = new Flotr.Color.parse(color);
+    color = new Color.parse(color);
     var dist = 0, x = 3;
     while(-1<--x){
       dist += Math.abs(this[this.rgba[x]] - color[this.rgba[x]]);
@@ -2233,7 +2267,7 @@ Flotr.Color.prototype = {
   }
 };
 
-_.extend(Flotr.Color, {
+_.extend(Color, {
   /**
    * Parses a color string and returns a corresponding Color.
    * The different tests are in order of probability to improve speed.
@@ -2241,9 +2275,9 @@ _.extend(Flotr.Color, {
    * @return {Color} returns a Color object or false
    */
   parse: function(color){
-    if (color instanceof Flotr.Color) return color;
+    if (color instanceof Color) return color;
 
-    var result, Color = Flotr.Color;
+    var result;
 
     // #a0b1c2
     if((result = /#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(color)))
@@ -2282,15 +2316,16 @@ _.extend(Flotr.Color, {
    */
   processColor: function(color, options) {
 
+    var opacity = options.opacity;
     if (!color) return 'rgba(0, 0, 0, 0)';
-    if (color instanceof Flotr.Color) return color.adjust(null, null, null, options.opacity).toString();
-    if (_.isString(color)) return Flotr.Color.parse(color).scale(null, null, null, options.opacity).toString();
+    if (color instanceof Color) return color.alpha(opacity).toString();
+    if (_.isString(color)) return Color.parse(color).alpha(opacity).toString();
     
     var grad = color.colors ? color : {colors: color};
     
     if (!options.ctx) {
       if (!_.isArray(grad.colors)) return 'rgba(0, 0, 0, 0)';
-      return Flotr.Color.parse(_.isArray(grad.colors[0]) ? grad.colors[0][1] : grad.colors[0]).scale(null, null, null, options.opacity).toString();
+      return Color.parse(_.isArray(grad.colors[0]) ? grad.colors[0][1] : grad.colors[0]).alpha(opacity).toString();
     }
     grad = _.extend({start: 'top', end: 'bottom'}, grad); 
     
@@ -2307,11 +2342,14 @@ _.extend(Flotr.Color, {
         c = c[1];
       }
       else stop = i / (grad.colors.length-1);
-      gradient.addColorStop(stop, Flotr.Color.parse(c).scale(null, null, null, options.opacity));
+      gradient.addColorStop(stop, Color.parse(c).alpha(opacity));
     }
     return gradient;
   }
 });
+
+Flotr.Color = Color;
+
 })();
 
 /**
@@ -4790,6 +4828,8 @@ Flotr.addType('gantt', {
  * @param {Object} obj - Marker value Object {x:..,y:..}
  * @return {String} Formatted marker string
  */
+(function () {
+
 Flotr.defaultMarkerFormatter = function(obj){
   return (Math.round(obj.y*100)/100)+'';
 };
@@ -4892,7 +4932,7 @@ Flotr.addType('markers', {
     ctx.restore();
   },
   plot: function(x, y, label, options) {
-    if (label instanceof Image && !label.complete) {
+    if ( isImage(label) && !label.complete) {
       Flotr.EventAdapter.observe(label, 'load', Flotr._.bind(function () {
         var ctx = this.ctx;
         ctx.save();
@@ -4912,7 +4952,7 @@ Flotr.addType('markers', {
         top = y,
         dim;
 
-    if (label instanceof Image)
+    if (isImage(label))
       dim = {height : label.height, width: label.width};
     else
       dim = this._text.canvas(label);
@@ -4935,12 +4975,18 @@ Flotr.addType('markers', {
     if(options.stroke)
       ctx.strokeRect(left, top, dim.width, dim.height);
     
-    if (label instanceof Image)
+    if (isImage(label))
       ctx.drawImage(label, left+margin, top+margin);
     else
       Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
   }
 });
+
+function isImage (i) {
+  return typeof i === 'object' && i.constructor && i.constructor === Image;
+}
+
+})();
 
 /** Pie **/
 /**
