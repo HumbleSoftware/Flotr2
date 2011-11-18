@@ -2,16 +2,16 @@ describe('Colors', function () {
 
   describe('Color Construction', function () {
     it('should have a color class', function () {
-      expect(Flotr.Color).not.toBeUndefined();
+      expect(TestFlotr.Color).not.toBeUndefined();
     });
 
     it('should create a color', function () {
-      var color = new Flotr.Color(0, 0, 0, 0);
+      var color = new TestFlotr.Color(0, 0, 0, 0);
       expect(color).toBeTruthy();
     });
 
     it('should have rgba attributes', function () {
-      var color = new Flotr.Color(0, 0, 0, 0);
+      var color = new TestFlotr.Color(0, 0, 0, 0);
       expect(color.r).toEqual(0);
       expect(color.g).toEqual(0);
       expect(color.b).toEqual(0);
@@ -29,7 +29,7 @@ describe('Colors', function () {
     });
 
     it('normalizes colors to upper bound', function () {
-      color = new Flotr.Color(1000, 1000, 1000, 10);
+      color = new TestFlotr.Color(1000, 1000, 1000, 10);
       expect(color.r).toEqual(255);
       expect(color.g).toEqual(255);
       expect(color.b).toEqual(255);
@@ -37,7 +37,7 @@ describe('Colors', function () {
     });
 
     it('normalizes colors to lower bound', function () {
-      color = new Flotr.Color(-1000, -1000, -1000, -10);
+      color = new TestFlotr.Color(-1000, -1000, -1000, -10);
       expect(color.r).toEqual(0);
       expect(color.g).toEqual(0);
       expect(color.b).toEqual(0);
@@ -45,7 +45,7 @@ describe('Colors', function () {
     });
 
     it('scales colors', function () {
-	    color = new Flotr.Color(200, 200, 200, 1.0);
+	    color = new TestFlotr.Color(200, 200, 200, 1.0);
       color.scale(.5, .5, .5, .5);
       expect(color.r).toEqual(100);
       expect(color.g).toEqual(100);
@@ -60,7 +60,7 @@ describe('Colors', function () {
       color;
 
     beforeEach(function () {
-	    color = new Flotr.Color(200, 200, 200, 1.0);
+	    color = new TestFlotr.Color(200, 200, 200, 1.0);
     });
     afterEach(function () {
       color = null;

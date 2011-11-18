@@ -58,13 +58,12 @@ describe('Flotr', function () {
   describe('Main', function () {
 
     it('gets a tick size', function () {
-
-      expect(Flotr.getTickSize).not.toBeUndefined();
-      expect(Flotr.getTickSize(10, 0, 100, 1)).toEqual(10);
-      expect(Flotr.getTickSize(20, 0, 100, 1)).toEqual(5);
-      expect(Flotr.getTickSize(5, 10, 110, 1)).toEqual(20);
-      expect(Flotr.getTickSize(0, 0, 10, 1)).toEqual(Number.POSITIVE_INFINITY);
-      expect(isNaN(Flotr.getTickSize(0, 0, -10, 1))).toBeTruthy();
+      expect(TestFlotr.getTickSize).not.toBeUndefined();
+      expect(TestFlotr.getTickSize(10, 0, 100, 1)).toEqual(10);
+      expect(TestFlotr.getTickSize(20, 0, 100, 1)).toEqual(5);
+      expect(TestFlotr.getTickSize(5, 10, 110, 1)).toEqual(20);
+      expect(TestFlotr.getTickSize(0, 0, 10, 1)).toEqual(Number.POSITIVE_INFINITY);
+      expect(isNaN(TestFlotr.getTickSize(0, 0, -10, 1))).toBeTruthy();
     });
   });
 });
