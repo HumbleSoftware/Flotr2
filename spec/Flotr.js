@@ -49,3 +49,23 @@ describe('Plots', function () {
     document.body.removeChild(node);
   }
 });
+
+describe('Colors', function () {
+
+  it('should have a color class', function () {
+    expect(Flotr.Color).not.toBeUndefined();
+  });
+
+  it('should create a color', function () {
+    var color = new Flotr.Color(0, 0, 0, 0);
+    expect(color).toBeTruthy();
+  });
+
+  it('should have rgba attributes', function () {
+    var color = new Flotr.Color(0, 0, 0, 0);
+    expect(color.r).toEqual(0);
+    expect(color.g).toEqual(0);
+    expect(color.b).toEqual(0);
+    expect(color.a).toEqual(1.0);
+  });
+});
