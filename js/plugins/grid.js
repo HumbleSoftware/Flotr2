@@ -51,7 +51,7 @@ Flotr.addPlugin('graphGrid', {
       }
       if(o.grid.minorHorizontalLines){
         a = this.axes.y;
-        _.each(a.minorTicks, function(v){
+        _.each(_.pluck(a.minorTicks, 'v'), function(v){
           var ratio = v / a.max;
       
           for(var j = 0; j <= sides; ++j){
@@ -96,7 +96,7 @@ Flotr.addPlugin('graphGrid', {
       }
       if(o.grid.minorVerticalLines){
         a = this.axes.x;
-         _.each(_.pluck(a.ticks, 'v'), function(v){
+         _.each(_.pluck(a.minorTicks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
               (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
