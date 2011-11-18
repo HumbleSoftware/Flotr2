@@ -1,6 +1,5 @@
 describe('Flotr', function () {
 
-
   describe('Plots', function () {
 
     var
@@ -20,6 +19,7 @@ describe('Flotr', function () {
       destroyNode(nodeA);
       destroyNode(nodeB);
       a = b = null;
+      Flotr = null;
     });
 
     _.each(TestFlotr.ExampleList.examples, function (example, key) {
@@ -32,6 +32,8 @@ describe('Flotr', function () {
         expect(b).toImageDiffEqual(a);
       });
     });
+
+    // Helpers
 
     function executeExampleTest (example, flotr, node) {
       Math.seedrandom(example.key);
