@@ -6,6 +6,11 @@
  * @version 0.2.0
  */
 
+var
+  global = this,
+  previousFlotr = this.Flotr,
+  Flotr;
+
 Flotr = {
   _: _,
   version: "0.2.0-alpha",
@@ -246,7 +251,13 @@ Flotr = {
   },
   getTextAngleFromAlign: function(style) {
     return Flotr.alignTable[style.textAlign+' '+style.textBaseline] || 0;
+  },
+  noConflict : function () {
+    global.Flotr = previousFlotr;
+    return this;
   }
 };
+
+global.Flotr = Flotr;
 
 })();
