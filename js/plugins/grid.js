@@ -1,6 +1,7 @@
 (function () {
 
-var E = Flotr.EventAdapter;
+var E = Flotr.EventAdapter,
+    _ = Flotr._;
 
 Flotr.addPlugin('graphGrid', {
 
@@ -50,8 +51,7 @@ Flotr.addPlugin('graphGrid', {
       }
       if(o.grid.minorHorizontalLines){
         a = this.axes.y;
-        for(var i = 0; i < a.minorTicks.length; ++i){
-          v = a.minorTicks[i].v;
+        _.each(a.minorTicks, function(v){
           var ratio = v / a.max;
       
           for(var j = 0; j <= sides; ++j){
@@ -59,14 +59,14 @@ Flotr.addPlugin('graphGrid', {
           }
           //ctx.moveTo(radius*ratio, 0);
           //ctx.arc(0, 0, radius*ratio, 0, Math.PI*2, true);
-        }
+        });
       }
       
       if(o.grid.verticalLines){
-        for(var i = 0; i < sides; ++i){
+        _.times(sides, function(i){
           ctx.moveTo(0, 0);
           ctx.lineTo(Math.cos(i*coeff+angle)*radius, Math.sin(i*coeff+angle)*radius);
-        }
+        });
       }
       ctx.stroke();
     }
@@ -84,57 +84,53 @@ Flotr.addPlugin('graphGrid', {
       
       if(o.grid.verticalLines){
         a = this.axes.x;
-        for(var i = 0; i < a.ticks.length; ++i){
-          v = a.ticks[i].v;
+        _.each(_.pluck(a.ticks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
               (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
-            continue;
+            return;
     
           ctx.moveTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, 0);
           ctx.lineTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, this.plotHeight);
-        }
+        }, this);
       }
       if(o.grid.minorVerticalLines){
         a = this.axes.x;
-        for(var i = 0; i < a.minorTicks.length; ++i){
-          v = a.minorTicks[i].v;
+         _.each(_.pluck(a.ticks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
               (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
-            continue;
+            return;
       
           ctx.moveTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, 0);
           ctx.lineTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, this.plotHeight);
-        }
+        }, this);
       }
       
       // Draw grid lines in horizontal direction.
       if(o.grid.horizontalLines){
         a = this.axes.y;
-        for(var j = 0; j < a.ticks.length; ++j){
-          v = a.ticks[j].v;
+        _.each(_.pluck(a.ticks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
               (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
-            continue;
+            return;
     
           ctx.moveTo(0, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
           ctx.lineTo(this.plotWidth, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-        }
+        }, this);
       }
       if(o.grid.minorHorizontalLines){
         a = this.axes.y;
-        for(var j = 0; j < a.minorTicks.length; ++j){
-          v = a.minorTicks[j].v;
+        _.each(_.pluck(a.ticks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
               (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
-            continue;
+            return;
     
           ctx.moveTo(0, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
           ctx.lineTo(this.plotWidth, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-        }
+        }, this);
       }
       ctx.stroke();
     }
