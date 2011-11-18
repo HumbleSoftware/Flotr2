@@ -31,19 +31,16 @@ var COLOR_NAMES = {
 };
 
 Flotr.Color.prototype = {
-  adjust: function(rd, gd, bd, ad) {
-    var x = 4;
-    while(-1<--x){
-      if(arguments[x] != null)
-        this[this.rgba[x]] += arguments[x];
-    }
-    return this.normalize();
-  },
   scale: function(rf, gf, bf, af){
     var x = 4;
     while(-1<--x){
-      if(arguments[x] != null)
-        this[this.rgba[x]] *= arguments[x];
+      if(arguments[x] != null) this[this.rgba[x]] *= arguments[x];
+    }
+    return this.normalize();
+  },
+  alpha: function(alpha) {
+    if (!_.isUndefined(alpha) && !_.isNull(alpha)) {
+      this.a = alpha;
     }
     return this.normalize();
   },
@@ -124,15 +121,16 @@ _.extend(Flotr.Color, {
    */
   processColor: function(color, options) {
 
+    var opacity = options.opacity;
     if (!color) return 'rgba(0, 0, 0, 0)';
-    if (color instanceof Flotr.Color) return color.adjust(null, null, null, options.opacity).toString();
-    if (_.isString(color)) return Flotr.Color.parse(color).scale(null, null, null, options.opacity).toString();
+    if (color instanceof Flotr.Color) return color.alpha(opacity).toString();
+    if (_.isString(color)) return Flotr.Color.parse(color).alpha(opacity).toString();
     
     var grad = color.colors ? color : {colors: color};
     
     if (!options.ctx) {
       if (!_.isArray(grad.colors)) return 'rgba(0, 0, 0, 0)';
-      return Flotr.Color.parse(_.isArray(grad.colors[0]) ? grad.colors[0][1] : grad.colors[0]).scale(null, null, null, options.opacity).toString();
+      return Flotr.Color.parse(_.isArray(grad.colors[0]) ? grad.colors[0][1] : grad.colors[0]).alpha(opacity).toString();
     }
     grad = _.extend({start: 'top', end: 'bottom'}, grad); 
     
@@ -149,7 +147,7 @@ _.extend(Flotr.Color, {
         c = c[1];
       }
       else stop = i / (grad.colors.length-1);
-      gradient.addColorStop(stop, Flotr.Color.parse(c).scale(null, null, null, options.opacity));
+      gradient.addColorStop(stop, Flotr.Color.parse(c).alpha(opacity));
     }
     return gradient;
   }
