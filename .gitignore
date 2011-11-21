@@ -1,5 +1,6 @@
 build
 .vimrc
 *.swp
+*.swm
 *.swo
 *.vim
