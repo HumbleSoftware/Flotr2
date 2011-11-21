@@ -40,66 +40,12 @@ Flotr.addPlugin('labels', {
       };
 
       // Add x labels.
-      axis = a.x;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels; ++i){
-        tick = axis.ticks[i];
-        tick.label += '';
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        x = Math.cos(i*coeff+angle) * radius; 
-        y = Math.sin(i*coeff+angle) * radius;
-            
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textBaseline = 'middle';
-        style.textAlign = (Math.abs(x) < 0.1 ? 'center' : (x < 0 ? 'right' : 'left'));
-
-        Flotr.drawText(ctx, tick.label, x, y, style);
-      }
-      for(i = 0; i < axis.minorTicks.length && axis.options.showMinorLabels; ++i){
-        tick = axis.minorTicks[i];
-        tick.label += '';
-        if(!tick.label || tick.label.length == 0) continue;
-      
-        x = Math.cos(i*coeff+angle) * radius;
-        y = Math.sin(i*coeff+angle) * radius;
-            
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textBaseline = 'middle';
-        style.textAlign = (Math.abs(x) < 0.1 ? 'center' : (x < 0 ? 'right' : 'left'));
-
-        Flotr.drawText(ctx, tick.label, x, y, style);
-      }
-      
-      // Add y labels.
-      axis = a.y;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels; ++i){
-        tick = axis.ticks[i];
-        tick.label += '';
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textBaseline = 'middle';
-        style.textAlign = 'left';
-        
-        Flotr.drawText(ctx, tick.label, 3, -(axis.ticks[i].v / axis.max) * (radius - options.fontSize), style);
-      }
-      for(i = 0; i < axis.minorTicks.length && axis.options.showMinorLabels; ++i){
-        tick = axis.minorTicks[i];
-        tick.label += '';
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textBaseline = 'middle';
-        style.textAlign = 'left';
-        
-        Flotr.drawText(ctx, tick.label, 3, -(axis.ticks[i].v / axis.max) * (radius - options.fontSize), style);
-      }
+      drawLabelCircular(this, a.x, false);
+      drawLabelCircular(this, a.x, true);
+      drawLabelCircular(this, a.y, false);
+      drawLabelCircular(this, a.y, true);
       ctx.restore();
-      return;
-    }
-    
+    } 
     if (!options.HtmlText && this.textEnabled) {
       style = {
         size: options.fontSize
@@ -209,12 +155,41 @@ Flotr.addPlugin('labels', {
       D.insert(div, html);
     }
 
+    function drawLabelCircular (graph, axis, minorTicks) {
+      var
+        ticks = minorTicks ? axis.minorTicks : axis.ticks,
+        isX     = axis.orientation === 1,
+        isFirst = axis.n === 1,
+        offset;
+
+      style.color = axis.options.color || options.grid.color;
+      for(i = 0; i < ticks.length &&
+          (minorTicks ? axis.options.showMinorLabels : axis.options.showLabels); ++i){
+        tick = ticks[i];
+        tick.label += '';
+        if(!tick.label || !tick.label.length) { continue; }
+        
+        x = Math.cos(i*coeff+angle) * radius; 
+        y = Math.sin(i*coeff+angle) * radius;
+            
+        style.angle = Flotr.toRad(axis.options.labelsAngle);
+        style.textBaseline = 'middle';
+        style.textAlign = isX ? (Math.abs(x) < 0.1 ? 'center' : (x < 0 ? 'right' : 'left')) : 'left';
+        
+        Flotr.drawText(
+          ctx, tick.label,
+          isX ? x : 3,
+          isX ? y : -(axis.ticks[i].v / axis.max) * (radius - options.fontSize),
+          style);
+      }
+    }
     function drawLabelNoHtmlText (graph, axis, textAlign, textBaseline)  {
       var
         isX     = axis.orientation === 1,
         isFirst = axis.n === 1,
         offset;
 
+      style.color = axis.options.color || options.grid.color;
       for (i = 0; i < axis.ticks.length && continueShowingLabels(axis); ++i) {
         
         tick = axis.ticks[i];
@@ -224,7 +199,6 @@ Flotr.addPlugin('labels', {
         if (offset < 0 ||
             offset > (isX ? graph.plotWidth : graph.plotHeight)) { continue; }
         
-        style.color = axis.options.color || options.grid.color;
         style.angle = Flotr.toRad(axis.options.labelsAngle);
         style.textAlign = textAlign;
         style.textBaseline = textBaseline;
