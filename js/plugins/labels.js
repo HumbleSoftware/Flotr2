@@ -104,107 +104,11 @@ Flotr.addPlugin('labels', {
       style = {
         size: options.fontSize
       };
-  
-      // Add x labels.
-      axis = a.x;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels && axis.used; ++i){
-        tick = axis.ticks[i];
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        left = axis.d2p(tick.v);
-        if (left < 0 || left > this.plotWidth) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textAlign = 'center';
-        style.textBaseline = 'top';
-        style = Flotr.getBestTextAlign(style.angle, style);
-        
-        Flotr.drawText(
-          ctx, tick.label,
-          this.plotOffset.left + left, 
-          this.plotOffset.top + this.plotHeight + options.grid.labelMargin,
-          style
-        );
-      }
-        
-      // Add x2 labels.
-      axis = a.x2;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels && axis.used; ++i){
-        tick = axis.ticks[i];
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        left = axis.d2p(tick.v);
-        if(left < 0 || left > this.plotWidth) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textAlign = 'center';
-        style.textBaseline = 'bottom';
-        style = Flotr.getBestTextAlign(style.angle, style);
-        
-        Flotr.drawText(
-          ctx, tick.label,
-          this.plotOffset.left + left, 
-          this.plotOffset.top + options.grid.labelMargin,
-          style
-        );
-      }
-        
-      // Add y labels.
-      axis = a.y;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels && axis.used; ++i){
-        tick = axis.ticks[i];
-        if (!tick.label || tick.label.length == 0) continue;
-        
-        top = axis.d2p(tick.v);
-        if(top < 0 || top > this.plotHeight) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textAlign = 'right';
-        style.textBaseline = 'middle';
-        style = Flotr.getBestTextAlign(style.angle, style);
-        
-        Flotr.drawText(
-          ctx, tick.label,
-          this.plotOffset.left - options.grid.labelMargin, 
-          this.plotOffset.top + top,
-          style
-        );
-      }
-        
-      // Add y2 labels.
-      axis = a.y2;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels && axis.used; ++i){
-        tick = axis.ticks[i];
-        if (!tick.label || tick.label.length == 0) continue;
-        
-        top = axis.d2p(tick.v);
-        if(top < 0 || top > this.plotHeight) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textAlign = 'left';
-        style.textBaseline = 'middle';
-        style = Flotr.getBestTextAlign(style.angle, style);
-        
-        Flotr.drawText(
-          ctx, tick.label,
-          this.plotOffset.left + this.plotWidth + options.grid.labelMargin, 
-          this.plotOffset.top + top,
-          style
-        );
-        
-        ctx.save();
-        ctx.strokeStyle = style.color;
-        ctx.beginPath();
-        ctx.moveTo(this.plotOffset.left + this.plotWidth - 8, this.plotOffset.top + axis.d2p(tick.v));
-        ctx.lineTo(this.plotOffset.left + this.plotWidth,     this.plotOffset.top + axis.d2p(tick.v));
-        ctx.stroke();
-        ctx.restore();
-      }
-    } 
+      drawLabelNoHtmlText(this, a.x, 'center', 'top');
+      drawLabelNoHtmlText(this, a.x2, 'center', 'bottom');
+      drawLabelNoHtmlText(this, a.y, 'right', 'middle');
+      drawLabelNoHtmlText(this, a.y2, 'left', 'middle');
+    }
     else if (a.x.options.showLabels || a.x2.options.showLabels || a.y.options.showLabels || a.y2.options.showLabels) {
       html = [];
       
@@ -303,6 +207,62 @@ Flotr.addPlugin('labels', {
       div.className = 'flotr-labels';
       D.insert(this.el, div);
       D.insert(div, html);
+    }
+
+    function drawLabelNoHtmlText (graph, axis, textAlign, textBaseline)  {
+      var
+        isX     = axis.orientation === 1,
+        isFirst = axis.n === 1,
+        offset;
+
+      for (i = 0; i < axis.ticks.length && continueShowingLabels(axis); ++i) {
+        
+        tick = axis.ticks[i];
+        if (!tick.label || !tick.label.length) { continue; }
+   
+        offset = axis.d2p(tick.v);
+        if (offset < 0 ||
+            offset > (isX ? graph.plotWidth : graph.plotHeight)) { continue; }
+        
+        style.color = axis.options.color || options.grid.color;
+        style.angle = Flotr.toRad(axis.options.labelsAngle);
+        style.textAlign = textAlign;
+        style.textBaseline = textBaseline;
+        style = Flotr.getBestTextAlign(style.angle, style);
+        
+        Flotr.drawText(
+          ctx, tick.label,
+          leftOffset(graph, isX, isFirst, offset),
+          topOffset(graph, isX, isFirst, offset),
+          style
+        );
+
+        // Only draw on axis y2
+        if (!isX && !isFirst) {
+          ctx.save();
+          ctx.strokeStyle = style.color;
+          ctx.beginPath();
+          ctx.moveTo(graph.plotOffset.left + graph.plotWidth - 8, graph.plotOffset.top + axis.d2p(tick.v));
+          ctx.lineTo(graph.plotOffset.left + graph.plotWidth, graph.plotOffset.top + axis.d2p(tick.v));
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+      function continueShowingLabels (axis) {
+        return axis.options.showLabels && axis.used;
+      }
+      function leftOffset (graph, isX, isFirst, offset) {
+        return graph.plotOffset.left +
+          (isX ? offset :
+            (isFirst ?
+              -options.grid.labelMargin :
+              options.grid.labelMargin + graph.plotWidth));
+      }
+      function topOffset (graph, isX, isFirst, offset) {
+        return graph.plotOffset.top +
+          (isX ? options.grid.labelMargin : offset) +
+          ((isX && isFirst) ? graph.plotHeight : 0);
+      }
     }
   }
 
