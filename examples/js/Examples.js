@@ -109,6 +109,7 @@ Examples.prototype = {
       this._exampleNode.show();
       this._example.setExample(example);
       this._resize();
+      $(document).scrollTop(0);
     }
   },
 
@@ -164,7 +165,7 @@ Examples.prototype = {
     function applySize () {
 
       var
-        height = page.height(),
+        height = page.height() - (that.options.thumbPadding || 0),
         width = page.width(),
         newClass;
 
