@@ -2,14 +2,14 @@
   "JAVASCRIPT": {
     "DIST_DIR": "./build",
     "ie": [
-      "./lib/excanvas.js",
-      "./lib/base64.js"
+      { "src": "./lib/excanvas.js", "jshint": false },
+      { "src": "./lib/base64.js", "jshint": false }
     ],
     "lib": [
-      "./lib/bean.js",
-      "./lib/underscore.js",
-      "./lib/canvas2image.js",
-      "./lib/canvastext.js"
+      { "src": "./lib/bean.js", "jshint": false },
+      { "src": "./lib/underscore.js", "jshint": false },
+      { "src": "./lib/canvas2image.js", "jshint": false },
+      { "src": "./lib/canvastext.js", "jshint": false }
     ],
     "flotr2": [
       "./js/Flotr.js",
