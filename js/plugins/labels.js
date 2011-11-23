@@ -15,7 +15,7 @@ Flotr.addPlugin('labels', {
     var
       axis, tick, left, top, xBoxWidth,
       radius, sides, coeff, angle,
-      div, html, i,
+      div, i, html = '',
       noLabels = 0,
       options  = this.options,
       ctx      = this.ctx,
@@ -168,7 +168,7 @@ Flotr.addPlugin('labels', {
       var
         isX     = axis.orientation === 1,
         isFirst = axis.n === 1,
-        html, left, style, top,
+        left, style, top,
         offset = graph.plotOffset;
 
       if (!isX && !isFirst) {
@@ -186,22 +186,20 @@ Flotr.addPlugin('labels', {
             continue;
           }
           top = offset.top +
-            (isX ? ((isFirst ? 1 : -1 ) * (graph.plotHeight + options.grid.labelMargin)) :
-            axis.d2p(tick.v) - axis.maxLabel.height / 2);
-
-          left = offset.left +
-            (isX ? axis.d2p(tick.v) - xBoxWidth / 2 :
-            -options.grid.labelMargin);
-
+            (isX ?
+              ((isFirst ? 1 : -1 ) * (graph.plotHeight + options.grid.labelMargin)) :
+              axis.d2p(tick.v) - axis.maxLabel.height / 2);
+          left = isX ? (offset.left + axis.d2p(tick.v) - xBoxWidth / 2) : 0;
+          
           html += [
-            '<div style="position:absolute; text-align: ' + (isX ? 'center' : 'right') + '; ',
-            'top:' + isX ? top : offset.top + axis.d2p(tick.v) - axis.maxLabel.height / 2+ 'px; ',
-            (!isX && !isFirst ? 'right:' : 'left:') + (isX ? left : 0) + 'px; ',
-            'width:' + isX ? xBoxWidth : ((isFirst ? offset.left : offset.right) - options.grid.labelMargin)+ 'px; ',
+            '<div style="position:absolute; text-align:' + (isX ? 'center' : 'right') + '; ',
+            'top:' + top + 'px; ',
+            ((!isX && !isFirst) ? 'right:' : 'left:') + left + 'px; ',
+            'width:' + (isX ? xBoxWidth : ((isFirst ? offset.left : offset.right) - options.grid.labelMargin)) + 'px; ',
             axis.options.color ? ('color:' + axis.options.color + '; ') : ' ',
-            '" class="flotr-grid-label">' + tick.label + '</div>'
-          ].join();
-
+            ' class="flotr-grid-label">' + tick.label + '</div>'
+          ].join(' ');
+          
           if (!isX && !isFirst) {
             ctx.moveTo(offset.left + graph.plotWidth - 8, offset.top + axis.d2p(tick.v));
             ctx.lineTo(offset.left + graph.plotWidth, offset.top + axis.d2p(tick.v));
