@@ -4,18 +4,18 @@
 (function () {
 
 var
-  D = Flotr.DOM,
-  E = Flotr.EventAdapter,
-  _ = Flotr._;
-
+  D     = Flotr.DOM,
+  E     = Flotr.EventAdapter,
+  _     = Flotr._;
+  flotr = Flotr;
 /**
  * Flotr Graph constructor.
  * @param {Element} el - element to insert the graph into
  * @param {Object} data - an array or object of dataseries
  * @param {Object} options - an object containing options
  */
-Flotr.Graph = function(el, data, options){
-
+Graph = function(el, data, options){
+// Let's see if we can get away with out this [JS]
 //  try {
     this._setEl(el);
     this._initMembers();
@@ -24,11 +24,11 @@ Flotr.Graph = function(el, data, options){
     E.fire(this.el, 'flotr:beforeinit', [this]);
 
     this.data = data;
-    this.series = Flotr.Series.getSeries(data);
+    this.series = flotr.Series.getSeries(data);
     this._initOptions(options);
     this._initGraphTypes();
     this._initCanvas();
-    this._text = new Flotr.Text({
+    this._text = new flotr.Text({
       element : this.el,
       ctx : this.ctx,
       html : this.options.HtmlText,
@@ -36,23 +36,23 @@ Flotr.Graph = function(el, data, options){
     });
     E.fire(this.el, 'flotr:afterconstruct', [this]);
     this._initEvents();
-  
+
     this.findDataRanges();
     this.calculateSpacing();
 
     this.draw(_.bind(function() {
       E.fire(this.el, 'flotr:afterinit', [this]);
     }, this));
-
+/*
     try {
   } catch (e) {
     try {
       console.error(e);
     } catch (e2) {}
-  }
+  }*/
 };
 
-Flotr.Graph.prototype = {
+Graph.prototype = {
 
   destroy: function () {
     _.each(this._handles, function (handle) {
@@ -89,7 +89,7 @@ Flotr.Graph.prototype = {
     if (!_.isArray(s)) s = [s];
 
     function e(s) {
-      _.each(_.keys(Flotr.graphTypes), function (type) {
+      _.each(_.keys(flotr.graphTypes), function (type) {
         if (s[type] && s[type].show) {
           try {
             if (!_.isUndefined(args))
@@ -108,7 +108,7 @@ Flotr.Graph.prototype = {
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
-    return Flotr.Color.processColor(color, o);
+    return flotr.Color.processColor(color, o);
   },
   /**
    * Function determines the min and max values for the xaxis and yaxis.
@@ -118,7 +118,7 @@ Flotr.Graph.prototype = {
   findDataRanges: function(){
     var a = this.axes,
       xaxis, yaxis, range;
-    
+
     a.x.datamin = a.x2.datamin = a.y.datamin = a.y2.datamin = Number.MAX_VALUE;
     a.x.datamax = a.x2.datamax = a.y.datamax = a.y2.datamax = -Number.MAX_VALUE;
 
@@ -144,7 +144,7 @@ Flotr.Graph.prototype = {
       axis.calculateRange();
     });
 
-    var types = _.keys(Flotr.graphTypes);
+    var types = _.keys(flotr.graphTypes);
 
     _.each(this.series, function (series) {
       _.each(types, function (type) {
@@ -203,31 +203,31 @@ Flotr.Graph.prototype = {
         maxOutset = Math.max(maxOutset, series[j].points.radius + series[j].points.lineWidth/2);
       }
     }
-    
+
     var p = this.plotOffset;
     if (x.options.margin === false) {
       p.bottom = 0;
       p.top    = 0;
     } else {
-      p.bottom += (options.grid.circular ? 0 : (x.used && x.options.showLabels ?  (x.maxLabel.height + margin) : 0)) + 
+      p.bottom += (options.grid.circular ? 0 : (x.used && x.options.showLabels ?  (x.maxLabel.height + margin) : 0)) +
                   (x.used && x.options.title ? (x.titleSize.height + margin) : 0) + maxOutset;
-    
-      p.top    += (options.grid.circular ? 0 : (x2.used && x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) + 
+
+      p.top    += (options.grid.circular ? 0 : (x2.used && x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) +
                   (x2.used && x2.options.title ? (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset;
     }
     if (y.options.margin === false) {
       p.left  = 0;
       p.right = 0;
     } else {
-      p.left   += (options.grid.circular ? 0 : (y.used && y.options.showLabels ?  (y.maxLabel.width + margin) : 0)) + 
+      p.left   += (options.grid.circular ? 0 : (y.used && y.options.showLabels ?  (y.maxLabel.width + margin) : 0)) +
                   (y.used && y.options.title ? (y.titleSize.width + margin) : 0) + maxOutset;
-    
-      p.right  += (options.grid.circular ? 0 : (y2.used && y2.options.showLabels ? (y2.maxLabel.width + margin) : 0)) + 
+
+      p.right  += (options.grid.circular ? 0 : (y2.used && y2.options.showLabels ? (y2.maxLabel.width + margin) : 0)) +
                   (y2.used && y2.options.title ? (y2.titleSize.width + margin) : 0) + maxOutset;
     }
-    
+
     p.top = Math.floor(p.top); // In order the outline not to be blured
-    
+
     this.plotWidth  = this.canvasWidth - p.left - p.right;
     this.plotHeight = this.canvasHeight - p.bottom - p.top;
 
@@ -248,49 +248,49 @@ Flotr.Graph.prototype = {
 
       if(this.series.length){
         E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
-        
+
         for(var i = 0; i < this.series.length; i++){
           if (!this.series[i].hide)
             this.drawSeries(this.series[i]);
         }
       }
-    
+
       this.clip();
       E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
       after();
     }, this);
-    
+
     var g = this.options.grid;
-    
+
     if (g && g.backgroundImage) {
       if (_.isString(g.backgroundImage)){
         g.backgroundImage = {src: g.backgroundImage, left: 0, top: 0};
       }else{
         g.backgroundImage = _.extend({left: 0, top: 0}, g.backgroundImage);
       }
-      
+
       var img = new Image();
       img.onload = _.bind(function() {
         var left = this.plotOffset.left + (parseInt(g.backgroundImage.left) || 0);
         var top = this.plotOffset.top + (parseInt(g.backgroundImage.top) || 0);
-        
+
         // Store the global alpha to restore it later on.
         var globalAlpha = this.ctx.globalAlpha;
-        
-        // When the watermarkAlpha is < 1 then the watermark is transparent. 
+
+        // When the watermarkAlpha is < 1 then the watermark is transparent.
         this.ctx.globalAlpha = (g.backgroundImage.alpha||globalAlpha);
-        
+
         // Draw the watermark.
         this.ctx.drawImage(img, left, top);
-        
+
         // Set the globalAlpha back to the alpha value before changing it to
         // the grid.watermarkAlpha, otherwise the graph will be transparent also.
         this.ctx.globalAlpha = globalAlpha;
-        
+
         afterImageLoad();
-        
+
       }, this);
-      
+
       img.onabort = img.onerror = afterImageLoad;
       img.src = g.backgroundImage.src;
     } else {
@@ -303,15 +303,15 @@ Flotr.Graph.prototype = {
    */
   drawSeries: function(series){
     series = series || this.series;
-    
+
     var drawn = false;
-    _.each(Flotr.graphTypes, function(handler, name) {
+    _.each(flotr.graphTypes, function(handler, name) {
       if(series[name] && series[name].show){
         drawn = true;
         handler.draw.call(this, series);
       }
     }, this);
-    
+
     if(!drawn){
       this[this.options.defaultType].draw(series);
     }
@@ -362,7 +362,7 @@ Flotr.Graph.prototype = {
   mouseMoveHandler: function(event){
     var pos = this.getEventPosition(event);
     this.lastMousePos.pageX = pos.absX;
-    this.lastMousePos.pageY = pos.absY;  
+    this.lastMousePos.pageY = pos.absY;
     E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
   },
   /**
@@ -378,7 +378,7 @@ Flotr.Graph.prototype = {
 
       var overlay = this.overlay;
       overlay.hide();
-      
+
       function cancelContextMenu () {
         overlay.show();
         E.stopObserving(document, 'mousemove', cancelContextMenu);
@@ -394,7 +394,7 @@ Flotr.Graph.prototype = {
     E.fire(this.el, 'flotr:mousedown', [event, this]);
   },
   /**
-   * Observes the mouseup event for the document. 
+   * Observes the mouseup event for the document.
    * @param {Event} event - 'mouseup' Event object.
    */
   mouseUpHandler: function(event){
@@ -405,8 +405,8 @@ Flotr.Graph.prototype = {
   },
   drawTooltip: function(content, x, y, options) {
     var mt = this.getMouseTrack(),
-        style = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;', 
-        p = options.position, 
+        style = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;',
+        p = options.position,
         m = options.margin,
         plotOffset = this.plotOffset;
 
@@ -423,7 +423,7 @@ Flotr.Graph.prototype = {
              if(p.charAt(1) == 'e') style += 'left:' + (m + plotOffset.left + x) + 'px;right:auto;';
         else if(p.charAt(1) == 'w') style += 'right:' + (m - plotOffset.left - x + this.canvasWidth) + 'px;left:auto;';
       }
-  
+
       mt.style.cssText = style;
       D.empty(mt);
       D.insert(mt, content);
@@ -442,7 +442,7 @@ Flotr.Graph.prototype = {
       w   = this.canvasWidth,
       h   = this.canvasHeight;
 
-    if (Flotr.isIE && Flotr.isIE < 9) {
+    if (flotr.isIE && flotr.isIE < 9) {
       // Clipping for excanvas :-(
       ctx.save();
       ctx.fillStyle = this.processColor(this.options.ieBackgroundColor);
@@ -468,7 +468,7 @@ Flotr.Graph.prototype = {
   },
 
   _initGraphTypes: function() {
-    _.each(Flotr.graphTypes, function(handler, graphType){
+    _.each(flotr.graphTypes, function(handler, graphType){
       this[graphType] = _.clone(handler);
       _.each(handler, function(fn, name){
         if (_.isFunction(fn))
@@ -505,13 +505,13 @@ Flotr.Graph.prototype = {
         pos = this.getEventPosition(e.touches[0]);
 
       this.lastMousePos.pageX = pageX;
-      this.lastMousePos.pageY = pageY;  
+      this.lastMousePos.pageY = pageY;
       E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
     }, this));
   },
 
   /**
-   * Initializes the canvas and it's overlay canvas element. When the browser is IE, this makes use 
+   * Initializes the canvas and it's overlay canvas element. When the browser is IE, this makes use
    * of excanvas. The overlay canvas is inserted for displaying interactions. After the canvas elements
    * are created, the elements are inserted into the container element.
    */
@@ -519,7 +519,7 @@ Flotr.Graph.prototype = {
     var el = this.el,
       o = this.options,
       size, style;
-    
+
     D.empty(el);
     D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
     size = D.size(el);
@@ -527,7 +527,7 @@ Flotr.Graph.prototype = {
     if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
       throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
     }
-    
+
     // The old canvases are retrieved to avoid memory leaks ...
     // @TODO Confirm.
     // this.canvas = el.select('.flotr-canvas')[0];
@@ -565,8 +565,8 @@ Flotr.Graph.prototype = {
   },
 
   _initPlugins: function(){
-    // TODO Should be moved to Flotr and mixed in.
-    _.each(Flotr.plugins, function(plugin, name){
+    // TODO Should be moved to flotr and mixed in.
+    _.each(flotr.plugins, function(plugin, name){
       _.each(plugin.callbacks, function(fn, c){
         this._observe(this.el, c, _.bind(fn, this));
       }, this);
@@ -579,32 +579,32 @@ Flotr.Graph.prototype = {
   },
 
   /**
-   * Sets options and initializes some variables and color specific values, used by the constructor. 
+   * Sets options and initializes some variables and color specific values, used by the constructor.
    * @param {Object} opts - options object
    */
   _initOptions: function(opts){
-    var options = Flotr.clone(Flotr.defaultOptions);
+    var options = flotr.clone(flotr.defaultOptions);
     options.x2axis = _.extend(_.clone(options.xaxis), options.x2axis);
     options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
-    this.options = Flotr.merge(opts || {}, options);
+    this.options = flotr.merge(opts || {}, options);
 
-    this.axes = Flotr.Axis.getAxes(this.options);
+    this.axes = flotr.Axis.getAxes(this.options);
 
-    if (this.options.grid.minorVerticalLines === null && 
+    if (this.options.grid.minorVerticalLines === null &&
       this.options.xaxis.scaling === 'logarithmic') {
       this.options.grid.minorVerticalLines = true;
     }
-    if (this.options.grid.minorHorizontalLines === null && 
+    if (this.options.grid.minorHorizontalLines === null &&
       this.options.yaxis.scaling === 'logarithmic') {
       this.options.grid.minorHorizontalLines = true;
     }
-    
+
     // Initialize some variables used throughout this function.
     var assignedColors = [],
         colors = [],
         ln = this.series.length,
         neededColors = this.series.length,
-        oc = this.options.colors, 
+        oc = this.options.colors,
         usedColors = [],
         variation = 0,
         c, i, j, s;
@@ -615,18 +615,18 @@ Flotr.Graph.prototype = {
       if(c){
         --neededColors;
         if(_.isNumber(c)) assignedColors.push(c);
-        else usedColors.push(Flotr.Color.parse(c));
+        else usedColors.push(flotr.Color.parse(c));
       }
     }
-    
+
     // Calculate the number of colors that need to be generated.
     for(i = assignedColors.length - 1; i > -1; --i)
       neededColors = Math.max(neededColors, assignedColors[i] + 1);
 
     // Generate needed number of colors.
     for(i = 0; colors.length < neededColors;){
-      c = (oc.length == i) ? new Flotr.Color(100, 100, 100) : Flotr.Color.parse(oc[i]);
-      
+      c = (oc.length == i) ? new flotr.Color(100, 100, 100) : flotr.Color.parse(oc[i]);
+
       // Make sure each serie gets a different color.
       var sign = variation % 2 == 1 ? -1 : 1,
           factor = 1 + sign * Math.ceil(variation / 2) * 0.2;
@@ -636,13 +636,13 @@ Flotr.Graph.prototype = {
        * @todo if we're getting too close to something else, we should probably skip this one
        */
       colors.push(c);
-      
+
       if(++i >= oc.length){
         i = 0;
         ++variation;
       }
     }
-  
+
     // Fill the options with the generated colors.
     for(i = 0, j = 0; i < ln; ++i){
       s = this.series[i];
@@ -653,22 +653,22 @@ Flotr.Graph.prototype = {
       }else if(_.isNumber(s.color)){
         s.color = colors[s.color].toString();
       }
-      
+
       // Every series needs an axis
       if (!s.xaxis) s.xaxis = this.axes.x;
            if (s.xaxis == 1) s.xaxis = this.axes.x;
       else if (s.xaxis == 2) s.xaxis = this.axes.x2;
-      
+
       if (!s.yaxis) s.yaxis = this.axes.y;
            if (s.yaxis == 1) s.yaxis = this.axes.y;
       else if (s.yaxis == 2) s.yaxis = this.axes.y2;
-      
+
       // Apply missing options to the series.
-      for (var t in Flotr.graphTypes){
+      for (var t in flotr.graphTypes){
         s[t] = _.extend(_.clone(this.options[t]), s[t]);
       }
       s.mouse = _.extend(_.clone(this.options.mouse), s.mouse);
-      
+
       if(s.shadowSize == null) s.shadowSize = this.options.shadowSize;
     }
   },
@@ -683,4 +683,7 @@ Flotr.Graph.prototype = {
     this.el.graph = this;
   }
 };
+
+Flotr.Graph = Graph;
+
 })();
