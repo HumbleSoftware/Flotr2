@@ -7,3 +7,4 @@ flotr2:
 	cp build/ie.min.js flotr2.ie.min.js
 	cp build/examples.min.js flotr2.examples.min.js
 	cp build/examples-types.js flotr2.examples.types.js
+	jasmine-headless-webkit -j spec/jasmine.yml -c
