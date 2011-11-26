@@ -4,7 +4,9 @@
 (function () {
 
 var
-  D = Flotr.DOM,
+  F = Flotr,
+  D = F.DOM,
+  _ = F._,
 
 Text = function (o) {
   this.o = o;
@@ -42,6 +44,30 @@ Text.prototype = {
     D.insert(this.o.element, div);
 
     return D.size(div);
+  },
+
+  measureText : function (ctx, text, style) {
+
+    var
+      context = this.o.ctx,
+      metrics;
+
+    if (!context.fillText || F.isIphone) {
+      return { width : context.measure(text, style)};
+    }
+
+    style = _.extend({
+      size: Flotr.defaultOptions.fontSize,
+      weight: 1,
+      angle: 0
+    }, style);
+
+    context.save();
+    context.font = (style.weight > 1 ? "bold " : "") + (style.size*1.3) + "px sans-serif";
+    metrics = context.measureText(text);
+    context.restore();
+
+    return metrics;
   }
 };
 
