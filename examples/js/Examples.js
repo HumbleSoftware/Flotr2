@@ -64,7 +64,7 @@ Examples.prototype = {
 
     _.each(this.list.get(), function (example) {
       _.defer(function () {
-        if (example.type === 'profile') return;
+        if (example.type === 'profile' || example.type === 'test') return;
         var node = $(T_THUMB);
         node.data('example', example);
         thumbsNode.append(node);
