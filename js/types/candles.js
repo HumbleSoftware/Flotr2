@@ -141,22 +141,10 @@ Flotr.addType('candles', {
       this.ctx.fillRect(Math.min(xa.d2p(left)+sw, this.plotWidth), Math.min(ya.d2p(top)+sw, this.plotWidth), width, height);
     }
   },
-  extendXRange: function(axis){
-    if(axis.options.max == null){
-      var newmin = axis.min,
-          newmax = axis.max,
-          i, c;
-
-      for(i = 0; i < this.series.length; ++i){
-        c = this.series[i].candles;
-        if(c.show && this.series[i].xaxis == axis) {
-          // We don't use c.candleWidth in order not to stick the borders
-          newmax = Math.max(axis.datamax + 0.5, newmax);
-          newmin = Math.min(axis.datamin - 0.5, newmin);
-        }
-      }
-      axis.max = newmax;
-      axis.min = newmin;
+  extendXRange: function (axis, data, options) {
+    if (axis.options.max == null) {
+      axis.max = Math.max(axis.datamax + 0.5, axis.max);
+      axis.min = Math.min(axis.datamin - 0.5, axis.min);
     }
   }
 });
