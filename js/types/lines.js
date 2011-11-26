@@ -48,7 +48,7 @@ Flotr.addType('lines', {
   getStack: function (series) {
     var stack = false;
     if(series.lines.stacked) {
-      stack = series.xaxis.getStack('bars');
+      stack = series.xaxis.getStack('lines');
       if (Flotr._.isEmpty(stack)) {
         stack.values = [];
       }
@@ -135,43 +135,44 @@ Flotr.addType('lines', {
     ctx.closePath();
   },
 
-  extendYRange: function(axis){
-    var o = axis.options;
-    if((!o.max && o.max !== 0) || (!o.min && o.min !== 0)){
-      var newmax = axis.max,
-          newmin = axis.min,
-          x, i, j, s, l,
-          stackedSumsPos = {},
-          stackedSumsNeg = {},
-          lastSerie = null;
-                  
-      for(i = 0; i < this.series.length; ++i){
-        s = this.series[i];
-        l = s.lines;
-        if (l.show && !s.hide && s.yaxis == axis) {
-          // For stacked lines
-          if(l.stacked){
-            for (j = 0; j < s.data.length; j++) {
-              x = s.data[j][0]+'';
-              if(s.data[j][1]>0)
-                stackedSumsPos[x] = (stackedSumsPos[x] || 0) + s.data[j][1];
-              else
-                stackedSumsNeg[x] = (stackedSumsNeg[x] || 0) + s.data[j][1];
-              lastSerie = s;
-            }
-            
-            for (j in stackedSumsPos) {
-              newmax = Math.max(stackedSumsPos[j], newmax);
-            }
-            for (j in stackedSumsNeg) {
-              newmin = Math.min(stackedSumsNeg[j], newmin);
-            }
-          }
+  extendYRange : function (axis, data, options, lines) {
+
+    var
+      o = axis.options;
+
+    if (options.stacked
+      && ((!o.max && o.max !== 0) || (!o.min && o.min !== 0))) {
+
+      var
+        newmax = axis.max,
+        newmin = axis.min,
+        positiveSums = lines.positiveSums || {},
+        negativeSums = lines.negativeSums || {},
+        x, j;
+
+      for (j = 0; j < data.length; j++) {
+
+        x = data[j][0] + '';
+
+        // Positive
+        if (data[j][1] > 0) {
+          positiveSums[x] = (positiveSums[x] || 0) + data[j][1];
+          newmax = Math.max(newmax, positiveSums[x]);
+        }
+
+        // Negative
+        else {
+          negativeSums[x] = (negativeSums[x] || 0) + data[j][1];
+          newmin = Math.min(newmin, negativeSums[x]);
         }
       }
-      axis.lastSerie = lastSerie;
+
+      lines.negativeSums = negativeSums;
+      lines.positiveSums = positiveSums;
+
       axis.max = newmax;
       axis.min = newmin;
     }
-  }
+  },
+
 });
