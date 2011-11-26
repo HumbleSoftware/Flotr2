@@ -116,11 +116,12 @@ Graph.prototype = {
     var types = _.keys(flotr.graphTypes);
 
     _.each(this.series, function (series) {
+      if (series.hide) return;
       _.each(types, function (type) {
         if (series[type] && series[type].show) {
-          if (this[type].extendRange) this[type].extendRange(series);
-          if (this[type].extendYRange) this[type].extendYRange(series.yaxis);
-          if (this[type].extendXRange) this[type].extendXRange(series.xaxis);
+          if (this[type].extendRange) this[type].extendRange(series, series.data, series[type], this[type]);
+          if (this[type].extendYRange) this[type].extendYRange(series.yaxis, series.data, series[type], this[type]);
+          if (this[type].extendXRange) this[type].extendXRange(series.xaxis, series.data, series[type], this[type]);
         }
       }, this);
     }, this);
