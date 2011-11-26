@@ -169,77 +169,68 @@ Flotr.addType('bars', {
     }
   },
 
-  extendXRange: function(axis) {
-    this.bars._extendRange(axis);
+  extendXRange : function (axis, data, options, bars) {
+    this.bars._extendRange(axis, data, options, bars);
   },
 
-  extendYRange: function(axis){
-    this.bars._extendRange(axis);
+  extendYRange : function (axis, data, options, bars) {
+    this.bars._extendRange(axis, data, options, bars);
   },
-  _extendRange: function (axis) {
+  _extendRange: function (axis, data, options, bars) {
 
-    if(axis.options.max == null){
-      var newmin = axis.min,
-          newmax = axis.max,
-          orientation = axis.orientation,
-          stackedSumsPos = {},
-          stackedSumsNeg = {},
-          lastSerie = null,
-          value, index,
-          i, j, s, b;
+    var
+      max = axis.options.max;
 
-      for(i = 0; i < this.series.length; ++i){
+    if (_.isNumber(max) || _.isString(max)) return; 
 
-        s = this.series[i];
-        b = s.bars;
+    var
+      newmin = axis.min,
+      newmax = axis.max,
+      orientation = axis.orientation,
+      positiveSums = bars.positiveSums || {},
+      negativeSums = bars.negativeSums || {},
+      value, datum, index, j;
 
-        if(b.show) {
+    // Sides of bars
+    if ((orientation == 1 && !options.horizontal) || (orientation == -1 && options.horizontal)) {
+      if (options.centered) {
+        newmax = Math.max(axis.datamax + 0.5, newmax);
+        newmin = Math.min(axis.datamin - 0.5, newmin);
+      }
+    }
 
-          // Sides of bars
-          if ((orientation == 1 && !b.horizontal) || (orientation == -1 && b.horizontal)) {
-            if (b.centered) {
-              newmax = Math.max(axis.datamax + 0.5, newmax);
-              newmin = Math.min(axis.datamin - 0.5, newmin);
-            }
-          }
+    // End of bars
+    if ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal)) {
+      if (options.barWidth + axis.datamax >= newmax)
+        newmax = axis.max + (options.centered ? options.barWidth/2 : options.barWidth);
+    }
 
-          // End of bars
-          if ((orientation == 1 && b.horizontal) || (orientation == -1 && !b.horizontal)) {
-            if (b.barWidth + axis.datamax >= newmax)
-              newmax = axis.max + (b.centered ? b.barWidth/2 : b.barWidth);
-          }
+    if (options.stacked && 
+        ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal))){
 
-          if (b.stacked && 
-              ((orientation == 1 && b.horizontal) || (orientation == -1 && !b.horizontal))){
-            for (j = 0; j < s.data.length; j++) {
-              if (b.show && b.stacked) {
-                value = s.data[j][(orientation == 1 ? 1 : 0)]+'';
+      for (j = data.length; j--;) {
+        value = data[j][(orientation == 1 ? 1 : 0)]+'';
+        datum = data[j][(orientation == 1 ? 0 : 1)];
 
-                index = orientation == 1 ? 0 : 1;
+        // Positive
+        if (datum > 0) {
+          positiveSums[value] = (positiveSums[value] || 0) + datum;
+          newmax = Math.max(newmax, positiveSums[value]);
+        }
 
-                if(s.data[j][index] > 0)
-                  stackedSumsPos[value] = (stackedSumsPos[value] || 0) + s.data[j][index];
-                else
-                  stackedSumsNeg[value] = (stackedSumsNeg[value] || 0) + s.data[j][index];
-                  
-                lastSerie = s;
-              }
-            }
-
-            for (j in stackedSumsPos) {
-              newmax = Math.max(stackedSumsPos[j], newmax);
-            }
-            for (j in stackedSumsNeg) {
-              newmin = Math.min(stackedSumsNeg[j], newmin);
-            }
-          }
+        // Negative
+        else {
+          negativeSums[value] = (negativeSums[value] || 0) + datum;
+          newmin = Math.min(newmin, negativeSums[value]);
         }
       }
-
-      axis.lastSerie = lastSerie;
-      axis.max = newmax;
-      axis.min = newmin;
     }
+
+    bars.negativeSums = negativeSums;
+    bars.positiveSums = positiveSums;
+
+    axis.max = newmax;
+    axis.min = newmin;
   },
 
   drawHit: function (n) {
