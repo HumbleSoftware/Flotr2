@@ -28,8 +28,10 @@ describe('Flotr', function () {
 
         a = executeExampleTest(example, StableFlotr, nodeA);
         b = executeExampleTest(example, TestFlotr, nodeB);
+        document.body.appendChild(b);
 
         expect(b).toImageDiffEqual(a);
+        die();
       });
     });
 
@@ -39,6 +41,10 @@ describe('Flotr', function () {
       Math.seedrandom(example.key);
       Flotr = flotr;
       example.callback(node);
+      //var canvas = html2canvas.Renderer(html2canvas.Parse(node), {width : 320, height : 240});
+      //var canvas = html2canvas.Renderer(html2canvas.Parse(node), {width : 320, height : 240});
+      //document.body.appendChild(canvas);
+      //document.body.appendChild(html2canvas.Renderer(html2canvas.Parse(node)));
       return node.graph.ctx;
     }
 
