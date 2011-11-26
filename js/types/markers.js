@@ -159,7 +159,7 @@ Flotr.addType('markers', {
 });
 
 function isImage (i) {
-  return typeof i === 'object' && i.constructor && i.constructor === Image;
+  return typeof i === 'object' && i.constructor && (Image ? true : i.constructor === Image);
 }
 
 })();
