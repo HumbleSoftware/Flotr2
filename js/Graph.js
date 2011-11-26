@@ -77,34 +77,6 @@ Graph.prototype = {
     var t = (series && series.type) ? series.type : this.options.defaultType;
     return this[t];
   },
-  /**
-   * Try a method on a graph type.  If the method exists, execute it.
-   * @param {Object} series
-   * @param {String} method  Method name.
-   * @param {Array} args  Arguments applied to method.
-   * @return executed successfully or failed.
-   */
-  executeOnType: function(s, method, args){
-    var success = false;
-    if (!_.isArray(s)) s = [s];
-
-    function e(s) {
-      _.each(_.keys(flotr.graphTypes), function (type) {
-        if (s[type] && s[type].show) {
-          try {
-            if (!_.isUndefined(args))
-                this[type][method].apply(this[type], args);
-            else
-                this[type][method].apply(this[type]);
-            success = true;
-          } catch (e) {}
-        }
-      }, this);
-    }
-    _.each(s, e, this);
-
-    return success;
-  },
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);

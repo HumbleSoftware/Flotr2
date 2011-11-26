@@ -16,6 +16,34 @@ Flotr.addPlugin('hit', {
     }
   },
   /**
+   * Try a method on a graph type.  If the method exists, execute it.
+   * @param {Object} series
+   * @param {String} method  Method name.
+   * @param {Array} args  Arguments applied to method.
+   * @return executed successfully or failed.
+   */
+  executeOnType: function(s, method, args){
+    var success = false;
+    if (!_.isArray(s)) s = [s];
+
+    function e(s) {
+      _.each(_.keys(flotr.graphTypes), function (type) {
+        if (s[type] && s[type].show) {
+          try {
+            if (!_.isUndefined(args))
+                this[type][method].apply(this[type], args);
+            else
+                this[type][method].apply(this[type]);
+            success = true;
+          } catch (e) {}
+        }
+      }, this);
+    }
+    _.each(s, e, this);
+
+    return success;
+  },
+  /**
    * Updates the mouse tracking point on the overlay.
    */
   drawHit: function(n){
@@ -28,7 +56,7 @@ Flotr.addPlugin('hit', {
       octx.strokeStyle = s.mouse.lineColor;
       octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
 
-      if (!this.executeOnType(s, 'drawHit', [n])) {
+      if (!this.hit.executeOnType(s, 'drawHit', [n])) {
         var xa = n.xaxis,
           ya = n.yaxis;
 
@@ -48,7 +76,7 @@ Flotr.addPlugin('hit', {
    */
   clearHit: function(){
     var prev = this.prevHit;
-    if(prev && !this.executeOnType(prev.series, 'clearHit')){
+    if(prev && !this.hit.executeOnType(prev.series, 'clearHit')){
       var plotOffset = this.plotOffset,
         s = prev.series,
         lw = (s.bars ? s.bars.lineWidth : 1),
@@ -141,7 +169,7 @@ Flotr.addPlugin('hit', {
         }
       }
     }
-    else if(!this.executeOnType(series, 'hit', [mouse, n])) {
+    else if(!this.hit.executeOnType(series, 'hit', [mouse, n])) {
       for(i = 0; i < series.length; i++){
         s = series[i];
         if(!s.mouse.track) continue;
