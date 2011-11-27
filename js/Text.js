@@ -26,13 +26,25 @@ Text.prototype = {
   canvas : function (text, style) {
 
     if (!this.o.textEnabled) return;
+    style = style || {};
 
-    var bounds = this.o.ctx.getTextBounds(text, style);
+    var
+      metrics = this.measureText(text, style),
+      width = metrics.width,
+      height = style.size || F.defaultOptions.fontSize,
+      angle = style.angle || 0,
+      cosAngle = Math.cos(angle),
+      sinAngle = Math.sin(angle),
+      widthPadding = 2,
+      heightPadding = 6,
+      bounds;
 
-    return {
-      width  : bounds.width + 2, // @TODO what are these paddings?
-      height : bounds.height + 6
+    bounds = {
+      width: Math.abs(cosAngle * width) + Math.abs(sinAngle * height) + widthPadding,
+      height: Math.abs(sinAngle * width) + Math.abs(cosAngle * height) + heightPadding
     };
+
+    return bounds;
   },
 
   html : function (text, element, style, className) {
@@ -57,7 +69,7 @@ Text.prototype = {
     }
 
     style = _.extend({
-      size: Flotr.defaultOptions.fontSize,
+      size: F.defaultOptions.fontSize,
       weight: 1,
       angle: 0
     }, style);
