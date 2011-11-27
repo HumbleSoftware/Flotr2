@@ -6,7 +6,6 @@ src_files:
   - "lib/bean.js"
   - "lib/underscore.js"
   - "lib/canvas2image.js"
-  - "lib/canvastext.js"
   - "js/Flotr.js"
   - "js/DefaultOptions.js"
   - "js/Color.js"

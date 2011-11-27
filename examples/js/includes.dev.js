@@ -7,11 +7,11 @@ yepnope([
     // Load for IE < 9
     yep : [
       '../lib/excanvas.js',
-      '../lib/base64.js'
+      '../lib/base64.js',
+      '../lib/canvastext.js'
     ]
   },
   '../lib/canvas2image.js',
-  '../lib/canvastext.js',
   'lib/google-code-prettify/prettify.js',
   'lib/beautify.js',
   'lib/randomseed.js',

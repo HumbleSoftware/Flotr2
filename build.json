@@ -3,13 +3,13 @@
     "DIST_DIR": "./build",
     "ie": [
       { "src": "./lib/excanvas.js", "jshint": false },
-      { "src": "./lib/base64.js", "jshint": false }
+      { "src": "./lib/base64.js", "jshint": false },
+      { "src": "./lib/canvastext.js", "jshint": false }
     ],
     "lib": [
       { "src": "./lib/bean.js", "jshint": false },
       { "src": "./lib/underscore.js", "jshint": false },
-      { "src": "./lib/canvas2image.js", "jshint": false },
-      { "src": "./lib/canvastext.js", "jshint": false }
+      { "src": "./lib/canvas2image.js", "jshint": false }
     ],
     "flotr2": [
       "./js/Flotr.js",
