@@ -63,7 +63,7 @@ Flotr.addPlugin('legend', {
         for(i = series.length - 1; i > -1; --i){
           if(!series[i].label || series[i].hide) continue;
           label = legend.labelFormatter(series[i].label);
-          labelMaxWidth = Math.max(labelMaxWidth, this._text.measureText(ctx, label, style).width);
+          labelMaxWidth = Math.max(labelMaxWidth, this._text.measureText(label, style).width);
         }
         
         var legendWidth  = Math.round(lbw + lbm*3 + labelMaxWidth),

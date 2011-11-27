@@ -46,7 +46,7 @@ Text.prototype = {
     return D.size(div);
   },
 
-  measureText : function (ctx, text, style) {
+  measureText : function (text, style) {
 
     var
       context = this.o.ctx,
