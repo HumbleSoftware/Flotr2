@@ -95,7 +95,7 @@ Flotr.addPlugin('legend', {
           ctx.strokeRect(Math.ceil(x)-1.5, Math.ceil(y)-1.5, lbw+2, lbh+2);
           
           // Legend text
-          Flotr.drawText(ctx, label, x + lbw + lbm, y + (lbh + style.size - ctx.fontDescent(style))/2, style);
+          Flotr.drawText(ctx, label, x + lbw + lbm, y + lbh, style);
           
           y += lbh + lbm;
         }
