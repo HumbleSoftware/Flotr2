@@ -510,7 +510,7 @@ Graph.prototype = {
     this.octx = getContext(this.overlay);
     this.canvasHeight = size.height*o.resolution;
     this.canvasWidth = size.width*o.resolution;
-    this.textEnabled = !!this.ctx.drawText; // Enable text functions
+    this.textEnabled = !!this.ctx.drawText || !!this.ctx.fillText; // Enable text functions
 
     function getCanvas(canvas, name){
       if(!canvas){
