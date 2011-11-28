@@ -194,6 +194,33 @@ Flotr.addPlugin('graphGrid', {
     }
     
     ctx.restore();
+
+    var
+      backgroundImage = grid.backgroundImage,
+      that = this,
+      plotOffset = this.plotOffset,
+      width = this.plotWidth,
+      height = this.plotHeight,
+      img, src, left, top, globalAlpha;
+
+
+    if (backgroundImage) {
+
+      src = backgroundImage.src || backgroundImage;
+      left = (parseInt(backgroundImage.left, 10) || 0) + plotOffset.left;
+      top = (parseInt(backgroundImage.top, 10) || 0) + plotOffset.top;
+      img = new Image();
+
+      img.onload = function() {
+        ctx.save();
+        if (backgroundImage.alpha) ctx.globalAlpha = backgroundImage.alpha;
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.drawImage(img, 0, 0, width, height, left, top, width, height);
+        ctx.restore();
+      };
+
+      img.src = src;
+    }
   }
 });
 
