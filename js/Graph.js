@@ -6,7 +6,7 @@
 var
   D     = Flotr.DOM,
   E     = Flotr.EventAdapter,
-  _     = Flotr._;
+  _     = Flotr._,
   flotr = Flotr;
 /**
  * Flotr Graph constructor.
