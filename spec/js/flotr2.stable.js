@@ -7,8 +7,15 @@
   * dperini: https://github.com/dperini/nwevents
   * the entire mootools team: github.com/mootools/mootools-core
   */
-!function (context) {
-  var __uid = 1, registry = {}, collected = {},
+!function (name, definition) {
+  if (typeof module != 'undefined') module.exports = definition();
+  else if (typeof define == 'function' && typeof define.amd  == 'object') define(definition);
+  else this[name] = definition();
+}('bean', function () {
+  var win = window,
+      __uid = 1,
+      registry = {},
+      collected = {},
       overOut = /over|out/,
       namespace = /[^\.]*(?=\..*)\.|.*/,
       stripName = /\..*/,
@@ -16,7 +23,7 @@
       attachEvent = 'attachEvent',
       removeEvent = 'removeEventListener',
       detachEvent = 'detachEvent',
-      doc = context.document || {},
+      doc = document || {},
       root = doc.documentElement || {},
       W3C_MODEL = root[addEvent],
       eventSupport = W3C_MODEL ? addEvent : attachEvent,
@@ -32,7 +39,7 @@
   },
 
   retrieveUid = function (obj, uid) {
-    return (obj.__uid = uid || obj.__uid || __uid++);
+    return (obj.__uid = uid && (uid + '::' + __uid++) || obj.__uid || __uid++);
   },
 
   retrieveEvents = function (element) {
@@ -43,21 +50,24 @@
   listener = W3C_MODEL ? function (element, type, fn, add) {
     element[add ? addEvent : removeEvent](type, fn, false);
   } : function (element, type, fn, add, custom) {
-    custom && add && (element['_on' + custom] = element['_on' + custom] || 0);
+    if (custom && add && element['_on' + custom] === null) {
+      element['_on' + custom] = 0;
+    }
     element[add ? attachEvent : detachEvent]('on' + type, fn);
   },
 
   nativeHandler = function (element, fn, args) {
     return function (event) {
-      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || context).event);
+      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event);
       return fn.apply(element, [event].concat(args));
     };
   },
 
   customHandler = function (element, fn, type, condition, args) {
-    return function (e) {
-      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : e && e.propertyName == '_on' + type || !e) {
-        fn.apply(element, Array.prototype.slice.call(arguments, e ? 0 : 1).concat(args));
+    return function (event) {
+      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event) {
+        event = event ? fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event) : null;
+        fn.apply(element, Array.prototype.slice.call(arguments, event ? 0 : 1).concat(args));
       }
     };
   },
@@ -93,15 +103,20 @@
   },
 
   removeListener = function (element, orgType, handler) {
-    var uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
+    var uid = element.__uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
+
     if (!events || !events[type]) {
       return element;
     }
+
     names = orgType.replace(namespace, '');
     uids = names ? names.split('.') : [handler.__uid];
-    for (i = uids.length; i--;) {
-      uid = uids[i];
+
+    function destroyHandler(uid) {
       handler = events[type][uid];
+      if (!handler) {
+        return;
+      }
       delete events[type][uid];
       if (element[eventSupport]) {
         type = customEvents[type] ? customEvents[type].base : type;
@@ -109,6 +124,19 @@
         listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
       }
     }
+
+    destroyHandler(names); //get combos
+    for (i = uids.length; i--; destroyHandler(uids[i])) {} //get singles
+
+    if (isEmpty(events[type])) {
+      delete events[type];
+    }
+
+    if (isEmpty(registry[uid])) {
+      delete registry[uid];
+      delete collected[uid];
+    }
+
     return element;
   },
 
@@ -141,11 +169,12 @@
   },
 
   remove = function (element, orgEvents, fn) {
-    var k, type, events, i,
+    var k, m, type, events, i,
         isString = typeof(orgEvents) == 'string',
         names = isString && orgEvents.replace(namespace, ''),
         rm = removeListener,
         attached = retrieveEvents(element);
+    names = names && names.split('.');
     if (isString && /\s/.test(orgEvents)) {
       orgEvents = orgEvents.split(' ');
       i = orgEvents.length - 1;
@@ -153,12 +182,14 @@
       return element;
     }
     events = isString ? orgEvents.replace(stripName, '') : orgEvents;
-    if (!attached || (isString && !attached[events])) {
-      if (attached && names) {
-        for (k in attached) {
-          if (attached.hasOwnProperty(k)) {
-            for (i in attached[k]) {
-              attached[k].hasOwnProperty(i) && i === names && rm(element, [k, names].join('.'));
+    if (!attached || names || (isString && !attached[events])) {
+      for (k in attached) {
+        if (attached.hasOwnProperty(k)) {
+          for (i in attached[k]) {
+            for (m = names.length; m--;) {
+              attached[k].hasOwnProperty(i)
+                && new RegExp('^' + names[m] + '::\\d*(\\..*)?$').test(i)
+                && rm(element, [k, i].join('.'));
             }
           }
         }
@@ -184,7 +215,7 @@
   },
 
   fire = function (element, type, args) {
-    var evt, k, i, types = type.split(' ');
+    var evt, k, i, m, types = type.split(' ');
     for (i = types.length; i--;) {
       type = types[i].replace(stripName, '');
       var isNative = nativeEvents[type],
@@ -193,7 +224,9 @@
       if (isNamespace) {
         isNamespace = isNamespace.split('.');
         for (k = isNamespace.length; k--;) {
-          handlers && handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, [false].concat(args));
+          for (m in handlers) {
+            handlers.hasOwnProperty(m) && new RegExp('^' + isNamespace[k] + '::\\d*(\\..*)?$').test(m) && handlers[m].apply(element, [false].concat(args));
+          }
         }
       } else if (!args && element[eventSupport]) {
         fireListener(isNative, type, element);
@@ -208,7 +241,7 @@
 
   fireListener = W3C_MODEL ? function (isNative, type, element) {
     evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
-    evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, context, 1);
+    evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1);
     element.dispatchEvent(evt);
   } : function (isNative, type, element) {
     isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
@@ -253,7 +286,14 @@
       }
     }
     return result;
-  };
+  },
+
+  isEmpty = function (obj) {
+    for (var prop in obj) {
+      if (obj.hasOwnProperty(prop)) return false;
+    }
+    return true;
+  }
 
   fixEvent.preventDefault = function (e) {
     return function () {
@@ -311,26 +351,23 @@
     }
   };
 
-  if (context[attachEvent]) {
-    add(context, 'unload', function () {
+  if (win[attachEvent]) {
+    add(win, 'unload', function () {
       for (var k in collected) {
         collected.hasOwnProperty(k) && clean(collected[k]);
       }
-      context.CollectGarbage && CollectGarbage();
+      win.CollectGarbage && CollectGarbage();
     });
   }
 
-  var oldBean = context.bean;
   bean.noConflict = function () {
-    context.bean = oldBean;
+    context.bean = old;
     return this;
   };
 
-  (typeof module !== 'undefined' && module.exports) ?
-    (module.exports = bean) :
-    (context['bean'] = bean);
+  return bean;
 
-}(this);
+});
 //     Underscore.js 1.1.7
 //     (c) 2011 Jeremy Ashkenas, DocumentCloud Inc.
 //     Underscore is freely distributable under the MIT license.
@@ -1368,436 +1405,7 @@ var Canvas2Image = (function() {
       return true;
     }
   };
-})();
-/**
- * This code is released to the public domain by Jim Studt, 2007.
- * He may keep some sort of up to date copy at http://www.federated.com/~jim/canvastext/
- * It as been modified by Fabien M�nager to handle font style like size, weight, color and rotation. 
- * A partial support for special characters has been added too.
- */
-var CanvasText = {
-  /** The letters definition. It is a list of letters, 
-   * with their width, and the coordinates of points compositing them.
-   * The syntax for the points is : [x, y], null value means "pen up"
-   */
-  letters: {
-    '\n':{ width: -1, points: [] },
-    ' ': { width: 10, points: [] },
-    '!': { width: 10, points: [[5,21],[5,7],null,[5,2],[4,1],[5,0],[6,1],[5,2]] },
-    '"': { width: 16, points: [[4,21],[4,14],null,[12,21],[12,14]] },
-    '#': { width: 21, points: [[11,25],[4,-7],null,[17,25],[10,-7],null,[4,12],[18,12],null,[3,6],[17,6]] },
-    '$': { width: 20, points: [[8,25],[8,-4],null,[12,25],[12,-4],null,[17,18],[15,20],[12,21],[8,21],[5,20],[3,18],[3,16],[4,14],[5,13],[7,12],[13,10],[15,9],[16,8],[17,6],[17,3],[15,1],[12,0],[8,0],[5,1],[3,3]] },
-    '%': { width: 24, points: [[21,21],[3,0],null,[8,21],[10,19],[10,17],[9,15],[7,14],[5,14],[3,16],[3,18],[4,20],[6,21],[8,21],null,[17,7],[15,6],[14,4],[14,2],[16,0],[18,0],[20,1],[21,3],[21,5],[19,7],[17,7]] },
-    '&': { width: 26, points: [[23,12],[23,13],[22,14],[21,14],[20,13],[19,11],[17,6],[15,3],[13,1],[11,0],[7,0],[5,1],[4,2],[3,4],[3,6],[4,8],[5,9],[12,13],[13,14],[14,16],[14,18],[13,20],[11,21],[9,20],[8,18],[8,16],[9,13],[11,10],[16,3],[18,1],[20,0],[22,0],[23,1],[23,2]] },
-    '\'':{ width: 10, points: [[5,19],[4,20],[5,21],[6,20],[6,18],[5,16],[4,15]] },
-    '(': { width: 14, points: [[11,25],[9,23],[7,20],[5,16],[4,11],[4,7],[5,2],[7,-2],[9,-5],[11,-7]] },
-    ')': { width: 14, points: [[3,25],[5,23],[7,20],[9,16],[10,11],[10,7],[9,2],[7,-2],[5,-5],[3,-7]] },
-    '*': { width: 16, points: [[8,21],[8,9],null,[3,18],[13,12],null,[13,18],[3,12]] },
-    '+': { width: 26, points: [[13,18],[13,0],null,[4,9],[22,9]] },
-    ',': { width: 10, points: [[6,1],[5,0],[4,1],[5,2],[6,1],[6,-1],[5,-3],[4,-4]] },
-    '-': { width: 26, points: [[4,9],[22,9]] },
-    '.': { width: 10, points: [[5,2],[4,1],[5,0],[6,1],[5,2]] },
-    '/': { width: 22, points: [[20,25],[2,-7]] },
-    '0': { width: 20, points: [[9,21],[6,20],[4,17],[3,12],[3,9],[4,4],[6,1],[9,0],[11,0],[14,1],[16,4],[17,9],[17,12],[16,17],[14,20],[11,21],[9,21]] },
-    '1': { width: 20, points: [[6,17],[8,18],[11,21],[11,0]] },
-    '2': { width: 20, points: [[4,16],[4,17],[5,19],[6,20],[8,21],[12,21],[14,20],[15,19],[16,17],[16,15],[15,13],[13,10],[3,0],[17,0]] },
-    '3': { width: 20, points: [[5,21],[16,21],[10,13],[13,13],[15,12],[16,11],[17,8],[17,6],[16,3],[14,1],[11,0],[8,0],[5,1],[4,2],[3,4]] },
-    '4': { width: 20, points: [[13,21],[3,7],[18,7],null,[13,21],[13,0]] },
-    '5': { width: 20, points: [[15,21],[5,21],[4,12],[5,13],[8,14],[11,14],[14,13],[16,11],[17,8],[17,6],[16,3],[14,1],[11,0],[8,0],[5,1],[4,2],[3,4]] },
-    '6': { width: 20, points: [[16,18],[15,20],[12,21],[10,21],[7,20],[5,17],[4,12],[4,7],[5,3],[7,1],[10,0],[11,0],[14,1],[16,3],[17,6],[17,7],[16,10],[14,12],[11,13],[10,13],[7,12],[5,10],[4,7]] },
-    '7': { width: 20, points: [[17,21],[7,0],null,[3,21],[17,21]] },
-    '8': { width: 20, points: [[8,21],[5,20],[4,18],[4,16],[5,14],[7,13],[11,12],[14,11],[16,9],[17,7],[17,4],[16,2],[15,1],[12,0],[8,0],[5,1],[4,2],[3,4],[3,7],[4,9],[6,11],[9,12],[13,13],[15,14],[16,16],[16,18],[15,20],[12,21],[8,21]] },
-    '9': { width: 20, points: [[16,14],[15,11],[13,9],[10,8],[9,8],[6,9],[4,11],[3,14],[3,15],[4,18],[6,20],[9,21],[10,21],[13,20],[15,18],[16,14],[16,9],[15,4],[13,1],[10,0],[8,0],[5,1],[4,3]] },
-    ':': { width: 10, points: [[5,14],[4,13],[5,12],[6,13],[5,14],null,[5,2],[4,1],[5,0],[6,1],[5,2]] },
-    ';': { width: 10, points: [[5,14],[4,13],[5,12],[6,13],[5,14],null,[6,1],[5,0],[4,1],[5,2],[6,1],[6,-1],[5,-3],[4,-4]] },
-    '<': { width: 24, points: [[20,18],[4,9],[20,0]] },
-    '=': { width: 26, points: [[4,12],[22,12],null,[4,6],[22,6]] },
-    '>': { width: 24, points: [[4,18],[20,9],[4,0]] },
-    '?': { width: 18, points: [[3,16],[3,17],[4,19],[5,20],[7,21],[11,21],[13,20],[14,19],[15,17],[15,15],[14,13],[13,12],[9,10],[9,7],null,[9,2],[8,1],[9,0],[10,1],[9,2]] },
-    '@': { width: 27, points: [[18,13],[17,15],[15,16],[12,16],[10,15],[9,14],[8,11],[8,8],[9,6],[11,5],[14,5],[16,6],[17,8],null,[12,16],[10,14],[9,11],[9,8],[10,6],[11,5],null,[18,16],[17,8],[17,6],[19,5],[21,5],[23,7],[24,10],[24,12],[23,15],[22,17],[20,19],[18,20],[15,21],[12,21],[9,20],[7,19],[5,17],[4,15],[3,12],[3,9],[4,6],[5,4],[7,2],[9,1],[12,0],[15,0],[18,1],[20,2],[21,3],null,[19,16],[18,8],[18,6],[19,5]] },
-    'A': { width: 18, points: [[9,21],[1,0],null,[9,21],[17,0],null,[4,7],[14,7]] },
-    'B': { width: 21, points: [[4,21],[4,0],null,[4,21],[13,21],[16,20],[17,19],[18,17],[18,15],[17,13],[16,12],[13,11],null,[4,11],[13,11],[16,10],[17,9],[18,7],[18,4],[17,2],[16,1],[13,0],[4,0]] },
-    'C': { width: 21, points: [[18,16],[17,18],[15,20],[13,21],[9,21],[7,20],[5,18],[4,16],[3,13],[3,8],[4,5],[5,3],[7,1],[9,0],[13,0],[15,1],[17,3],[18,5]] },
-    'D': { width: 21, points: [[4,21],[4,0],null,[4,21],[11,21],[14,20],[16,18],[17,16],[18,13],[18,8],[17,5],[16,3],[14,1],[11,0],[4,0]] },
-    'E': { width: 19, points: [[4,21],[4,0],null,[4,21],[17,21],null,[4,11],[12,11],null,[4,0],[17,0]] },
-    'F': { width: 18, points: [[4,21],[4,0],null,[4,21],[17,21],null,[4,11],[12,11]] },
-    'G': { width: 21, points: [[18,16],[17,18],[15,20],[13,21],[9,21],[7,20],[5,18],[4,16],[3,13],[3,8],[4,5],[5,3],[7,1],[9,0],[13,0],[15,1],[17,3],[18,5],[18,8],null,[13,8],[18,8]] },
-    'H': { width: 22, points: [[4,21],[4,0],null,[18,21],[18,0],null,[4,11],[18,11]] },
-    'I': { width: 8,  points: [[4,21],[4,0]] },
-    'J': { width: 16, points: [[12,21],[12,5],[11,2],[10,1],[8,0],[6,0],[4,1],[3,2],[2,5],[2,7]] },
-    'K': { width: 21, points: [[4,21],[4,0],null,[18,21],[4,7],null,[9,12],[18,0]] },
-    'L': { width: 17, points: [[4,21],[4,0],null,[4,0],[16,0]] },
-    'M': { width: 24, points: [[4,21],[4,0],null,[4,21],[12,0],null,[20,21],[12,0],null,[20,21],[20,0]] },
-    'N': { width: 22, points: [[4,21],[4,0],null,[4,21],[18,0],null,[18,21],[18,0]] },
-    'O': { width: 22, points: [[9,21],[7,20],[5,18],[4,16],[3,13],[3,8],[4,5],[5,3],[7,1],[9,0],[13,0],[15,1],[17,3],[18,5],[19,8],[19,13],[18,16],[17,18],[15,20],[13,21],[9,21]] },
-    'P': { width: 21, points: [[4,21],[4,0],null,[4,21],[13,21],[16,20],[17,19],[18,17],[18,14],[17,12],[16,11],[13,10],[4,10]] },
-    'Q': { width: 22, points: [[9,21],[7,20],[5,18],[4,16],[3,13],[3,8],[4,5],[5,3],[7,1],[9,0],[13,0],[15,1],[17,3],[18,5],[19,8],[19,13],[18,16],[17,18],[15,20],[13,21],[9,21],null,[12,4],[18,-2]] },
-    'R': { width: 21, points: [[4,21],[4,0],null,[4,21],[13,21],[16,20],[17,19],[18,17],[18,15],[17,13],[16,12],[13,11],[4,11],null,[11,11],[18,0]] },
-    'S': { width: 20, points: [[17,18],[15,20],[12,21],[8,21],[5,20],[3,18],[3,16],[4,14],[5,13],[7,12],[13,10],[15,9],[16,8],[17,6],[17,3],[15,1],[12,0],[8,0],[5,1],[3,3]] },
-    'T': { width: 16, points: [[8,21],[8,0],null,[1,21],[15,21]] },
-    'U': { width: 22, points: [[4,21],[4,6],[5,3],[7,1],[10,0],[12,0],[15,1],[17,3],[18,6],[18,21]] },
-    'V': { width: 18, points: [[1,21],[9,0],null,[17,21],[9,0]] },
-    'W': { width: 24, points: [[2,21],[7,0],null,[12,21],[7,0],null,[12,21],[17,0],null,[22,21],[17,0]] },
-    'X': { width: 20, points: [[3,21],[17,0],null,[17,21],[3,0]] },
-    'Y': { width: 18, points: [[1,21],[9,11],[9,0],null,[17,21],[9,11]] },
-    'Z': { width: 20, points: [[17,21],[3,0],null,[3,21],[17,21],null,[3,0],[17,0]] },
-    '[': { width: 14, points: [[4,25],[4,-7],null,[5,25],[5,-7],null,[4,25],[11,25],null,[4,-7],[11,-7]] },
-    '\\':{ width: 14, points: [[0,21],[14,-3]] },
-    ']': { width: 14, points: [[9,25],[9,-7],null,[10,25],[10,-7],null,[3,25],[10,25],null,[3,-7],[10,-7]] },
-    '^': { width: 14, points: [[3,10],[8,18],[13,10]] },
-    '_': { width: 16, points: [[0,-2],[16,-2]] },
-    '`': { width: 10, points: [[6,21],[5,20],[4,18],[4,16],[5,15],[6,16],[5,17]] },
-    'a': { width: 19, points: [[15,14],[15,0],null,[15,11],[13,13],[11,14],[8,14],[6,13],[4,11],[3,8],[3,6],[4,3],[6,1],[8,0],[11,0],[13,1],[15,3]] },
-    'b': { width: 19, points: [[4,21],[4,0],null,[4,11],[6,13],[8,14],[11,14],[13,13],[15,11],[16,8],[16,6],[15,3],[13,1],[11,0],[8,0],[6,1],[4,3]] },
-    'c': { width: 18, points: [[15,11],[13,13],[11,14],[8,14],[6,13],[4,11],[3,8],[3,6],[4,3],[6,1],[8,0],[11,0],[13,1],[15,3]] },
-    'd': { width: 19, points: [[15,21],[15,0],null,[15,11],[13,13],[11,14],[8,14],[6,13],[4,11],[3,8],[3,6],[4,3],[6,1],[8,0],[11,0],[13,1],[15,3]] },
-    'e': { width: 18, points: [[3,8],[15,8],[15,10],[14,12],[13,13],[11,14],[8,14],[6,13],[4,11],[3,8],[3,6],[4,3],[6,1],[8,0],[11,0],[13,1],[15,3]] },
-    'f': { width: 12, points: [[10,21],[8,21],[6,20],[5,17],[5,0],null,[2,14],[9,14]] },
-    'g': { width: 19, points: [[15,14],[15,-2],[14,-5],[13,-6],[11,-7],[8,-7],[6,-6],null,[15,11],[13,13],[11,14],[8,14],[6,13],[4,11],[3,8],[3,6],[4,3],[6,1],[8,0],[11,0],[13,1],[15,3]] },
-    'h': { width: 19, points: [[4,21],[4,0],null,[4,10],[7,13],[9,14],[12,14],[14,13],[15,10],[15,0]] },
-    'i': { width: 8,  points: [[3,21],[4,20],[5,21],[4,22],[3,21],null,[4,14],[4,0]] },
-    'j': { width: 10, points: [[5,21],[6,20],[7,21],[6,22],[5,21],null,[6,14],[6,-3],[5,-6],[3,-7],[1,-7]] },
-    'k': { width: 17, points: [[4,21],[4,0],null,[14,14],[4,4],null,[8,8],[15,0]] },
-    'l': { width: 8,  points: [[4,21],[4,0]] },
-    'm': { width: 30, points: [[4,14],[4,0],null,[4,10],[7,13],[9,14],[12,14],[14,13],[15,10],[15,0],null,[15,10],[18,13],[20,14],[23,14],[25,13],[26,10],[26,0]] },
-    'n': { width: 19, points: [[4,14],[4,0],null,[4,10],[7,13],[9,14],[12,14],[14,13],[15,10],[15,0]] },
-    'o': { width: 19, points: [[8,14],[6,13],[4,11],[3,8],[3,6],[4,3],[6,1],[8,0],[11,0],[13,1],[15,3],[16,6],[16,8],[15,11],[13,13],[11,14],[8,14]] },
-    'p': { width: 19, points: [[4,14],[4,-7],null,[4,11],[6,13],[8,14],[11,14],[13,13],[15,11],[16,8],[16,6],[15,3],[13,1],[11,0],[8,0],[6,1],[4,3]] },
-    'q': { width: 19, points: [[15,14],[15,-7],null,[15,11],[13,13],[11,14],[8,14],[6,13],[4,11],[3,8],[3,6],[4,3],[6,1],[8,0],[11,0],[13,1],[15,3]] },
-    'r': { width: 13, points: [[4,14],[4,0],null,[4,8],[5,11],[7,13],[9,14],[12,14]] },
-    's': { width: 17, points: [[14,11],[13,13],[10,14],[7,14],[4,13],[3,11],[4,9],[6,8],[11,7],[13,6],[14,4],[14,3],[13,1],[10,0],[7,0],[4,1],[3,3]] },
-    't': { width: 12, points: [[5,21],[5,4],[6,1],[8,0],[10,0],null,[2,14],[9,14]] },
-    'u': { width: 19, points: [[4,14],[4,4],[5,1],[7,0],[10,0],[12,1],[15,4],null,[15,14],[15,0]] },
-    'v': { width: 16, points: [[2,14],[8,0],null,[14,14],[8,0]] },
-    'w': { width: 22, points: [[3,14],[7,0],null,[11,14],[7,0],null,[11,14],[15,0],null,[19,14],[15,0]] },
-    'x': { width: 17, points: [[3,14],[14,0],null,[14,14],[3,0]] },
-    'y': { width: 16, points: [[2,14],[8,0],null,[14,14],[8,0],[6,-4],[4,-6],[2,-7],[1,-7]] },
-    'z': { width: 17, points: [[14,14],[3,0],null,[3,14],[14,14],null,[3,0],[14,0]] },
-    '{': { width: 14, points: [[9,25],[7,24],[6,23],[5,21],[5,19],[6,17],[7,16],[8,14],[8,12],[6,10],null,[7,24],[6,22],[6,20],[7,18],[8,17],[9,15],[9,13],[8,11],[4,9],[8,7],[9,5],[9,3],[8,1],[7,0],[6,-2],[6,-4],[7,-6],null,[6,8],[8,6],[8,4],[7,2],[6,1],[5,-1],[5,-3],[6,-5],[7,-6],[9,-7]] },
-    '|': { width: 8,  points: [[4,25],[4,-7]] },
-    '}': { width: 14, points: [[5,25],[7,24],[8,23],[9,21],[9,19],[8,17],[7,16],[6,14],[6,12],[8,10],null,[7,24],[8,22],[8,20],[7,18],[6,17],[5,15],[5,13],[6,11],[10,9],[6,7],[5,5],[5,3],[6,1],[7,0],[8,-2],[8,-4],[7,-6],null,[8,8],[6,6],[6,4],[7,2],[8,1],[9,-1],[9,-3],[8,-5],[7,-6],[5,-7]] },
-    '~': { width: 24, points: [[3,6],[3,8],[4,11],[6,12],[8,12],[10,11],[14,8],[16,7],[18,7],[20,8],[21,10],null,[3,8],[4,10],[6,11],[8,11],[10,10],[14,7],[16,6],[18,6],[20,7],[21,10],[21,12]] },
-    
-    // Lower case Latin-1
-    '�': { diacritic: '`', letter: 'a' },
-    '�': { diacritic: '�', letter: 'a' },
-    '�': { diacritic: '^', letter: 'a' },
-    '�': { diacritic: '�', letter: 'a' },
-    '�': { diacritic: '~', letter: 'a' },
-    
-    '�': { diacritic: '`', letter: 'e' },
-    '�': { diacritic: '�', letter: 'e' },
-    '�': { diacritic: '^', letter: 'e' },
-    '�': { diacritic: '�', letter: 'e' },
-    
-    '�': { diacritic: '`', letter: 'i' },
-    '�': { diacritic: '�', letter: 'i' },
-    '�': { diacritic: '^', letter: 'i' },
-    '�': { diacritic: '�', letter: 'i' },
-    
-    '�': { diacritic: '`', letter: 'o' },
-    '�': { diacritic: '�', letter: 'o' },
-    '�': { diacritic: '^', letter: 'o' },
-    '�': { diacritic: '�', letter: 'o' },
-    '�': { diacritic: '~', letter: 'o' },
-
-    '�': { diacritic: '`', letter: 'u' },
-    '�': { diacritic: '�', letter: 'u' },
-    '�': { diacritic: '^', letter: 'u' },
-    '�': { diacritic: '�', letter: 'u' },
-    
-    '�': { diacritic: '�', letter: 'y' },
-    '�': { diacritic: '�', letter: 'y' },
-    
-    '�': { diacritic: '�', letter: 'c' },
-    '�': { diacritic: '~', letter: 'n' },
-
-    // Upper case Latin-1
-    '�': { diacritic: '`', letter: 'A' },
-    '�': { diacritic: '�', letter: 'A' },
-    '�': { diacritic: '^', letter: 'A' },
-    '�': { diacritic: '�', letter: 'A' },
-    '�': { diacritic: '~', letter: 'A' },
-    
-    '�': { diacritic: '`', letter: 'E' },
-    '�': { diacritic: '�', letter: 'E' },
-    '�': { diacritic: '^', letter: 'E' },
-    '�': { diacritic: '�', letter: 'E' },
-
-    '�': { diacritic: '`', letter: 'I' },
-    '�': { diacritic: '�', letter: 'I' },
-    '�': { diacritic: '^', letter: 'I' },
-    '�': { diacritic: '�', letter: 'I' },
-    
-    '�': { diacritic: '`', letter: 'O' },
-    '�': { diacritic: '�', letter: 'O' },
-    '�': { diacritic: '^', letter: 'O' },
-    '�': { diacritic: '�', letter: 'O' },
-    '�': { diacritic: '~', letter: 'O' },
-    
-    '�': { diacritic: '`', letter: 'U' },
-    '�': { diacritic: '�', letter: 'U' },
-    '�': { diacritic: '^', letter: 'U' },
-    '�': { diacritic: '�', letter: 'U' },
-    
-    '�': { diacritic: '�', letter: 'Y' },
-    
-    '�': { diacritic: '�', letter: 'C' },
-    '�': { diacritic: '~', letter: 'N' }
-  },
-  
-  specialchars: {
-    'pi': { width: 19, points: [[6,14],[6,0],null,[14,14],[14,0],null,[2,13],[6,16],[13,13],[17,16]] }
-  },
-  
-  /** Diacritics, used to draw accentuated letters */
-  diacritics: {
-    '�': { entity: 'cedil', points: [[6,-4],[4,-6],[2,-7],[1,-7]] },
-    '�': { entity: 'acute', points: [[8,19],[13,22]] },
-    '`': { entity: 'grave', points: [[7,22],[12,19]] },
-    '^': { entity: 'circ',  points: [[5.5,19],[9.5,23],[12.5,19]] },
-    '�': { entity: 'trema', points: [[5,21],[6,20],[7,21],[6,22],[5,21],null,[12,21],[13,20],[14,21],[13,22],[12,21]] },
-    '~': { entity: 'tilde', points: [[4,18],[7,22],[10,18],[13,22]] }
-  },
-  
-  /** The default font styling */
-  style: {
-    size: 8,            // font height in pixels
-    font: null,         // not yet implemented
-    color: '#000000',   // font color
-    weight: 1,          // float, 1 for 'normal'
-    textAlign: 'left',  // left, right, center
-    textBaseline: 'bottom', // top, middle, bottom 
-    adjustAlign: false, // modifies the alignments if the angle is different from 0 to make the spin point always at the good position
-    angle: 0,           // in radians, anticlockwise
-    tracking: 1,        // space between the letters, float, 1 for 'normal'
-    boundingBoxColor: '#ff0000', // color of the bounding box (null to hide), can be used for debug and font drawing
-    originPointColor: '#000000'  // color of the bounding box (null to hide), can be used for debug and font drawing
-  },
-  
-  debug: false,
-  _bufferLexemes: {},
-
-  extend: function(dest, src) {
-    for (var property in src) {
-      if (property in dest) continue;
-      dest[property] = src[property];
-    }
-    return dest;
-  },
-
-  /** Get the letter data corresponding to a char
-   * @param {String} ch - The char
-   */
-  letter: function(ch) {
-    return CanvasText.letters[ch];
-  },
-  
-  parseLexemes: function(str) {
-    if (CanvasText._bufferLexemes[str]) 
-      return CanvasText._bufferLexemes[str];
-    
-    var i, c, matches = str.match(/&[A-Za-z]{2,5};|\s|./g),
-        result = [], chars = [];
-        
-    for (i = 0; i < matches.length; i++) {
-      c = matches[i];
-      if (c.length == 1) 
-        chars.push(c);
-      else {
-        var entity = c.substring(1, c.length-1);
-        if (CanvasText.specialchars[entity]) 
-          chars.push(entity);
-        else
-          chars = chars.concat(c.toArray());
-      }
-    }
-    for (i = 0; i < chars.length; i++) {
-      c = chars[i];
-      if (c = CanvasText.letters[c] || CanvasText.specialchars[c]) result.push(c);
-    }
-    for (i = 0; i < result.length; i++) {
-      if (result === null || typeof result === 'undefined') 
-      delete result[i];
-    }
-    return CanvasText._bufferLexemes[str] = result;
-  },
-
-  /** Get the font ascent for a given style
-   * @param {Object} style - The reference style
-   */
-  ascent: function(style) {
-    style = style || CanvasText.style;
-    return (style.size || CanvasText.style.size);
-  },
-  
-  /** Get the font descent for a given style 
-   * @param {Object} style - The reference style
-   * */
-  descent: function(style) {
-    style = style || CanvasText.style;
-    return 7.0*(style.size || CanvasText.style.size)/25.0;
-  },
-  
-  /** Measure the text horizontal size 
-   * @param {String} str - The text
-   * @param {Object} style - Text style
-   * */
-  measure: function(str, style) {
-    if (!str) return;
-    style = style || CanvasText.style;
-    
-    var i, width, lexemes = CanvasText.parseLexemes(str),
-        total = 0;
-
-    for (i = lexemes.length-1; i > -1; --i) {
-      c = lexemes[i];
-      width = (c.diacritic) ? CanvasText.letter(c.letter).width : c.width;
-      total += width * (style.tracking || CanvasText.style.tracking) * (style.size || CanvasText.style.size) / 25.0;
-    }
-    return total;
-  },
-  
-  getDimensions: function(str, style) {
-    style = style || CanvasText.style;
-    
-    var width = CanvasText.measure(str, style),
-        height = style.size || CanvasText.style.size,
-        angle = style.angle || CanvasText.style.angle;
-
-    if (style.angle == 0) return {width: width, height: height};
-    return {
-      width:  Math.abs(Math.cos(angle) * width) + Math.abs(Math.sin(angle) * height),
-      height: Math.abs(Math.sin(angle) * width) + Math.abs(Math.cos(angle) * height)
-    }
-  },
-  
-  /** Draws serie of points at given coordinates 
-   * @param {Canvas context} ctx - The canvas context
-   * @param {Array} points - The points to draw
-   * @param {Number} x - The X coordinate
-   * @param {Number} y - The Y coordinate
-   * @param {Number} mag - The scale 
-   */
-  drawPoints: function (ctx, points, x, y, mag, offset) {
-    var i, a, penUp = true, needStroke = 0;
-    offset = offset || {x:0, y:0};
-    
-    ctx.beginPath();
-    for (i = 0; i < points.length; i++) {
-      a = points[i];
-      if (!a) {
-        penUp = true;
-        continue;
-      }
-      if (penUp) {
-        ctx.moveTo(x + a[0]*mag + offset.x, y - a[1]*mag + offset.y);
-        penUp = false;
-      }
-      else {
-        ctx.lineTo(x + a[0]*mag + offset.x, y - a[1]*mag + offset.y);
-      }
-    }
-    ctx.stroke();
-    ctx.closePath();
-  },
-  
-  /** Draws a text at given coordinates and with a given style
-   * @param {String} str - The text to draw
-   * @param {Number} xOrig - The X coordinate
-   * @param {Number} yOrig - The Y coordinate
-   * @param {Object} style - The font style
-   */
-  draw: function(str, xOrig, yOrig, style) {
-    if (!str) return;
-    CanvasText.extend(style, CanvasText.style);
-    
-    var i, c, total = 0,
-        mag = style.size / 25.0,
-        x = 0, y = 0,
-        lexemes = CanvasText.parseLexemes(str),
-        offset = {x: 0, y: 0}, 
-        measure = CanvasText.measure(str, style),
-        align;
-        
-    if (style.adjustAlign) {
-      align = CanvasText.getBestAlign(style.angle, style);
-      CanvasText.extend(style, align);
-    }
-        
-    switch (style.textAlign) {
-      case 'left': break;
-      case 'center': offset.x = -measure / 2; break;
-      case 'right':  offset.x = -measure; break;
-    }
-    
-    switch (style.textBaseline) {
-      case 'bottom': break;
-      case 'middle': offset.y = style.size / 2; break;
-      case 'top':    offset.y = style.size; break;
-    }
-    
-    this.save();
-    this.translate(xOrig, yOrig);
-    this.rotate(style.angle);
-    this.lineCap = "round";
-    this.lineWidth = 2.0 * mag * (style.weight || CanvasText.style.weight);
-    this.strokeStyle = style.color || CanvasText.style.color;
-    
-    for (i = 0; i < lexemes.length; i++) {
-      c = lexemes[i];
-      if (c.width == -1) {
-        x = 0;
-        y = style.size * 1.4;
-        continue;
-      }
-    
-      var points = c.points,
-          width = c.width;
-          
-      if (c.diacritic) {
-        var dia = CanvasText.diacritics[c.diacritic],
-            character = CanvasText.letter(c.letter);
-
-        CanvasText.drawPoints(this, dia.points, x, y - (c.letter.toUpperCase() == c.letter ? 3 : 0), mag, offset);
-        points = character.points;
-        width = character.width;
-      }
-
-      CanvasText.drawPoints(this, points, x, y, mag, offset);
-      
-      if (CanvasText.debug) {
-        this.save();
-        this.lineJoin = "miter";
-        this.lineWidth = 0.5;
-        this.strokeStyle = (style.boundingBoxColor || CanvasText.style.boundingBoxColor);
-        this.strokeRect(x+offset.x, y+offset.y, width*mag, -style.size);
-        
-        this.fillStyle = (style.originPointColor || CanvasText.style.originPointColor);
-        this.beginPath();
-        this.arc(0, 0, 1.5, 0, Math.PI*2, true);
-        this.fill();
-        this.closePath();
-        this.restore();
-      }
-      
-      x += width*mag*(style.tracking || CanvasText.style.tracking);
-    }
-    this.restore();
-    return total;
-  }
-};
-
-/** The text functions are bound to the CanvasRenderingContext2D prototype */
-CanvasText.proto = window.CanvasRenderingContext2D ? window.CanvasRenderingContext2D.prototype : document.createElement('canvas').getContext('2d').__proto__;
-
-if (CanvasText.proto) {
-  CanvasText.proto.drawText      = CanvasText.draw;
-  CanvasText.proto.measure       = CanvasText.measure;
-  CanvasText.proto.getTextBounds = CanvasText.getDimensions;
-  CanvasText.proto.fontAscent    = CanvasText.ascent;
-  CanvasText.proto.fontDescent   = CanvasText.descent;
-}(function () {
+})();(function () {
 /** 
  * @projectDescription Flotr is a javascript plotting library based on the Prototype Javascript Framework.
  * @author Bas Wenneker
@@ -2007,24 +1615,6 @@ Flotr = {
     ctx.fillText(text, 0, 0);
     ctx.restore();
   },
-  measureText: function(ctx, text, style) {
-    if (!ctx.fillText || Flotr.isIphone) {
-      return {width: ctx.measure(text, style)};
-    }
-    
-    style = this._.extend({
-      size: Flotr.defaultOptions.fontSize,
-      weight: 1,
-      angle: 0
-    }, style);
-    
-    ctx.save();
-    ctx.rotate(style.angle);
-    ctx.font = (style.weight > 1 ? "bold " : "") + (style.size*1.3) + "px sans-serif";
-    var metrics = ctx.measureText(text);
-    ctx.restore();
-    return metrics;
-  },
   getBestTextAlign: function(angle, style) {
     style = style || {textAlign: 'center', textBaseline: 'middle'};
     angle += Flotr.getTextAngleFromAlign(style);
@@ -2166,7 +1756,7 @@ var
   _ = Flotr._;
 
 // Constructor
-Flotr.Color = function(r, g, b, a){
+function Color (r, g, b, a) {
   this.rgba = ['r','g','b','a'];
   var x = 4;
   while(-1<--x){
@@ -2188,25 +1778,22 @@ var COLOR_NAMES = {
   violet:[128,0,128],red:[255,0,0],silver:[192,192,192],white:[255,255,255],yellow:[255,255,0]
 };
 
-Flotr.Color.prototype = {
-  adjust: function(rd, gd, bd, ad) {
-    var x = 4;
-    while(-1<--x){
-      if(arguments[x] != null)
-        this[this.rgba[x]] += arguments[x];
-    }
-    return this.normalize();
-  },
+Color.prototype = {
   scale: function(rf, gf, bf, af){
     var x = 4;
     while(-1<--x){
-      if(arguments[x] != null)
-        this[this.rgba[x]] *= arguments[x];
+      if(arguments[x] != null) this[this.rgba[x]] *= arguments[x];
+    }
+    return this.normalize();
+  },
+  alpha: function(alpha) {
+    if (!_.isUndefined(alpha) && !_.isNull(alpha)) {
+      this.a = alpha;
     }
     return this.normalize();
   },
   clone: function(){
-    return new Flotr.Color(this.r, this.b, this.g, this.a);
+    return new Color(this.r, this.b, this.g, this.a);
   },
   limit: function(val,minVal,maxVal){
     return Math.max(Math.min(val, maxVal), minVal);
@@ -2221,7 +1808,7 @@ Flotr.Color.prototype = {
   },
   distance: function(color){
     if (!color) return;
-    color = new Flotr.Color.parse(color);
+    color = new Color.parse(color);
     var dist = 0, x = 3;
     while(-1<--x){
       dist += Math.abs(this[this.rgba[x]] - color[this.rgba[x]]);
@@ -2233,7 +1820,7 @@ Flotr.Color.prototype = {
   }
 };
 
-_.extend(Flotr.Color, {
+_.extend(Color, {
   /**
    * Parses a color string and returns a corresponding Color.
    * The different tests are in order of probability to improve speed.
@@ -2241,9 +1828,9 @@ _.extend(Flotr.Color, {
    * @return {Color} returns a Color object or false
    */
   parse: function(color){
-    if (color instanceof Flotr.Color) return color;
+    if (color instanceof Color) return color;
 
-    var result, Color = Flotr.Color;
+    var result;
 
     // #a0b1c2
     if((result = /#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(color)))
@@ -2282,15 +1869,16 @@ _.extend(Flotr.Color, {
    */
   processColor: function(color, options) {
 
+    var opacity = options.opacity;
     if (!color) return 'rgba(0, 0, 0, 0)';
-    if (color instanceof Flotr.Color) return color.adjust(null, null, null, options.opacity).toString();
-    if (_.isString(color)) return Flotr.Color.parse(color).scale(null, null, null, options.opacity).toString();
+    if (color instanceof Color) return color.alpha(opacity).toString();
+    if (_.isString(color)) return Color.parse(color).alpha(opacity).toString();
     
     var grad = color.colors ? color : {colors: color};
     
     if (!options.ctx) {
       if (!_.isArray(grad.colors)) return 'rgba(0, 0, 0, 0)';
-      return Flotr.Color.parse(_.isArray(grad.colors[0]) ? grad.colors[0][1] : grad.colors[0]).scale(null, null, null, options.opacity).toString();
+      return Color.parse(_.isArray(grad.colors[0]) ? grad.colors[0][1] : grad.colors[0]).alpha(opacity).toString();
     }
     grad = _.extend({start: 'top', end: 'bottom'}, grad); 
     
@@ -2307,11 +1895,14 @@ _.extend(Flotr.Color, {
         c = c[1];
       }
       else stop = i / (grad.colors.length-1);
-      gradient.addColorStop(stop, Flotr.Color.parse(c).scale(null, null, null, options.opacity));
+      gradient.addColorStop(stop, Color.parse(c).alpha(opacity));
     }
     return gradient;
   }
 });
+
+Flotr.Color = Color;
+
 })();
 
 /**
@@ -2582,7 +2173,9 @@ Flotr.EventAdapter = {
 (function () {
 
 var
-  D = Flotr.DOM,
+  F = Flotr,
+  D = F.DOM,
+  _ = F._,
 
 Text = function (o) {
   this.o = o;
@@ -2602,13 +2195,25 @@ Text.prototype = {
   canvas : function (text, style) {
 
     if (!this.o.textEnabled) return;
+    style = style || {};
 
-    var bounds = this.o.ctx.getTextBounds(text, style);
+    var
+      metrics = this.measureText(text, style),
+      width = metrics.width,
+      height = style.size || F.defaultOptions.fontSize,
+      angle = style.angle || 0,
+      cosAngle = Math.cos(angle),
+      sinAngle = Math.sin(angle),
+      widthPadding = 2,
+      heightPadding = 6,
+      bounds;
 
-    return {
-      width  : bounds.width + 2, // @TODO what are these paddings?
-      height : bounds.height + 6
+    bounds = {
+      width: Math.abs(cosAngle * width) + Math.abs(sinAngle * height) + widthPadding,
+      height: Math.abs(sinAngle * width) + Math.abs(cosAngle * height) + heightPadding
     };
+
+    return bounds;
   },
 
   html : function (text, element, style, className) {
@@ -2620,6 +2225,30 @@ Text.prototype = {
     D.insert(this.o.element, div);
 
     return D.size(div);
+  },
+
+  measureText : function (text, style) {
+
+    var
+      context = this.o.ctx,
+      metrics;
+
+    if (!context.fillText || F.isIphone) {
+      return { width : context.measure(text, style)};
+    }
+
+    style = _.extend({
+      size: F.defaultOptions.fontSize,
+      weight: 1,
+      angle: 0
+    }, style);
+
+    context.save();
+    context.font = (style.weight > 1 ? "bold " : "") + (style.size*1.3) + "px sans-serif";
+    metrics = context.measureText(text);
+    context.restore();
+
+    return metrics;
   }
 };
 
@@ -2633,18 +2262,18 @@ Flotr.Text = Text;
 (function () {
 
 var
-  D = Flotr.DOM,
-  E = Flotr.EventAdapter,
-  _ = Flotr._;
-
+  D     = Flotr.DOM,
+  E     = Flotr.EventAdapter,
+  _     = Flotr._;
+  flotr = Flotr;
 /**
  * Flotr Graph constructor.
  * @param {Element} el - element to insert the graph into
  * @param {Object} data - an array or object of dataseries
  * @param {Object} options - an object containing options
  */
-Flotr.Graph = function(el, data, options){
-
+Graph = function(el, data, options){
+// Let's see if we can get away with out this [JS]
 //  try {
     this._setEl(el);
     this._initMembers();
@@ -2653,11 +2282,11 @@ Flotr.Graph = function(el, data, options){
     E.fire(this.el, 'flotr:beforeinit', [this]);
 
     this.data = data;
-    this.series = Flotr.Series.getSeries(data);
+    this.series = flotr.Series.getSeries(data);
     this._initOptions(options);
     this._initGraphTypes();
     this._initCanvas();
-    this._text = new Flotr.Text({
+    this._text = new flotr.Text({
       element : this.el,
       ctx : this.ctx,
       html : this.options.HtmlText,
@@ -2665,23 +2294,23 @@ Flotr.Graph = function(el, data, options){
     });
     E.fire(this.el, 'flotr:afterconstruct', [this]);
     this._initEvents();
-  
+
     this.findDataRanges();
     this.calculateSpacing();
 
     this.draw(_.bind(function() {
       E.fire(this.el, 'flotr:afterinit', [this]);
     }, this));
-
+/*
     try {
   } catch (e) {
     try {
       console.error(e);
     } catch (e2) {}
-  }
+  }*/
 };
 
-Flotr.Graph.prototype = {
+Graph.prototype = {
 
   destroy: function () {
     _.each(this._handles, function (handle) {
@@ -2706,38 +2335,10 @@ Flotr.Graph.prototype = {
     var t = (series && series.type) ? series.type : this.options.defaultType;
     return this[t];
   },
-  /**
-   * Try a method on a graph type.  If the method exists, execute it.
-   * @param {Object} series
-   * @param {String} method  Method name.
-   * @param {Array} args  Arguments applied to method.
-   * @return executed successfully or failed.
-   */
-  executeOnType: function(s, method, args){
-    var success = false;
-    if (!_.isArray(s)) s = [s];
-
-    function e(s) {
-      _.each(_.keys(Flotr.graphTypes), function (type) {
-        if (s[type] && s[type].show) {
-          try {
-            if (!_.isUndefined(args))
-                this[type][method].apply(this[type], args);
-            else
-                this[type][method].apply(this[type]);
-            success = true;
-          } catch (e) {}
-        }
-      }, this);
-    }
-    _.each(s, e, this);
-
-    return success;
-  },
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
-    return Flotr.Color.processColor(color, o);
+    return flotr.Color.processColor(color, o);
   },
   /**
    * Function determines the min and max values for the xaxis and yaxis.
@@ -2747,7 +2348,7 @@ Flotr.Graph.prototype = {
   findDataRanges: function(){
     var a = this.axes,
       xaxis, yaxis, range;
-    
+
     a.x.datamin = a.x2.datamin = a.y.datamin = a.y2.datamin = Number.MAX_VALUE;
     a.x.datamax = a.x2.datamax = a.y.datamax = a.y2.datamax = -Number.MAX_VALUE;
 
@@ -2773,7 +2374,7 @@ Flotr.Graph.prototype = {
       axis.calculateRange();
     });
 
-    var types = _.keys(Flotr.graphTypes);
+    var types = _.keys(flotr.graphTypes);
 
     _.each(this.series, function (series) {
       _.each(types, function (type) {
@@ -2832,31 +2433,31 @@ Flotr.Graph.prototype = {
         maxOutset = Math.max(maxOutset, series[j].points.radius + series[j].points.lineWidth/2);
       }
     }
-    
+
     var p = this.plotOffset;
     if (x.options.margin === false) {
       p.bottom = 0;
       p.top    = 0;
     } else {
-      p.bottom += (options.grid.circular ? 0 : (x.used && x.options.showLabels ?  (x.maxLabel.height + margin) : 0)) + 
+      p.bottom += (options.grid.circular ? 0 : (x.used && x.options.showLabels ?  (x.maxLabel.height + margin) : 0)) +
                   (x.used && x.options.title ? (x.titleSize.height + margin) : 0) + maxOutset;
-    
-      p.top    += (options.grid.circular ? 0 : (x2.used && x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) + 
+
+      p.top    += (options.grid.circular ? 0 : (x2.used && x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) +
                   (x2.used && x2.options.title ? (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset;
     }
     if (y.options.margin === false) {
       p.left  = 0;
       p.right = 0;
     } else {
-      p.left   += (options.grid.circular ? 0 : (y.used && y.options.showLabels ?  (y.maxLabel.width + margin) : 0)) + 
+      p.left   += (options.grid.circular ? 0 : (y.used && y.options.showLabels ?  (y.maxLabel.width + margin) : 0)) +
                   (y.used && y.options.title ? (y.titleSize.width + margin) : 0) + maxOutset;
-    
-      p.right  += (options.grid.circular ? 0 : (y2.used && y2.options.showLabels ? (y2.maxLabel.width + margin) : 0)) + 
+
+      p.right  += (options.grid.circular ? 0 : (y2.used && y2.options.showLabels ? (y2.maxLabel.width + margin) : 0)) +
                   (y2.used && y2.options.title ? (y2.titleSize.width + margin) : 0) + maxOutset;
     }
-    
+
     p.top = Math.floor(p.top); // In order the outline not to be blured
-    
+
     this.plotWidth  = this.canvasWidth - p.left - p.right;
     this.plotHeight = this.canvasHeight - p.bottom - p.top;
 
@@ -2877,49 +2478,49 @@ Flotr.Graph.prototype = {
 
       if(this.series.length){
         E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
-        
+
         for(var i = 0; i < this.series.length; i++){
           if (!this.series[i].hide)
             this.drawSeries(this.series[i]);
         }
       }
-    
+
       this.clip();
       E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
       after();
     }, this);
-    
+
     var g = this.options.grid;
-    
+
     if (g && g.backgroundImage) {
       if (_.isString(g.backgroundImage)){
         g.backgroundImage = {src: g.backgroundImage, left: 0, top: 0};
       }else{
         g.backgroundImage = _.extend({left: 0, top: 0}, g.backgroundImage);
       }
-      
+
       var img = new Image();
       img.onload = _.bind(function() {
         var left = this.plotOffset.left + (parseInt(g.backgroundImage.left) || 0);
         var top = this.plotOffset.top + (parseInt(g.backgroundImage.top) || 0);
-        
+
         // Store the global alpha to restore it later on.
         var globalAlpha = this.ctx.globalAlpha;
-        
-        // When the watermarkAlpha is < 1 then the watermark is transparent. 
+
+        // When the watermarkAlpha is < 1 then the watermark is transparent.
         this.ctx.globalAlpha = (g.backgroundImage.alpha||globalAlpha);
-        
+
         // Draw the watermark.
         this.ctx.drawImage(img, left, top);
-        
+
         // Set the globalAlpha back to the alpha value before changing it to
         // the grid.watermarkAlpha, otherwise the graph will be transparent also.
         this.ctx.globalAlpha = globalAlpha;
-        
+
         afterImageLoad();
-        
+
       }, this);
-      
+
       img.onabort = img.onerror = afterImageLoad;
       img.src = g.backgroundImage.src;
     } else {
@@ -2932,15 +2533,15 @@ Flotr.Graph.prototype = {
    */
   drawSeries: function(series){
     series = series || this.series;
-    
+
     var drawn = false;
-    for(type in Flotr.graphTypes){
-      if(series[type] && series[type].show){
+    _.each(flotr.graphTypes, function(handler, name) {
+      if(series[name] && series[name].show){
         drawn = true;
-        this[type].draw(series);
+        handler.draw.call(this, series);
       }
-    }
-    
+    }, this);
+
     if(!drawn){
       this[this.options.defaultType].draw(series);
     }
@@ -2953,7 +2554,7 @@ Flotr.Graph.prototype = {
   getEventPosition: function (e){
 
     var d = document,
-        r = this.overlay.getBoundingClientRect();
+        r = this.overlay.getBoundingClientRect(),
         pointer = E.eventPointer(e),
         rx = e.clientX - d.body.scrollLeft - d.documentElement.scrollLeft - r.left - this.plotOffset.left,
         ry = e.clientY - d.body.scrollTop - d.documentElement.scrollTop - r.top - this.plotOffset.top,
@@ -2991,7 +2592,7 @@ Flotr.Graph.prototype = {
   mouseMoveHandler: function(event){
     var pos = this.getEventPosition(event);
     this.lastMousePos.pageX = pos.absX;
-    this.lastMousePos.pageY = pos.absY;  
+    this.lastMousePos.pageY = pos.absY;
     E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
   },
   /**
@@ -3007,7 +2608,7 @@ Flotr.Graph.prototype = {
 
       var overlay = this.overlay;
       overlay.hide();
-      
+
       function cancelContextMenu () {
         overlay.show();
         E.stopObserving(document, 'mousemove', cancelContextMenu);
@@ -3023,7 +2624,7 @@ Flotr.Graph.prototype = {
     E.fire(this.el, 'flotr:mousedown', [event, this]);
   },
   /**
-   * Observes the mouseup event for the document. 
+   * Observes the mouseup event for the document.
    * @param {Event} event - 'mouseup' Event object.
    */
   mouseUpHandler: function(event){
@@ -3034,8 +2635,8 @@ Flotr.Graph.prototype = {
   },
   drawTooltip: function(content, x, y, options) {
     var mt = this.getMouseTrack(),
-        style = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;', 
-        p = options.position, 
+        style = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;',
+        p = options.position,
         m = options.margin,
         plotOffset = this.plotOffset;
 
@@ -3052,7 +2653,7 @@ Flotr.Graph.prototype = {
              if(p.charAt(1) == 'e') style += 'left:' + (m + plotOffset.left + x) + 'px;right:auto;';
         else if(p.charAt(1) == 'w') style += 'right:' + (m - plotOffset.left - x + this.canvasWidth) + 'px;left:auto;';
       }
-  
+
       mt.style.cssText = style;
       D.empty(mt);
       D.insert(mt, content);
@@ -3071,7 +2672,7 @@ Flotr.Graph.prototype = {
       w   = this.canvasWidth,
       h   = this.canvasHeight;
 
-    if (Flotr.isIE && Flotr.isIE < 9) {
+    if (flotr.isIE && flotr.isIE < 9) {
       // Clipping for excanvas :-(
       ctx.save();
       ctx.fillStyle = this.processColor(this.options.ieBackgroundColor);
@@ -3097,14 +2698,14 @@ Flotr.Graph.prototype = {
   },
 
   _initGraphTypes: function() {
-    var type, p;
-    for (type in Flotr.graphTypes) {
-      this[type] = _.clone(Flotr.graphTypes[type]);
-      for (p in this[type]) {
-        if (_.isFunction(this[type][p]))
-          this[type][p] = _.bind(this[type][p], this);
-      }
-    }
+    _.each(flotr.graphTypes, function(handler, graphType){
+      this[graphType] = _.clone(handler);
+      _.each(handler, function(fn, name){
+        if (_.isFunction(fn))
+          this[graphType][name] = _.bind(fn, this);
+      }, this);
+    }, this);
+
   },
 
   _initEvents: function () {
@@ -3134,13 +2735,13 @@ Flotr.Graph.prototype = {
         pos = this.getEventPosition(e.touches[0]);
 
       this.lastMousePos.pageX = pageX;
-      this.lastMousePos.pageY = pageY;  
+      this.lastMousePos.pageY = pageY;
       E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
     }, this));
   },
 
   /**
-   * Initializes the canvas and it's overlay canvas element. When the browser is IE, this makes use 
+   * Initializes the canvas and it's overlay canvas element. When the browser is IE, this makes use
    * of excanvas. The overlay canvas is inserted for displaying interactions. After the canvas elements
    * are created, the elements are inserted into the container element.
    */
@@ -3148,7 +2749,7 @@ Flotr.Graph.prototype = {
     var el = this.el,
       o = this.options,
       size, style;
-    
+
     D.empty(el);
     D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
     size = D.size(el);
@@ -3156,7 +2757,7 @@ Flotr.Graph.prototype = {
     if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
       throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
     }
-    
+
     // The old canvases are retrieved to avoid memory leaks ...
     // @TODO Confirm.
     // this.canvas = el.select('.flotr-canvas')[0];
@@ -3167,7 +2768,7 @@ Flotr.Graph.prototype = {
     this.octx = getContext(this.overlay);
     this.canvasHeight = size.height*o.resolution;
     this.canvasWidth = size.width*o.resolution;
-    this.textEnabled = !!this.ctx.drawText; // Enable text functions
+    this.textEnabled = !!this.ctx.drawText || !!this.ctx.fillText; // Enable text functions
 
     function getCanvas(canvas, name){
       if(!canvas){
@@ -3194,48 +2795,46 @@ Flotr.Graph.prototype = {
   },
 
   _initPlugins: function(){
-    // TODO Should be moved to Flotr and mixed in.
-    var name, plugin, c;
-    for (name in Flotr.plugins) {
-      plugin = Flotr.plugins[name];
-      for (c in plugin.callbacks) {
-        this._observe(this.el, c, _.bind(plugin.callbacks[c], this));
-      }
+    // TODO Should be moved to flotr and mixed in.
+    _.each(flotr.plugins, function(plugin, name){
+      _.each(plugin.callbacks, function(fn, c){
+        this._observe(this.el, c, _.bind(fn, this));
+      }, this);
       this[name] = _.clone(plugin);
-      for (p in this[name]) {
-        if (_.isFunction(this[name][p]))
-          this[name][p] = _.bind(this[name][p], this);
-      }
-    }
+      _.each(this[name], function(fn, p){
+        if (_.isFunction(fn))
+          this[name][p] = _.bind(fn, this);
+      }, this);
+    }, this);
   },
 
   /**
-   * Sets options and initializes some variables and color specific values, used by the constructor. 
+   * Sets options and initializes some variables and color specific values, used by the constructor.
    * @param {Object} opts - options object
    */
   _initOptions: function(opts){
-    var options = Flotr.clone(Flotr.defaultOptions);
+    var options = flotr.clone(flotr.defaultOptions);
     options.x2axis = _.extend(_.clone(options.xaxis), options.x2axis);
     options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
-    this.options = Flotr.merge(opts || {}, options);
+    this.options = flotr.merge(opts || {}, options);
 
-    this.axes = Flotr.Axis.getAxes(this.options);
+    this.axes = flotr.Axis.getAxes(this.options);
 
-    if (this.options.grid.minorVerticalLines === null && 
+    if (this.options.grid.minorVerticalLines === null &&
       this.options.xaxis.scaling === 'logarithmic') {
       this.options.grid.minorVerticalLines = true;
     }
-    if (this.options.grid.minorHorizontalLines === null && 
+    if (this.options.grid.minorHorizontalLines === null &&
       this.options.yaxis.scaling === 'logarithmic') {
       this.options.grid.minorHorizontalLines = true;
     }
-    
+
     // Initialize some variables used throughout this function.
     var assignedColors = [],
         colors = [],
         ln = this.series.length,
         neededColors = this.series.length,
-        oc = this.options.colors, 
+        oc = this.options.colors,
         usedColors = [],
         variation = 0,
         c, i, j, s;
@@ -3246,18 +2845,18 @@ Flotr.Graph.prototype = {
       if(c){
         --neededColors;
         if(_.isNumber(c)) assignedColors.push(c);
-        else usedColors.push(Flotr.Color.parse(c));
+        else usedColors.push(flotr.Color.parse(c));
       }
     }
-    
+
     // Calculate the number of colors that need to be generated.
     for(i = assignedColors.length - 1; i > -1; --i)
       neededColors = Math.max(neededColors, assignedColors[i] + 1);
 
     // Generate needed number of colors.
     for(i = 0; colors.length < neededColors;){
-      c = (oc.length == i) ? new Flotr.Color(100, 100, 100) : Flotr.Color.parse(oc[i]);
-      
+      c = (oc.length == i) ? new flotr.Color(100, 100, 100) : flotr.Color.parse(oc[i]);
+
       // Make sure each serie gets a different color.
       var sign = variation % 2 == 1 ? -1 : 1,
           factor = 1 + sign * Math.ceil(variation / 2) * 0.2;
@@ -3267,13 +2866,13 @@ Flotr.Graph.prototype = {
        * @todo if we're getting too close to something else, we should probably skip this one
        */
       colors.push(c);
-      
+
       if(++i >= oc.length){
         i = 0;
         ++variation;
       }
     }
-  
+
     // Fill the options with the generated colors.
     for(i = 0, j = 0; i < ln; ++i){
       s = this.series[i];
@@ -3284,22 +2883,22 @@ Flotr.Graph.prototype = {
       }else if(_.isNumber(s.color)){
         s.color = colors[s.color].toString();
       }
-      
+
       // Every series needs an axis
       if (!s.xaxis) s.xaxis = this.axes.x;
            if (s.xaxis == 1) s.xaxis = this.axes.x;
       else if (s.xaxis == 2) s.xaxis = this.axes.x2;
-      
+
       if (!s.yaxis) s.yaxis = this.axes.y;
            if (s.yaxis == 1) s.yaxis = this.axes.y;
       else if (s.yaxis == 2) s.yaxis = this.axes.y2;
-      
+
       // Apply missing options to the series.
-      for (var t in Flotr.graphTypes){
+      for (var t in flotr.graphTypes){
         s[t] = _.extend(_.clone(this.options[t]), s[t]);
       }
       s.mouse = _.extend(_.clone(this.options.mouse), s.mouse);
-      
+
       if(s.shadowSize == null) s.shadowSize = this.options.shadowSize;
     }
   },
@@ -3313,7 +2912,10 @@ Flotr.Graph.prototype = {
 
     this.el.graph = this;
   }
-}
+};
+
+Flotr.Graph = Graph;
+
 })();
 
 /**
@@ -3335,7 +2937,7 @@ function Axis (o) {
   _.extend(this, o);
 
   this._setTranslations();
-};
+}
 
 
 // Prototype
@@ -3528,7 +3130,8 @@ Axis.prototype = {
 
     var axis = this,
       o = axis.options,
-      v;
+      v,
+      decadeStart;
 
     var max = Math.log(axis.max);
     if (o.base != Math.E) max /= Math.log(o.base);
@@ -3539,7 +3142,7 @@ Axis.prototype = {
     min = Math.ceil(min);
     
     for (i = min; i < max; i += axis.tickSize) {
-      var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
+      decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
       // Next decade begins here:
       var decadeEnd = decadeStart * ((o.base == Math.E) ? Math.exp(axis.tickSize) : Math.pow(o.base, axis.tickSize));
       var stepSize = (decadeEnd - decadeStart) / o.minorTickFreq;
@@ -3550,7 +3153,7 @@ Axis.prototype = {
     }
     
     // Always show the value at the would-be start of next decade (end of this decade)
-    var decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
+    decadeStart = (o.base == Math.E) ? Math.exp(i) : Math.pow(o.base, i);
     axis.ticks.push({v: decadeStart, label: o.tickFormatter(decadeStart, {min : axis.min, max : axis.max})});
   },
 
@@ -3655,7 +3258,7 @@ var
 
 function Series (o) {
   _.extend(this, o);
-};
+}
 
 Series.prototype = {
 
@@ -3663,8 +3266,8 @@ Series.prototype = {
 
     var data = this.data,
       length = data.length,
-      xmin = ymin = Number.MAX_VALUE,
-      xmax = ymax = -Number.MAX_VALUE,
+      xmin = Number.MAX_VALUE, ymin = Number.MAX_VALUE,
+      xmax = -Number.MAX_VALUE, ymax = -Number.MAX_VALUE,
       xused, yused,
       x, y, i;
 
@@ -4006,20 +3609,29 @@ Flotr.addType('bars', {
       barOffset = series.bars.centered ? barWidth/2 : 0;
       
       if(series.bars.horizontal){ 
-        if (x > 0)
-          left = stackOffsetPos, right = x + stackOffsetPos;
-        else
-          right = stackOffsetNeg, left = x + stackOffsetNeg;
-          
-        bottom = y - barOffset, top = y + barWidth - barOffset;
+        if (x > 0){
+          left = stackOffsetPos;
+          right = x + stackOffsetPos;
+        }
+        else {
+          right = stackOffsetNeg;
+          left = x + stackOffsetNeg;
+        }
+        bottom = y - barOffset;
+        top = y + barWidth - barOffset;
       }
       else {
-        if (y > 0)
-          bottom = stackOffsetPos, top = y + stackOffsetPos;
-        else
-          top = stackOffsetNeg, bottom = y + stackOffsetNeg;
+        if (y > 0){
+          bottom = stackOffsetPos;
+          top = y + stackOffsetPos;
+        }
+        else{
+          top = stackOffsetNeg;
+          bottom = y + stackOffsetNeg;
+        }
           
-        left = x - barOffset, right = x + barWidth - barOffset;
+        left = x - barOffset;
+        right = x + barWidth - barOffset;
       }
       
       if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
@@ -4062,7 +3674,7 @@ Flotr.addType('bars', {
   extendYRange: function(axis){
     this.bars._extendRange(axis);
   },
-  _extendRange: function (axis, orientation) {
+  _extendRange: function (axis) {
 
     if(axis.options.max == null){
       var newmin = axis.min,
@@ -4132,7 +3744,8 @@ Flotr.addType('bars', {
     var octx = this.octx,
       s = n.series,
       xa = n.xaxis,
-      ya = n.yaxis;
+      ya = n.yaxis,
+      lx, rx, ly, uy;
 
     octx.save();
     octx.translate(this.plotOffset.left, this.plotOffset.top);
@@ -4148,18 +3761,18 @@ Flotr.addType('bars', {
         x = xa.d2p(n.x);
         
       if(!s.bars.horizontal){ //vertical bars (default)
-        var ly = ya.d2p(ya.min<0? 0 : ya.min); //lower vertex y value (in points)
+        ly = ya.d2p(ya.min<0? 0 : ya.min); //lower vertex y value (in points)
         
         if(s.bars.centered){
-          var lx = xa.d2p(n.x-(bw/2)),
-            rx = xa.d2p(n.x+(bw/2));
+          lx = xa.d2p(n.x-(bw/2));
+          rx = xa.d2p(n.x+(bw/2));
         
           octx.moveTo(lx, ly);
           octx.lineTo(lx, y);
           octx.lineTo(rx, y);
           octx.lineTo(rx, ly);
         } else {
-          var rx = xa.d2p(n.x+bw); //right vertex x value (in points)
+          rx = xa.d2p(n.x+bw); //right vertex x value (in points)
           
           octx.moveTo(x, ly);
           octx.lineTo(x, y);
@@ -4167,18 +3780,18 @@ Flotr.addType('bars', {
           octx.lineTo(rx, ly);
         }
       } else { //horizontal bars
-        var lx = xa.d2p(xa.min<0? 0 : xa.min); //left vertex y value (in points)
+        lx = xa.d2p(xa.min<0? 0 : xa.min); //left vertex y value (in points)
           
         if(s.bars.centered){
-          var ly = ya.d2p(n.y-(bw/2)),
-            uy = ya.d2p(n.y+(bw/2));
+          ly = ya.d2p(n.y-(bw/2));
+          uy = ya.d2p(n.y+(bw/2));
                        
           octx.moveTo(lx, ly);
           octx.lineTo(x, ly);
           octx.lineTo(x, uy);
           octx.lineTo(lx, uy);
         } else {
-          var uy = ya.d2p(n.y+bw); //upper vertex y value (in points)
+          uy = ya.d2p(n.y+bw); //upper vertex y value (in points)
         
           octx.moveTo(lx, y);
           octx.lineTo(x, y);
@@ -4781,6 +4394,8 @@ Flotr.addType('gantt', {
  * @param {Object} obj - Marker value Object {x:..,y:..}
  * @return {String} Formatted marker string
  */
+(function () {
+
 Flotr.defaultMarkerFormatter = function(obj){
   return (Math.round(obj.y*100)/100)+'';
 };
@@ -4883,7 +4498,7 @@ Flotr.addType('markers', {
     ctx.restore();
   },
   plot: function(x, y, label, options) {
-    if (label instanceof Image && !label.complete) {
+    if ( isImage(label) && !label.complete) {
       Flotr.EventAdapter.observe(label, 'load', Flotr._.bind(function () {
         var ctx = this.ctx;
         ctx.save();
@@ -4903,7 +4518,7 @@ Flotr.addType('markers', {
         top = y,
         dim;
 
-    if (label instanceof Image)
+    if (isImage(label))
       dim = {height : label.height, width: label.width};
     else
       dim = this._text.canvas(label);
@@ -4926,12 +4541,18 @@ Flotr.addType('markers', {
     if(options.stroke)
       ctx.strokeRect(left, top, dim.width, dim.height);
     
-    if (label instanceof Image)
+    if (isImage(label))
       ctx.drawImage(label, left+margin, top+margin);
     else
       Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
   }
 });
+
+function isImage (i) {
+  return typeof i === 'object' && i.constructor && (Image ? true : i.constructor === Image);
+}
+
+})();
 
 /** Pie **/
 /**
@@ -5625,7 +5246,8 @@ Flotr.addPlugin('download', {
 
 (function () {
 
-var E = Flotr.EventAdapter;
+var E = Flotr.EventAdapter,
+    _ = Flotr._;
 
 Flotr.addPlugin('graphGrid', {
 
@@ -5675,8 +5297,7 @@ Flotr.addPlugin('graphGrid', {
       }
       if(o.grid.minorHorizontalLines){
         a = this.axes.y;
-        for(var i = 0; i < a.minorTicks.length; ++i){
-          v = a.minorTicks[i].v;
+        _.each(_.pluck(a.minorTicks, 'v'), function(v){
           var ratio = v / a.max;
       
           for(var j = 0; j <= sides; ++j){
@@ -5684,14 +5305,14 @@ Flotr.addPlugin('graphGrid', {
           }
           //ctx.moveTo(radius*ratio, 0);
           //ctx.arc(0, 0, radius*ratio, 0, Math.PI*2, true);
-        }
+        });
       }
       
       if(o.grid.verticalLines){
-        for(var i = 0; i < sides; ++i){
+        _.times(sides, function(i){
           ctx.moveTo(0, 0);
           ctx.lineTo(Math.cos(i*coeff+angle)*radius, Math.sin(i*coeff+angle)*radius);
-        }
+        });
       }
       ctx.stroke();
     }
@@ -5709,57 +5330,53 @@ Flotr.addPlugin('graphGrid', {
       
       if(o.grid.verticalLines){
         a = this.axes.x;
-        for(var i = 0; i < a.ticks.length; ++i){
-          v = a.ticks[i].v;
+        _.each(_.pluck(a.ticks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
               (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
-            continue;
+            return;
     
           ctx.moveTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, 0);
           ctx.lineTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, this.plotHeight);
-        }
+        }, this);
       }
       if(o.grid.minorVerticalLines){
         a = this.axes.x;
-        for(var i = 0; i < a.minorTicks.length; ++i){
-          v = a.minorTicks[i].v;
+         _.each(_.pluck(a.minorTicks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
               (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
-            continue;
+            return;
       
           ctx.moveTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, 0);
           ctx.lineTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, this.plotHeight);
-        }
+        }, this);
       }
       
       // Draw grid lines in horizontal direction.
       if(o.grid.horizontalLines){
         a = this.axes.y;
-        for(var j = 0; j < a.ticks.length; ++j){
-          v = a.ticks[j].v;
+        _.each(_.pluck(a.ticks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
               (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
-            continue;
+            return;
     
           ctx.moveTo(0, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
           ctx.lineTo(this.plotWidth, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-        }
+        }, this);
       }
       if(o.grid.minorHorizontalLines){
         a = this.axes.y;
-        for(var j = 0; j < a.minorTicks.length; ++j){
-          v = a.minorTicks[j].v;
+        _.each(_.pluck(a.ticks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
               (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
-            continue;
+            return;
     
           ctx.moveTo(0, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
           ctx.lineTo(this.plotWidth, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-        }
+        }, this);
       }
       ctx.stroke();
     }
@@ -5835,6 +5452,34 @@ Flotr.addPlugin('hit', {
     }
   },
   /**
+   * Try a method on a graph type.  If the method exists, execute it.
+   * @param {Object} series
+   * @param {String} method  Method name.
+   * @param {Array} args  Arguments applied to method.
+   * @return executed successfully or failed.
+   */
+  executeOnType: function(s, method, args){
+    var success = false;
+    if (!_.isArray(s)) s = [s];
+
+    function e(s) {
+      _.each(_.keys(flotr.graphTypes), function (type) {
+        if (s[type] && s[type].show) {
+          try {
+            if (!_.isUndefined(args))
+                this[type][method].apply(this[type], args);
+            else
+                this[type][method].apply(this[type]);
+            success = true;
+          } catch (e) {}
+        }
+      }, this);
+    }
+    _.each(s, e, this);
+
+    return success;
+  },
+  /**
    * Updates the mouse tracking point on the overlay.
    */
   drawHit: function(n){
@@ -5847,7 +5492,7 @@ Flotr.addPlugin('hit', {
       octx.strokeStyle = s.mouse.lineColor;
       octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
 
-      if (!this.executeOnType(s, 'drawHit', [n])) {
+      if (!this.hit.executeOnType(s, 'drawHit', [n])) {
         var xa = n.xaxis,
           ya = n.yaxis;
 
@@ -5867,7 +5512,7 @@ Flotr.addPlugin('hit', {
    */
   clearHit: function(){
     var prev = this.prevHit;
-    if(prev && !this.executeOnType(prev.series, 'clearHit')){
+    if(prev && !this.hit.executeOnType(prev.series, 'clearHit')){
       var plotOffset = this.plotOffset,
         s = prev.series,
         lw = (s.bars ? s.bars.lineWidth : 1),
@@ -5960,7 +5605,7 @@ Flotr.addPlugin('hit', {
         }
       }
     }
-    else if(!this.executeOnType(series, 'hit', [mouse, n])) {
+    else if(!this.hit.executeOnType(series, 'hit', [mouse, n])) {
       for(i = 0; i < series.length; i++){
         s = series[i];
         if(!s.mouse.track) continue;
@@ -6369,7 +6014,8 @@ Flotr.addPlugin('labels', {
         xBoxWidth, i, html, tick, left, top,
         options = this.options,
         ctx = this.ctx,
-        a = this.axes;
+        a = this.axes,
+        style;
     
     for(i = 0; i < a.x.ticks.length; ++i){
       if (a.x.ticks[i].label) {
@@ -6384,9 +6030,10 @@ Flotr.addPlugin('labels', {
       var radius = this.plotHeight*options.radar.radiusRatio/2 + options.fontSize,
           sides = this.axes.x.ticks.length,
           coeff = 2*(Math.PI/sides),
-          angle = -Math.PI/2;
+          angle = -Math.PI/2,
+          x, y;
       
-      var style = {
+      style = {
         size: options.fontSize
       };
 
@@ -6398,8 +6045,8 @@ Flotr.addPlugin('labels', {
         tick.label += '';
         if(!tick.label || tick.label.length == 0) continue;
         
-        var x = Math.cos(i*coeff+angle) * radius, 
-            y = Math.sin(i*coeff+angle) * radius;
+        x = Math.cos(i*coeff+angle) * radius; 
+        y = Math.sin(i*coeff+angle) * radius;
             
         style.angle = Flotr.toRad(axis.options.labelsAngle);
         style.textBaseline = 'middle';
@@ -6412,8 +6059,8 @@ Flotr.addPlugin('labels', {
         tick.label += '';
         if(!tick.label || tick.label.length == 0) continue;
       
-        var x = Math.cos(i*coeff+angle) * radius, 
-            y = Math.sin(i*coeff+angle) * radius;
+        x = Math.cos(i*coeff+angle) * radius;
+        y = Math.sin(i*coeff+angle) * radius;
             
         style.angle = Flotr.toRad(axis.options.labelsAngle);
         style.textBaseline = 'middle';
@@ -6452,7 +6099,7 @@ Flotr.addPlugin('labels', {
     }
     
     if (!options.HtmlText && this.textEnabled) {
-      var style = {
+      style = {
         size: options.fontSize
       };
   
@@ -6725,7 +6372,7 @@ Flotr.addPlugin('legend', {
         for(i = series.length - 1; i > -1; --i){
           if(!series[i].label || series[i].hide) continue;
           label = legend.labelFormatter(series[i].label);
-          labelMaxWidth = Math.max(labelMaxWidth, Flotr.measureText(ctx, label, style).width);
+          labelMaxWidth = Math.max(labelMaxWidth, this._text.measureText(label, style).width);
         }
         
         var legendWidth  = Math.round(lbw + lbm*3 + labelMaxWidth),
@@ -6757,7 +6404,7 @@ Flotr.addPlugin('legend', {
           ctx.strokeRect(Math.ceil(x)-1.5, Math.ceil(y)-1.5, lbw+2, lbh+2);
           
           // Legend text
-          Flotr.drawText(ctx, label, x + lbw + lbm, y + (lbh + style.size - ctx.fontDescent(style))/2, style);
+          Flotr.drawText(ctx, label, x + lbw + lbm, y + lbh, style);
           
           y += lbh + lbm;
         }

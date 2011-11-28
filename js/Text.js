@@ -4,7 +4,9 @@
 (function () {
 
 var
-  D = Flotr.DOM,
+  F = Flotr,
+  D = F.DOM,
+  _ = F._,
 
 Text = function (o) {
   this.o = o;
@@ -24,13 +26,25 @@ Text.prototype = {
   canvas : function (text, style) {
 
     if (!this.o.textEnabled) return;
+    style = style || {};
 
-    var bounds = this.o.ctx.getTextBounds(text, style);
+    var
+      metrics = this.measureText(text, style),
+      width = metrics.width,
+      height = style.size || F.defaultOptions.fontSize,
+      angle = style.angle || 0,
+      cosAngle = Math.cos(angle),
+      sinAngle = Math.sin(angle),
+      widthPadding = 2,
+      heightPadding = 6,
+      bounds;
 
-    return {
-      width  : bounds.width + 2, // @TODO what are these paddings?
-      height : bounds.height + 6
+    bounds = {
+      width: Math.abs(cosAngle * width) + Math.abs(sinAngle * height) + widthPadding,
+      height: Math.abs(sinAngle * width) + Math.abs(cosAngle * height) + heightPadding
     };
+
+    return bounds;
   },
 
   html : function (text, element, style, className) {
@@ -42,6 +56,30 @@ Text.prototype = {
     D.insert(this.o.element, div);
 
     return D.size(div);
+  },
+
+  measureText : function (text, style) {
+
+    var
+      context = this.o.ctx,
+      metrics;
+
+    if (!context.fillText || F.isIphone) {
+      return { width : context.measure(text, style)};
+    }
+
+    style = _.extend({
+      size: F.defaultOptions.fontSize,
+      weight: 1,
+      angle: 0
+    }, style);
+
+    context.save();
+    context.font = (style.weight > 1 ? "bold " : "") + (style.size*1.3) + "px sans-serif";
+    metrics = context.measureText(text);
+    context.restore();
+
+    return metrics;
   }
 };
 

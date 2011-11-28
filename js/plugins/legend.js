@@ -63,7 +63,7 @@ Flotr.addPlugin('legend', {
         for(i = series.length - 1; i > -1; --i){
           if(!series[i].label || series[i].hide) continue;
           label = legend.labelFormatter(series[i].label);
-          labelMaxWidth = Math.max(labelMaxWidth, Flotr.measureText(ctx, label, style).width);
+          labelMaxWidth = Math.max(labelMaxWidth, this._text.measureText(label, style).width);
         }
         
         var legendWidth  = Math.round(lbw + lbm*3 + labelMaxWidth),
@@ -95,7 +95,7 @@ Flotr.addPlugin('legend', {
           ctx.strokeRect(Math.ceil(x)-1.5, Math.ceil(y)-1.5, lbw+2, lbh+2);
           
           // Legend text
-          Flotr.drawText(ctx, label, x + lbw + lbm, y + (lbh + style.size - ctx.fontDescent(style))/2, style);
+          Flotr.drawText(ctx, label, x + lbw + lbm, y + lbh, style);
           
           y += lbh + lbm;
         }

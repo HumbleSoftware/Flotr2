@@ -1,3 +1,6 @@
+all: test flotr2
+test:
+	jasmine-headless-webkit -j spec/jasmine.yml -c
 flotr2:
 	smoosh build.json
 	cat build/lib.js build/flotr2.js > flotr2.js

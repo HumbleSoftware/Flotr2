@@ -208,24 +208,6 @@ Flotr = {
     ctx.fillText(text, 0, 0);
     ctx.restore();
   },
-  measureText: function(ctx, text, style) {
-    if (!ctx.fillText || Flotr.isIphone) {
-      return {width: ctx.measure(text, style)};
-    }
-    
-    style = this._.extend({
-      size: Flotr.defaultOptions.fontSize,
-      weight: 1,
-      angle: 0
-    }, style);
-    
-    ctx.save();
-    ctx.rotate(style.angle);
-    ctx.font = (style.weight > 1 ? "bold " : "") + (style.size*1.3) + "px sans-serif";
-    var metrics = ctx.measureText(text);
-    ctx.restore();
-    return metrics;
-  },
   getBestTextAlign: function(angle, style) {
     style = style || {textAlign: 'center', textBaseline: 'middle'};
     angle += Flotr.getTextAngleFromAlign(style);
