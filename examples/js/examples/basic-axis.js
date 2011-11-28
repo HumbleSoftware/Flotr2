@@ -1,7 +1,7 @@
 (function () {
 
 Flotr.ExampleList.add({
-  key : 'basic-axi',
+  key : 'basic-axis',
   name : 'Basic Axis',
   callback : basic_axis
 });
