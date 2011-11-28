@@ -29,8 +29,14 @@ describe('Flotr', function () {
 
         a = executeExampleTest(example, StableFlotr, nodeA);
         b = executeExampleTest(example, TestFlotr, nodeB);
-
-        expect(b).toImageDiffEqual(a);
+        if (example.timeout) {
+          waits(example.timeout);
+          runs (function () {
+            expect(b).toImageDiffEqual(a);
+          });
+        } else {
+          expect(b).toImageDiffEqual(a);
+        }
       });
     });
 
