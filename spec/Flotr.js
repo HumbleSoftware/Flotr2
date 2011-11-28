@@ -32,10 +32,10 @@ describe('Flotr', function () {
         if (example.timeout) {
           waits(example.timeout);
           runs (function () {
-            expect(b).toImageDiffEqual(a);
+            expect(b).toImageDiffEqual(a, example.tolerance || 0);
           });
         } else {
-          expect(b).toImageDiffEqual(a);
+          expect(b).toImageDiffEqual(a, example.tolerance || 0);
         }
       });
     });
