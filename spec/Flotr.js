@@ -18,7 +18,8 @@ describe('Flotr', function () {
     afterEach(function () {
       destroyNode(nodeA);
       destroyNode(nodeB);
-      a = b = null;
+      nodeA = null;
+      nodeB = null;
       Flotr = null;
     });
 
