@@ -4,6 +4,17 @@ var
   D = Flotr.DOM,
   _ = Flotr._;
 
+function getImage (type, canvas, width, height) {
+
+  // TODO add scaling for w / h
+  var
+    mime = 'image/'+type,
+    data = toDataURL(mime),
+    image = new Image();
+  image.src = data;
+  return image;
+}
+
 Flotr.addPlugin('download', {
 
   saveImage: function (type, width, height, replaceCanvas) {
@@ -12,14 +23,11 @@ Flotr.addPlugin('download', {
       image = '<html><body>'+this.canvas.firstChild.innerHTML+'</body></html>';
       return window.open().document.write(image);
     }
-      
-    switch (type) {
-      case 'jpeg':
-      case 'jpg': image = Canvas2Image.saveAsJPEG(this.canvas, replaceCanvas, width, height); break;
-      default:
-      case 'png': image = Canvas2Image.saveAsPNG(this.canvas, replaceCanvas, width, height); break;
-      case 'bmp': image = Canvas2Image.saveAsBMP(this.canvas, replaceCanvas, width, height); break;
-    }
+
+    if (type !== 'jpeg' || type !== 'png') return;
+
+    image = getImage(type, this.canavs, width, height);
+
     if (_.isElement(image) && replaceCanvas) {
       this.download.restoreCanvas();
       D.hide(this.canvas);
