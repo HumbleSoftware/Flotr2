@@ -24,6 +24,8 @@ Flotr.addPlugin('graphGrid', {
       horizontalLines = grid.horizontalLines,
       minorVerticalLines = grid.minorVerticalLines,
       minorHorizontalLines = grid.minorHorizontalLines,
+      plotHeight = this.plotHeight,
+      plotWidth = this.plotWidth,
       a, v, i, j;
         
     if(verticalLines || minorVerticalLines || 
@@ -35,8 +37,8 @@ Flotr.addPlugin('graphGrid', {
     ctx.strokeStyle = grid.tickColor;
     
     if (grid.circular) {
-      ctx.translate(this.plotOffset.left+this.plotWidth/2, this.plotOffset.top+this.plotHeight/2);
-      var radius = Math.min(this.plotHeight, this.plotWidth)*options.radar.radiusRatio/2,
+      ctx.translate(this.plotOffset.left+plotWidth/2, this.plotOffset.top+plotHeight/2);
+      var radius = Math.min(plotHeight, plotWidth)*options.radar.radiusRatio/2,
           sides = this.axes.x.ticks.length,
           coeff = 2*(Math.PI/sides),
           angle = -Math.PI/2;
@@ -77,63 +79,40 @@ Flotr.addPlugin('graphGrid', {
   
       // Draw grid background, if present in options.
       if(grid.backgroundColor){
-        ctx.fillStyle = this.processColor(grid.backgroundColor, {x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight});
-        ctx.fillRect(0, 0, this.plotWidth, this.plotHeight);
+        ctx.fillStyle = this.processColor(grid.backgroundColor, {x1: 0, y1: 0, x2: plotWidth, y2: plotHeight});
+        ctx.fillRect(0, 0, plotWidth, plotHeight);
       }
       
       // Draw grid lines in vertical direction.
       ctx.beginPath();
       
-      if(verticalLines){
-        a = this.axes.x;
-        _.each(_.pluck(a.ticks, 'v'), function(v){
+      function drawGridLines (ticks, callback) {
+        _.each(_.pluck(ticks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
               (v == a.min || v == a.max) && grid.outlineWidth)
             return;
-    
-          ctx.moveTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, 0);
-          ctx.lineTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, this.plotHeight);
-        }, this);
+          callback(Math.floor(a.d2p(v)) + ctx.lineWidth/2);
+        });
       }
-      if(minorVerticalLines){
-        a = this.axes.x;
-         _.each(_.pluck(a.minorTicks, 'v'), function(v){
-          // Don't show lines on upper and lower bounds.
-          if ((v <= a.min || v >= a.max) || 
-              (v == a.min || v == a.max) && grid.outlineWidth)
-            return;
+    
+      function drawVerticalLines (x) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, plotHeight);
+      }
+      function drawHorizontalLines (y) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(plotWidth, y);
+      }
+
+      a = this.axes.x;
+      if (verticalLines)        drawGridLines(a.ticks, drawVerticalLines);
+      if (minorVerticalLines)   drawGridLines(a.minorTicks, drawVerticalLines);
       
-          ctx.moveTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, 0);
-          ctx.lineTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, this.plotHeight);
-        }, this);
-      }
-      
-      // Draw grid lines in horizontal direction.
-      if(horizontalLines){
-        a = this.axes.y;
-        _.each(_.pluck(a.ticks, 'v'), function(v){
-          // Don't show lines on upper and lower bounds.
-          if ((v <= a.min || v >= a.max) || 
-              (v == a.min || v == a.max) && grid.outlineWidth)
-            return;
-    
-          ctx.moveTo(0, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-          ctx.lineTo(this.plotWidth, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-        }, this);
-      }
-      if(minorHorizontalLines){
-        a = this.axes.y;
-        _.each(_.pluck(a.ticks, 'v'), function(v){
-          // Don't show lines on upper and lower bounds.
-          if ((v <= a.min || v >= a.max) || 
-              (v == a.min || v == a.max) && grid.outlineWidth)
-            return;
-    
-          ctx.moveTo(0, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-          ctx.lineTo(this.plotWidth, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-        }, this);
-      }
+      a = this.axes.y;
+      if (horizontalLines)      drawGridLines(a.ticks, drawHorizontalLines);
+      if (minorHorizontalLines) drawGridLines(a.minorTicks, drawHorizontalLines);
+
       ctx.stroke();
     }
     
