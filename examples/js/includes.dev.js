@@ -11,7 +11,6 @@ yepnope([
       '../lib/canvastext.js'
     ]
   },
-  '../lib/canvas2image.js',
   'lib/google-code-prettify/prettify.js',
   'lib/beautify.js',
   'lib/randomseed.js',

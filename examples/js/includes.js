@@ -10,7 +10,6 @@ yepnope([
       '../lib/base64.js'
     ]
   },
-  '../lib/canvas2image.js',
   '../lib/canvastext.js',
   'lib/google-code-prettify/prettify.js',
   'lib/beautify.js',
