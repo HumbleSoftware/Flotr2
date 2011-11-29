@@ -24,7 +24,7 @@ Flotr.addPlugin('graphGrid', {
       horizontalLines = grid.horizontalLines,
       minorVerticalLines = grid.minorVerticalLines,
       minorHorizontalLines = grid.minorHorizontalLines,
-      a, v;
+      a, v, i, j;
         
     if(verticalLines || minorVerticalLines || 
            horizontalLines || minorHorizontalLines){
@@ -44,36 +44,24 @@ Flotr.addPlugin('graphGrid', {
       // Draw grid lines in vertical direction.
       ctx.beginPath();
       
-      if(horizontalLines){
-        a = this.axes.y;
-        for(var i = 0; i < a.ticks.length; ++i){
-          v = a.ticks[i].v;
-          var ratio = v / a.max;
-          
-          for(var j = 0; j <= sides; ++j){
+      a = this.axes.y;
+      function circularHorizontalTicks (ticks) {
+        for(i = 0; i < ticks.length; ++i){
+          var ratio = ticks[i].v / a.max;
+          for(j = 0; j <= sides; ++j){
             ctx[j === 0 ? 'moveTo' : 'lineTo'](
               Math.cos(j*coeff+angle)*radius*ratio,
               Math.sin(j*coeff+angle)*radius*ratio
             );
           }
-          //ctx.moveTo(radius*ratio, 0);
-          //ctx.arc(0, 0, radius*ratio, 0, Math.PI*2, true);
         }
       }
+
+      if(horizontalLines){
+        circularHorizontalTicks(a.ticks);
+      }
       if(minorHorizontalLines){
-        a = this.axes.y;
-        _.each(_.pluck(a.minorTicks, 'v'), function(v){
-          var ratio = v / a.max;
-      
-          for(var j = 0; j <= sides; ++j){
-            ctx[j === 0 ? 'moveTo' : 'lineTo'](
-              Math.cos(j*coeff+angle)*radius*ratio,
-              Math.sin(j*coeff+angle)*radius*ratio
-            );
-          }
-          //ctx.moveTo(radius*ratio, 0);
-          //ctx.arc(0, 0, radius*ratio, 0, Math.PI*2, true);
-        });
+        circularHorizontalTicks(a.minorTicks);
       }
       
       if(verticalLines){
@@ -187,7 +175,7 @@ Flotr.addPlugin('graphGrid', {
       ctx.strokeStyle = grid.color;
       ctx.lineJoin = 'round';
       
-      for(var i = 0; i <= sides; ++i){
+      for(i = 0; i <= sides; ++i){
         ctx[i === 0 ? 'moveTo' : 'lineTo'](Math.cos(i*coeff+angle)*radius, Math.sin(i*coeff+angle)*radius);
       }
       //ctx.arc(0, 0, radius, 0, Math.PI*2, true);
