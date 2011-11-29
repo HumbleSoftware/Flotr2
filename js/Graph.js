@@ -100,8 +100,8 @@ Graph.prototype = {
         xaxis.datamax = Math.max(range.xmax, xaxis.datamax);
         yaxis.datamin = Math.min(range.ymin, yaxis.datamin);
         yaxis.datamax = Math.max(range.ymax, yaxis.datamax);
-        xaxis.used = (xaxis.used || range.xused ? true : false);
-        yaxis.used = (yaxis.used || range.yused ? true : false);
+        xaxis.used = (xaxis.used || range.xused);
+        yaxis.used = (yaxis.used || range.yused);
       }
     }, this);
 

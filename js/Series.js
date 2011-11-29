@@ -22,7 +22,8 @@ Series.prototype = {
       ymin = Number.MAX_VALUE,
       xmax = -Number.MAX_VALUE,
       ymax = -Number.MAX_VALUE,
-      xused, yused,
+      xused = false,
+      yused = false,
       x, y, i;
 
     if (length < 0 || this.hide) return false;
