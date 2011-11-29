@@ -91,9 +91,6 @@ Graph.prototype = {
     var a = this.axes,
       xaxis, yaxis, range;
 
-    a.x.datamin = a.x2.datamin = a.y.datamin = a.y2.datamin = Number.MAX_VALUE;
-    a.x.datamax = a.x2.datamax = a.y.datamax = a.y2.datamax = -Number.MAX_VALUE;
-
     _.each(this.series, function (series) {
       range = series.getRange();
       if (range) {
