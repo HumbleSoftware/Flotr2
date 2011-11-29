@@ -75,17 +75,7 @@ Flotr.addPlugin('graphGrid', {
       ctx.stroke();
     }
     else {
-      ctx.translate(this.plotOffset.left, this.plotOffset.top);
-  
-      // Draw grid background, if present in options.
-      if(grid.backgroundColor){
-        ctx.fillStyle = this.processColor(grid.backgroundColor, {x1: 0, y1: 0, x2: plotWidth, y2: plotHeight});
-        ctx.fillRect(0, 0, plotWidth, plotHeight);
-      }
-      
-      // Draw grid lines in vertical direction.
-      ctx.beginPath();
-      
+
       function drawGridLines (ticks, callback) {
         _.each(_.pluck(ticks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
@@ -95,7 +85,6 @@ Flotr.addPlugin('graphGrid', {
           callback(Math.floor(a.d2p(v)) + ctx.lineWidth/2);
         });
       }
-    
       function drawVerticalLines (x) {
         ctx.moveTo(x, 0);
         ctx.lineTo(x, plotHeight);
@@ -105,10 +94,20 @@ Flotr.addPlugin('graphGrid', {
         ctx.lineTo(plotWidth, y);
       }
 
+      ctx.translate(this.plotOffset.left, this.plotOffset.top);
+  
+      // Draw grid background, if present in options.
+      if(grid.backgroundColor){
+        ctx.fillStyle = this.processColor(grid.backgroundColor, {x1: 0, y1: 0, x2: plotWidth, y2: plotHeight});
+        ctx.fillRect(0, 0, plotWidth, plotHeight);
+      }
+      
+      ctx.beginPath();
+
       a = this.axes.x;
       if (verticalLines)        drawGridLines(a.ticks, drawVerticalLines);
       if (minorVerticalLines)   drawGridLines(a.minorTicks, drawVerticalLines);
-      
+
       a = this.axes.y;
       if (horizontalLines)      drawGridLines(a.ticks, drawHorizontalLines);
       if (minorHorizontalLines) drawGridLines(a.minorTicks, drawHorizontalLines);
