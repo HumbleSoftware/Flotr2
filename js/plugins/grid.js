@@ -152,18 +152,25 @@ Flotr.addPlugin('graphGrid', {
 
   drawOutline: function(){
     var
-      options = this.options,
+      that = this,
+      options = that.options,
       grid = options.grid,
-      ctx = this.ctx,
-      v;
+      ctx = that.ctx,
+      backgroundImage = grid.backgroundImage,
+      plotOffset = that.plotOffset,
+      leftOffset = plotOffset.left,
+      topOffset = plotOffset.top,
+      plotWidth = that.plotWidth,
+      plotHeight = that.plotHeight,
+      v, img, src, left, top, globalAlpha;
     
     if (grid.outlineWidth == 0) return;
     
     ctx.save();
     
     if (grid.circular) {
-      ctx.translate(this.plotOffset.left+this.plotWidth/2, this.plotOffset.top+this.plotHeight/2);
-      var radius = Math.min(this.plotHeight, this.plotWidth)*options.radar.radiusRatio/2,
+      ctx.translate(leftOffset + plotWidth / 2, topOffset + plotHeight / 2);
+      var radius = Math.min(plotHeight, plotWidth) * options.radar.radiusRatio / 2,
           sides = this.axes.x.ticks.length,
           coeff = 2*(Math.PI/sides),
           angle = -Math.PI/2;
@@ -182,7 +189,7 @@ Flotr.addPlugin('graphGrid', {
       ctx.stroke();
     }
     else {
-      ctx.translate(this.plotOffset.left, this.plotOffset.top);
+      ctx.translate(leftOffset, topOffset);
       
       // Draw axis/grid border.
       var lw = grid.outlineWidth,
@@ -190,19 +197,10 @@ Flotr.addPlugin('graphGrid', {
       ctx.lineWidth = lw;
       ctx.strokeStyle = grid.color;
       ctx.lineJoin = 'miter';
-      ctx.strokeRect(orig, orig, this.plotWidth, this.plotHeight);
+      ctx.strokeRect(orig, orig, plotWidth, plotHeight);
     }
     
     ctx.restore();
-
-    var
-      backgroundImage = grid.backgroundImage,
-      that = this,
-      plotOffset = this.plotOffset,
-      width = this.plotWidth,
-      height = this.plotHeight,
-      img, src, left, top, globalAlpha;
-
 
     if (backgroundImage) {
 
@@ -215,7 +213,7 @@ Flotr.addPlugin('graphGrid', {
         ctx.save();
         if (backgroundImage.alpha) ctx.globalAlpha = backgroundImage.alpha;
         ctx.globalCompositeOperation = 'destination-over';
-        ctx.drawImage(img, 0, 0, width, height, left, top, width, height);
+        ctx.drawImage(img, 0, 0, plotWidth, plotHeight, left, top, plotWidth, plotHeight);
         ctx.restore();
       };
 
