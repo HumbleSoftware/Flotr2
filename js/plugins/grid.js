@@ -51,7 +51,10 @@ Flotr.addPlugin('graphGrid', {
           var ratio = v / a.max;
           
           for(var j = 0; j <= sides; ++j){
-            ctx[j == 0 ? 'moveTo' : 'lineTo'](Math.cos(j*coeff+angle)*radius*ratio, Math.sin(j*coeff+angle)*radius*ratio);
+            ctx[j === 0 ? 'moveTo' : 'lineTo'](
+              Math.cos(j*coeff+angle)*radius*ratio,
+              Math.sin(j*coeff+angle)*radius*ratio
+            );
           }
           //ctx.moveTo(radius*ratio, 0);
           //ctx.arc(0, 0, radius*ratio, 0, Math.PI*2, true);
@@ -63,7 +66,10 @@ Flotr.addPlugin('graphGrid', {
           var ratio = v / a.max;
       
           for(var j = 0; j <= sides; ++j){
-            ctx[j == 0 ? 'moveTo' : 'lineTo'](Math.cos(j*coeff+angle)*radius*ratio, Math.sin(j*coeff+angle)*radius*ratio);
+            ctx[j === 0 ? 'moveTo' : 'lineTo'](
+              Math.cos(j*coeff+angle)*radius*ratio,
+              Math.sin(j*coeff+angle)*radius*ratio
+            );
           }
           //ctx.moveTo(radius*ratio, 0);
           //ctx.arc(0, 0, radius*ratio, 0, Math.PI*2, true);
@@ -82,7 +88,7 @@ Flotr.addPlugin('graphGrid', {
       ctx.translate(this.plotOffset.left, this.plotOffset.top);
   
       // Draw grid background, if present in options.
-      if(grid.backgroundColor != null){
+      if(grid.backgroundColor){
         ctx.fillStyle = this.processColor(grid.backgroundColor, {x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight});
         ctx.fillRect(0, 0, this.plotWidth, this.plotHeight);
       }
@@ -95,7 +101,7 @@ Flotr.addPlugin('graphGrid', {
         _.each(_.pluck(a.ticks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
-              (v == a.min || v == a.max) && grid.outlineWidth != 0)
+              (v == a.min || v == a.max) && grid.outlineWidth)
             return;
     
           ctx.moveTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, 0);
@@ -107,7 +113,7 @@ Flotr.addPlugin('graphGrid', {
          _.each(_.pluck(a.minorTicks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
-              (v == a.min || v == a.max) && grid.outlineWidth != 0)
+              (v == a.min || v == a.max) && grid.outlineWidth)
             return;
       
           ctx.moveTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, 0);
@@ -121,7 +127,7 @@ Flotr.addPlugin('graphGrid', {
         _.each(_.pluck(a.ticks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
-              (v == a.min || v == a.max) && grid.outlineWidth != 0)
+              (v == a.min || v == a.max) && grid.outlineWidth)
             return;
     
           ctx.moveTo(0, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
@@ -133,7 +139,7 @@ Flotr.addPlugin('graphGrid', {
         _.each(_.pluck(a.ticks, 'v'), function(v){
           // Don't show lines on upper and lower bounds.
           if ((v <= a.min || v >= a.max) || 
-              (v == a.min || v == a.max) && grid.outlineWidth != 0)
+              (v == a.min || v == a.max) && grid.outlineWidth)
             return;
     
           ctx.moveTo(0, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
@@ -164,7 +170,7 @@ Flotr.addPlugin('graphGrid', {
       plotHeight = that.plotHeight,
       v, img, src, left, top, globalAlpha;
     
-    if (grid.outlineWidth == 0) return;
+    if (!grid.outlineWidth) return;
     
     ctx.save();
     
@@ -182,7 +188,7 @@ Flotr.addPlugin('graphGrid', {
       ctx.lineJoin = 'round';
       
       for(var i = 0; i <= sides; ++i){
-        ctx[i == 0 ? 'moveTo' : 'lineTo'](Math.cos(i*coeff+angle)*radius, Math.sin(i*coeff+angle)*radius);
+        ctx[i === 0 ? 'moveTo' : 'lineTo'](Math.cos(i*coeff+angle)*radius, Math.sin(i*coeff+angle)*radius);
       }
       //ctx.arc(0, 0, radius, 0, Math.PI*2, true);
 
