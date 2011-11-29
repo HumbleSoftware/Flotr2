@@ -6,7 +6,7 @@
 var
   D     = Flotr.DOM,
   E     = Flotr.EventAdapter,
-  _     = Flotr._;
+  _     = Flotr._,
   flotr = Flotr;
 /**
  * Flotr Graph constructor.
@@ -216,58 +216,20 @@ Graph.prototype = {
    * Draws grid, labels, series and outline.
    */
   draw: function(after) {
-    var afterImageLoad = _.bind(function() {
 
-      if(this.series.length){
-        E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
+    E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
 
-        for(var i = 0; i < this.series.length; i++){
-          if (!this.series[i].hide)
-            this.drawSeries(this.series[i]);
-        }
+    if(this.series.length){
+      for(var i = 0; i < this.series.length; i++){
+        if (!this.series[i].hide)
+          this.drawSeries(this.series[i]);
       }
 
       this.clip();
-      E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
-      after();
-    }, this);
-
-    var g = this.options.grid;
-
-    if (g && g.backgroundImage) {
-      if (_.isString(g.backgroundImage)){
-        g.backgroundImage = {src: g.backgroundImage, left: 0, top: 0};
-      }else{
-        g.backgroundImage = _.extend({left: 0, top: 0}, g.backgroundImage);
-      }
-
-      var img = new Image();
-      img.onload = _.bind(function() {
-        var left = this.plotOffset.left + (parseInt(g.backgroundImage.left) || 0);
-        var top = this.plotOffset.top + (parseInt(g.backgroundImage.top) || 0);
-
-        // Store the global alpha to restore it later on.
-        var globalAlpha = this.ctx.globalAlpha;
-
-        // When the watermarkAlpha is < 1 then the watermark is transparent.
-        this.ctx.globalAlpha = (g.backgroundImage.alpha||globalAlpha);
-
-        // Draw the watermark.
-        this.ctx.drawImage(img, left, top);
-
-        // Set the globalAlpha back to the alpha value before changing it to
-        // the grid.watermarkAlpha, otherwise the graph will be transparent also.
-        this.ctx.globalAlpha = globalAlpha;
-
-        afterImageLoad();
-
-      }, this);
-
-      img.onabort = img.onerror = afterImageLoad;
-      img.src = g.backgroundImage.src;
-    } else {
-      afterImageLoad();
     }
+
+    E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
+    if (after) after();
   },
   /**
    * Actually draws the graph.

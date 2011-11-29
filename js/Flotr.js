@@ -13,6 +13,7 @@ var
 
 Flotr = {
   _: _,
+  bean: bean,
   version: "0.2.0-alpha",
   revision: ('$Revision: 192 $'.match(/(\d+)/) || [null,null])[1],
   author: ['Bas Wenneker', 'Fabien Ménager'],

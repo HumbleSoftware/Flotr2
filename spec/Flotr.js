@@ -18,7 +18,8 @@ describe('Flotr', function () {
     afterEach(function () {
       destroyNode(nodeA);
       destroyNode(nodeB);
-      a = b = null;
+      a = null;
+      b = null;
       Flotr = null;
     });
 
@@ -28,8 +29,14 @@ describe('Flotr', function () {
 
         a = executeExampleTest(example, StableFlotr, nodeA);
         b = executeExampleTest(example, TestFlotr, nodeB);
-
-        expect(b).toImageDiffEqual(a);
+        if (example.timeout) {
+          waits(example.timeout);
+          runs (function () {
+            expect(b).toImageDiffEqual(a, example.tolerance || 0);
+          });
+        } else {
+          expect(b).toImageDiffEqual(a, example.tolerance || 0);
+        }
       });
     });
 

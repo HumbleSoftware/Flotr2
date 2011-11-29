@@ -1,12 +1,14 @@
 (function () {
 
 Flotr.ExampleList.add({
-  key : 'basic-axis',
-  name : 'Basic Axis',
-  callback : basic_axis
+  key : 'test-background',
+  name : 'Test Background',
+  callback : test_background,
+  timeout : 100, 
+  tolerance : 10
 });
 
-function basic_axis (container) {
+function test_background (container) {
 
   var
     d1 = [],
@@ -51,10 +53,8 @@ function basic_axis (container) {
       },
       grid : {
         verticalLines : false,
-        backgroundColor : {
-          colors : [[0,'#fff'], [1,'#ccc']],
-          start : 'top',
-          end : 'bottom'
+        backgroundImage : {
+          src : 'img/test-background.png?' + Math.random()
         }
       },
       legend : {
