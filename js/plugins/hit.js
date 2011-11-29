@@ -2,7 +2,8 @@
 
 var
   D = Flotr.DOM,
-  _ = Flotr._;
+  _ = Flotr._,
+  flotr = Flotr;
 
 Flotr.addPlugin('hit', {
   callbacks: {
