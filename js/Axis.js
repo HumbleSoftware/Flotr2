@@ -1,5 +1,5 @@
 /**
- * Flotr Series Library
+ * Flotr Axis Library
  */
 
 (function () {
