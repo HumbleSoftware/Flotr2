@@ -8,8 +8,7 @@
     ],
     "lib": [
       { "src": "./lib/bean.js", "jshint": false },
-      { "src": "./lib/underscore.js", "jshint": false },
-      { "src": "./lib/canvas2image.js", "jshint": false }
+      { "src": "./lib/underscore.js", "jshint": false }
     ],
     "flotr2": [
       "./js/Flotr.js",

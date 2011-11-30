@@ -90,12 +90,7 @@ Flotr = {
    * @TODO See if we can't remove this.
    */
   clone: function(object){
-    var i, v, clone = {};
-    for(i in object){
-      v = object[i];
-      clone[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !this._.isElement(v)) ? Flotr.clone(v) : v;
-    }
-    return clone;
+    return Flotr.merge(object, {});
   },
   
   /**

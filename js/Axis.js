@@ -1,5 +1,5 @@
 /**
- * Flotr Series Library
+ * Flotr Axis Library
  */
 
 (function () {
@@ -13,6 +13,8 @@ function Axis (o) {
   this.orientation = 1;
   this.offset = 0;
   this.stacks = {};
+  this.datamin = Number.MAX_VALUE;
+  this.datamax = -Number.MAX_VALUE;
 
   _.extend(this, o);
 

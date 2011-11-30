@@ -15,11 +15,15 @@ Series.prototype = {
 
   getRange: function () {
 
-    var data = this.data,
+    var
+      data = this.data,
       length = data.length,
-      xmin = Number.MAX_VALUE, ymin = Number.MAX_VALUE,
-      xmax = -Number.MAX_VALUE, ymax = -Number.MAX_VALUE,
-      xused, yused,
+      xmin = Number.MAX_VALUE,
+      ymin = Number.MAX_VALUE,
+      xmax = -Number.MAX_VALUE,
+      ymax = -Number.MAX_VALUE,
+      xused = false,
+      yused = false,
       x, y, i;
 
     if (length < 0 || this.hide) return false;
