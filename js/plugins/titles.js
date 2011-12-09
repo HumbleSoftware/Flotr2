@@ -3,11 +3,13 @@
 var D = Flotr.DOM;
 
 Flotr.addPlugin('titles', {
+
   callbacks: {
     'flotr:afterdraw': function() {
       this.titles.drawTitles();
     }
   },
+
   /**
    * Draws the title and the subtitle
    */
@@ -172,6 +174,28 @@ Flotr.addPlugin('titles', {
       D.insert(this.el, div);
       D.insert(div, html);
     }
+  },
+
+  calculateSpacing : function (options, text) {
+
+    // Title height
+    this.titleHeight = text.dimensions(
+      options.title,
+      {size: options.fontSize*1.5},
+      'font-size:1em;font-weight:bold;',
+      'flotr-title'
+    ).height;
+
+    // Subtitle height
+    this.subtitleHeight = text.dimensions(
+      options.subtitle,
+      {size: options.fontSize},
+      'font-size:smaller;',
+      'flotr-subtitle'
+    ).height;
+
+    return this.titleHeight + this.subtitleHeight;
   }
 });
+
 })();

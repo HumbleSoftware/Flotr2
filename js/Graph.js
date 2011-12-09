@@ -141,7 +141,7 @@ Graph.prototype = {
         y = a.y,
         y2 = a.y2,
         maxOutset = options.grid.outlineWidth,
-        i, j, l, dim;
+        i, j, l, titleHeight;
 
     // TODO post refactor, fix this
     _.each(a, function (axis) {
@@ -149,23 +149,7 @@ Graph.prototype = {
       axis.calculateTextDimensions(T, options);
     });
 
-    // Title height
-    dim = T.dimensions(
-      options.title,
-      {size: options.fontSize*1.5},
-      'font-size:1em;font-weight:bold;',
-      'flotr-title'
-    );
-    this.titleHeight = dim.height;
-
-    // Subtitle height
-    dim = T.dimensions(
-      options.subtitle,
-      {size: options.fontSize},
-      'font-size:smaller;',
-      'flotr-subtitle'
-    );
-    this.subtitleHeight = dim.height;
+    if (this.titles) titleHeight = this.titles.calculateSpacing(options, T);
 
     for(j = 0; j < options.length; ++j){
       if (series[j].points.show){
@@ -182,7 +166,7 @@ Graph.prototype = {
                   (x.used && x.options.title ? (x.titleSize.height + margin) : 0) + maxOutset;
 
       p.top    += (options.grid.circular ? 0 : (x2.used && x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) +
-                  (x2.used && x2.options.title ? (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset;
+                  (x2.used && x2.options.title ? (x2.titleSize.height + margin) : 0) + titleHeight + maxOutset;
     }
     if (y.options.margin === false) {
       p.left  = 0;
