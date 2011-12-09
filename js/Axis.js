@@ -174,7 +174,7 @@ Axis.prototype = {
 
     for(i = 0; i < ticks.length; ++i){
       tick = ticks[i];
-      if(_.isObject(tick)){
+      if(typeof(tick) === 'object'){
         v = tick[0];
         label = (tick.length > 1) ? tick[1] : options.tickFormatter(v, {min : axis.min, max : axis.max});
       } else {
