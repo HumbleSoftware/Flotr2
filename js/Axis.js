@@ -55,8 +55,6 @@ Axis.prototype = {
     } else {
       this._calculateTicks();
     }
-
-    if (this.ticks.length) console.log('ticks', this.ticks);
   },
 
   /**
