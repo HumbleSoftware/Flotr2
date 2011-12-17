@@ -44,21 +44,19 @@ Axis.prototype = {
 
     this.ticks = [];
     this.minorTicks = [];
-    
+
     // User Ticks
-    if(options.ticks){
-      this._cleanUserTicks(options.ticks, this.ticks);
-      this._cleanUserTicks(options.minorTicks || [], this.minorTicks);
+    if (options.ticks) {
+      this._calculateUserTicks();
+    } else if (options.mode == 'time') {
+      this._calculateTimeTicks();
+    } else if (options.scaling === 'logarithmic') {
+      this._calculateLogTicks();
+    } else {
+      this._calculateTicks();
     }
-    else {
-      if (options.mode == 'time') {
-        this._calculateTimeTicks();
-      } else if (options.scaling === 'logarithmic') {
-        this._calculateLogTicks();
-      } else {
-        this._calculateTicks();
-      }
-    }
+
+    if (this.ticks.length) console.log('ticks', this.ticks);
   },
 
   /**
@@ -164,7 +162,6 @@ Axis.prototype = {
   },
 
   _cleanUserTicks : function (ticks, axisTicks) {
-
     var
       axis = this,
       options = this.options,
@@ -183,6 +180,12 @@ Axis.prototype = {
       }
       axisTicks[i] = { v: v, label: label };
     }
+  },
+
+  _calculateUserTicks : function () {
+    var options = this.options;
+    this._cleanUserTicks(options.ticks, this.ticks);
+    this._cleanUserTicks(options.minorTicks || [], this.minorTicks);
   },
 
   _calculateTimeTicks : function () {
