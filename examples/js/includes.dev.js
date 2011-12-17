@@ -54,6 +54,7 @@ yepnope([
   'js/Editor.js',
   'js/Profile.js',
   'js/examples/basic.js',
+  'js/examples/basic-log.js',
   'js/examples/basic-axis.js',
   'js/examples/basic-bars.js',
   'js/examples/basic-bars-stacked.js',
