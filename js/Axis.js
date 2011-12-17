@@ -163,20 +163,21 @@ Axis.prototype = {
 
   _cleanUserTicks : function (ticks, axisTicks) {
     var
-      axis = this,
       options = this.options,
+      min = this.min,
+      max = this.max,
       v, i, label, tick;
 
-    if(_.isFunction(ticks)) ticks = ticks({min : axis.min, max : axis.max});
+    if(_.isFunction(ticks)) ticks = ticks({min : min, max : max});
 
     for(i = 0; i < ticks.length; ++i){
       tick = ticks[i];
       if(typeof(tick) === 'object'){
         v = tick[0];
-        label = (tick.length > 1) ? tick[1] : options.tickFormatter(v, {min : axis.min, max : axis.max});
+        label = (tick.length > 1) ? tick[1] : options.tickFormatter(v, {min : min, max : max});
       } else {
         v = tick;
-        label = options.tickFormatter(v, {min : this.min, max : this.max});
+        label = options.tickFormatter(v, {min : min, max : max});
       }
       axisTicks[i] = { v: v, label: label };
     }
