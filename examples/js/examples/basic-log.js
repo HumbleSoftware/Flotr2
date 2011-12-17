@@ -9,21 +9,22 @@ Flotr.ExampleList.add({
 function basic (container) {
 
   var
-    d1 = [[0, 3], [4, 8], [8, 5], [9, 13]], // First data series
-    d2 = [],                                // Second data series
+    d1 = [], // Second data series
     i, graph;
 
   // Generate first data set
   for (i = 0; i < 14; i += 0.5) {
-    d2.push([i, Math.exp(i)]);
+    d1.push([i, Math.exp(i)]);
   }
 
   // Draw Graph
-  graph = Flotr.draw(container, [ d1, d2 ], {
+  graph = Flotr.draw(container, [ d1 ], {
     xaxis: {
-      minorTickFreq: 4,
+      minorTickFreq: 4
+    },
+    yaxis : {
       scaling: 'logarithmic'
-    }, 
+    },
     grid: {
       minorVerticalLines: true
     }
