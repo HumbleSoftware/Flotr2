@@ -16,8 +16,7 @@ Flotr.addType('candles', {
   draw : function (options) {
 
     var
-      context = options.context,
-      width   = options.candleWidth / 2;
+      context = options.context;
 
     context.save();
     context.translate(options.offsetLeft, options.offsetTop);
@@ -26,12 +25,12 @@ Flotr.addType('candles', {
     // @TODO linewidth not interpreted the right way.
     context.lineWidth = options.wickLineWidth || options.lineWidth;
 
-    this.plot(options, width);
+    this.plot(options);
 
     context.restore();
   },
 
-  plot : function (options, offset) {
+  plot : function (options) {
 
     var
       data          = options.data,
@@ -46,7 +45,6 @@ Flotr.addType('candles', {
       datum, x, y,
       open, high, low, close,
       left, right, bottom, top, bottom2, top2,
-      width, height,
       i;
 
     if (data.length < 1) return;
@@ -89,7 +87,7 @@ Flotr.addType('candles', {
         context.save();
         context.globalAlpha = options.fillOpacity;
         context.fillStyle = color;
-        context.fillRect(left, top2 + offset, right - left, bottom2 - top2);
+        context.fillRect(left, top2 + width, right - left, bottom2 - top2);
         context.restore();
       }
 
@@ -104,23 +102,23 @@ Flotr.addType('candles', {
         // TODO Again with the bartcharts
         if (options.barcharts) {
           
-          context.moveTo(x, Math.floor(top + offset));
-          context.lineTo(x, Math.floor(bottom + offset));
+          context.moveTo(x, Math.floor(top + width));
+          context.lineTo(x, Math.floor(bottom + width));
           
-          y = Math.floor(open + offset) + 0.5;
+          y = Math.floor(open + width) + 0.5;
           context.moveTo(Math.floor(left) + pixelOffset, y);
           context.lineTo(x, y);
           
-          y = Math.floor(close + offset) + 0.5;
+          y = Math.floor(close + width) + 0.5;
           context.moveTo(Math.floor(right) + pixelOffset, y);
           context.lineTo(x, y);
         } else {
-          context.strokeRect(left, top2 + offset, right - left, bottom2 - top2);
+          context.strokeRect(left, top2 + width, right - left, bottom2 - top2);
 
-          context.moveTo(x, Math.floor(top2 + offset));
-          context.lineTo(x, Math.floor(top + offset));
-          context.moveTo(x, Math.floor(bottom2 + offset));
-          context.lineTo(x, Math.floor(bottom + offset));
+          context.moveTo(x, Math.floor(top2 + width));
+          context.lineTo(x, Math.floor(top + width));
+          context.moveTo(x, Math.floor(bottom2 + width));
+          context.lineTo(x, Math.floor(bottom + width));
         }
         
         context.closePath();
