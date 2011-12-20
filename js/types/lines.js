@@ -48,16 +48,8 @@ Flotr.addType('lines', {
     context.restore();
   },
 
-  getStack: function (series) {
-    var stack = false;
-    if (series.lines.stacked) {
-      stack = series.xaxis.getStack('lines');
-      if (Flotr._.isEmpty(stack)) {
-        stack.values = [];
-      }
-    }
-
-    return stack;
+  getEmptyStack : function () {
+    return { values : [] };
   },
 
   plot: function (options, shadowOffset, incStack){
@@ -70,11 +62,10 @@ Flotr.addType('lines', {
       yScale    = options.yScale,
       data      = options.data, 
       fill      = options.fill,
+      stack     = options.stack,
       length    = data.length - 1,
       prevx     = null,
       prevy     = null,
-      stack     = false,
-      // stack     = this.lines.getStack(series),
       zero      = yScale(0),
       x1, x2, y1, y2, stack1, stack2, i;
       
