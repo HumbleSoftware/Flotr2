@@ -34,90 +34,78 @@ Flotr.addType('markers', {
         values : []
     };
   },
-  /**
-   * Draws lines series in the canvas element.
-   * @param {Object} series - Series with options.lines.show = true.
-   */
-  draw: function(series){
-    series = series || this.series;
-    var ctx = this.ctx,
-        xa = series.xaxis,
-        ya = series.yaxis,
-        options = series.markers,
-        stack = this.markers.getStack(series),
-        data = series.data;
-        
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = options.lineWidth;
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillStyle = this.processColor(options.fillColor, {opacity: options.fillOpacity});
 
-    for(var i = 0; i < data.length; ++i){
+  draw : function (options) {
+
+    var
+      data            = options.data,
+      context         = options.context,
+      stack           = options.stack,
+      stackType       = options.stackingType,
+      stackOffsetNeg,
+      stackOffsetPos,
+      stackOffset,
+      i, x, y, label;
+
+    context.save();
+    context.translate(options.offsetLeft, options.offsetTop);
+    context.lineJoin = 'round';
+    context.lineWidth = options.lineWidth;
+    context.strokeStyle = 'rgba(0,0,0,0.5)';
+    context.fillStyle = options.fillStyle;
+
+    for (i = 0; i < data.length; ++i) {
     
-      var x = data[i][0],
-        y = data[i][1],
-        label;
+      x = data[i][0];
+      y = data[i][1];
         
-      if(stack) {
-        if(series.markers.stackingType == 'b'){
+      if (stack) {
+        if (stackType == 'b') {
 
-          var stackOffsetPos = 0,
-            stackOffsetNeg = 0;
-            
-          if(series.markers.horizontal) {
-            stackOffsetPos = stack.positive[y] || 0;
-            stackOffsetNeg = stack.negative[y] || 0;
-            if(x > 0) {
-              stack.positive[y] = stackOffsetPos + x;
-              x = stackOffsetPos + x;
+          function stackPos (a, b) {
+            stackOffsetPos = stack.negative[a] || 0;
+            stackOffsetNeg = stack.positive[a] || 0;
+            if (b > 0) {
+              stack.positive[a] = stackOffsetPos + b;
+              return stackOffsetPos + b;
             } else {
-              stack.negative[y] = stackOffsetNeg + x;
-              x = stackOffsetNeg + x;
+              stack.negative[a] = stackOffsetNeg + b;
+              return stackOffsetNeg + b;
             }
           }
-          else {
-            stackOffsetPos = stack.negative[x] || 0;
-            stackOffsetNeg = stack.positive[x] || 0;
-            if(y > 0) {
-              stack.positive[x] = stackOffsetPos + y;
-              y = stackOffsetPos + y;
-            } else {
-              stack.negative[x] = stackOffsetNeg + y;
-              y = stackOffsetNeg + y;
-            }
-          }
-        } else if(series.markers.stackingType == 'a') {
-          var stackOffset = stack.values[x] || 0;
+
+          if (options.horizontal) y = stackPos(y, x);
+          else x = stackPos(x, y);
+
+        } else if (stackType == 'a') {
+          stackOffset = stack.values[x] || 0;
           stack.values[x] = stackOffset + y;
           y = stackOffset + y;
         }
       }
-      var xPos = xa.d2p(x),
-        yPos = ya.d2p(y);
-        label = options.labelFormatter({x: x, y: y, index: i, data : data});
 
-      this.markers.plot(xPos, yPos, label, options);
+      label = options.labelFormatter({x: x, y: y, index: i, data : data});
+      this.plot(options.xScale(x), options.yScale(y), label, options);
     }
-    ctx.restore();
+    context.restore();
   },
   plot: function(x, y, label, options) {
-    if ( isImage(label) && !label.complete) {
+    var context = options.context;
+    if (isImage(label) && !label.complete) {
       Flotr.EventAdapter.observe(label, 'load', Flotr._.bind(function () {
-        var ctx = this.ctx;
-        ctx.save();
-        ctx.translate(this.plotOffset.left, this.plotOffset.top);
-        this.markers._plot(x, y, label, options);
-        ctx.restore();
+        context.save();
+        context.translate(options.offsetLeft, options.offsetTop);
+        this._plot(x, y, label, options);
+        context.restore();
       }, this));
     } else {
-      this.markers._plot(x, y, label, options);
+      this._plot(x, y, label, options);
     }
   },
 
   _plot: function(x, y, label, options) {
-    var ctx = this.ctx,
+    // TODO Coupled with Graph...
+    var context = options.context,
         margin = 2,
         left = x,
         top = y,
@@ -141,15 +129,15 @@ Flotr.addType('markers', {
     top = Math.floor(top)+0.5;
     
     if(options.fill)
-      ctx.fillRect(left, top, dim.width, dim.height);
+      context.fillRect(left, top, dim.width, dim.height);
       
     if(options.stroke)
-      ctx.strokeRect(left, top, dim.width, dim.height);
+      context.strokeRect(left, top, dim.width, dim.height);
     
     if (isImage(label))
-      ctx.drawImage(label, left+margin, top+margin);
+      context.drawImage(label, left+margin, top+margin);
     else
-      Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
+      Flotr.drawText(context, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
   }
 });
 
