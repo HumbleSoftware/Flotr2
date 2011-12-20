@@ -22,15 +22,15 @@ Flotr.addType('points', {
       context.lineWidth = shadowSize / 2;
       
       context.strokeStyle = 'rgba(0,0,0,0.1)';
-      this.plotShadows(options, shadowSize / 2 + context.lineWidth / 2)
+      this.plot(options, shadowSize / 2 + context.lineWidth / 2);
 
       context.strokeStyle = 'rgba(0,0,0,0.2)';
-      this.plotShadows(options, context.lineWidth / 2)
+      this.plot(options, context.lineWidth / 2);
     }
 
     context.lineWidth = options.lineWidth;
     context.strokeStyle = options.color;
-    context.fillStyle = options.fillStyle;
+    context.fillStyle = options.fillColor || options.color;
 
     this.plot(options);
     context.restore();
@@ -45,38 +45,24 @@ Flotr.addType('points', {
       i, x, y;
       
     for (i = data.length - 1; i > -1; --i) {
-      x = data[i][0];
       y = data[i][1];
-
       if (y === null) continue;
+
+      x = xScale(data[i][0]);
+      y = yScale(y);
 
       // TODO skipping
       //if (x < xa.min || x > xa.max || y < ya.min || y > ya.max) continue;
       
       context.beginPath();
-      context.arc(xScale(x), yScale(y), options.radius, 0, 2 * Math.PI, true);
-      if (options.fill) context.fill();
+      if (offset) {
+        context.arc(x, y + offset, options.radius, 0, Math.PI, false);
+      } else {
+        context.arc(x, y, options.radius, 0, 2 * Math.PI, true);
+        if (options.fill) context.fill();
+      }
       context.stroke();
       context.closePath();
-    }
-  },
-  plotShadows : function (series, offset, radius) {
-    return;
-    var xa = series.xaxis,
-        ya = series.yaxis,
-        ctx = this.ctx,
-        data = series.data,
-        i, x, y;
-      
-    for(i = data.length - 1; i > -1; --i){
-      x = data[i][0];
-      y = data[i][1];
-      if (y === null || x < xa.min || x > xa.max || y < ya.min || y > ya.max)
-        continue;
-      ctx.beginPath();
-      ctx.arc(xa.d2p(x), ya.d2p(y) + offset, radius, 0, Math.PI, false);
-      ctx.stroke();
-      ctx.closePath();
     }
   },
   getHit: function(series, pos) {
