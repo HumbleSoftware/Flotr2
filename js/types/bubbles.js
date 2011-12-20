@@ -43,7 +43,7 @@ Flotr.addType('bubbles', {
 
       x = options.xScale(data[i][0]) + offset,
       y = options.yScale(data[i][1]) + offset,
-      z = data[i][2] * options.radius;
+      z = data[i][2] * options.baseRadius;
 
       context.beginPath();
       context.arc(x, y, z, 0, Math.PI*2, true);
