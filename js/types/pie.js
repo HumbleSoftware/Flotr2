@@ -9,8 +9,8 @@
 var
   _ = Flotr._;
 
-Flotr.defaultPieLabelFormatter = function(slice) {
-  return (slice.fraction*100).toFixed(2)+'%';
+Flotr.defaultPieLabelFormatter = function (total, value) {
+  return (100 * value / total).toFixed(2)+'%';
 };
 
 Flotr.addType('pie', {
@@ -52,15 +52,14 @@ Flotr.addType('pie', {
       startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
       endAngle      = startAngle + measure,
       bisection     = startAngle + measure / 2,
+      label         = options.labelFormatter(this.total, value),
       //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
+      alignRight    = (Math.cos(bisection) < 0),
+      alignTop      = (Math.sin(bisection) > 0),
+      explodeCoeff  = explode + radius + 4,
       style, center,
-      x, y;
-
-    style = {
-      size : options.fontSize * 1.2,
-      color : options.fontColor,
-      weight : 1.5
-    };
+      x, y,
+      distX, distY;
     
     center = {
       x : options.offsetLeft + options.width / 2,
@@ -69,17 +68,8 @@ Flotr.addType('pie', {
 
     context.save();
 
-    function plotSlice (x, y) {
+    context.scale(1, vScale);
 
-      vScale = vScale || 1;
-
-      context.scale(1, vScale);
-      context.beginPath();
-      context.moveTo(x, y);
-      context.arc(x, y, radius, startAngle, endAngle, false);
-      context.lineTo(x, y);
-      context.closePath();
-    }
 
     // TODO wtf is this for?
     if (startAngle == endAngle) return;
@@ -89,14 +79,14 @@ Flotr.addType('pie', {
 
     // Shadows
     if (shadowSize > 0) {
-      plotSlice(x + shadowSize, y + shadowSize);
+      this.plotSlice(x + shadowSize, y + shadowSize, radius, startAngle, endAngle, context);
       if (fill) {
         context.fillStyle = 'rgba(0,0,0,0.1)';
         context.fill();
       }
     }
 
-    plotSlice(x, y);
+    this.plotSlice(x, y, radius, startAngle, endAngle, context);
     if (fill) {
       context.fillStyle = fillStyle;
       context.fill();
@@ -105,44 +95,51 @@ Flotr.addType('pie', {
     context.strokeStyle = color;
     context.stroke();
 
-    this.startAngle = endAngle;
+    distX = center.x + Math.cos(bisection) * explodeCoeff;
+    distY = center.y + Math.sin(bisection) * explodeCoeff;
+    style = {
+      size : options.fontSize * 1.2,
+      color : options.fontColor,
+      weight : 1.5
+    };
 
-    return;
+    console.log(style);
 
-    _.each(slices, function (slice, index) {
-      var label = options.pie.labelFormatter(slice),
-          textAlignRight = (Math.cos(bisection) < 0),
-          textAlignTop = (Math.sin(bisection) > 0),
-          explodeCoeff = (slice.options.explode || series.pie.explode) + radius + 4,
-          distX = center.x + Math.cos(bisection) * explodeCoeff,
-          distY = center.y + Math.sin(bisection) * explodeCoeff;
-      
-      if (slice.fraction && label) {
-        if (options.HtmlText || !this.textEnabled) {
-          var yAlignDist = textAlignTop ? (distY - 5) : (height - distY + 5),
-              divStyle = 'position:absolute;' + (textAlignTop ? 'top' : 'bottom') + ':' + yAlignDist + 'px;'; //@todo: change
-          if (textAlignRight)
-            divStyle += 'right:'+(this.canvasWidth - distX)+'px;text-align:right;';
-          else 
-            divStyle += 'left:'+distX+'px;text-align:left;';
-          html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
-        }
-        else {
-          style.textAlign = textAlignRight ? 'right' : 'left';
-          style.textBaseline = textAlignTop ? 'top' : 'bottom';
-          Flotr.drawText(ctx, label, distX, distY, style);
-        }
+    if (label) {
+      if (options.htmlText || !options.textEnabled) {
+        // TODO HTML text is broken here.
+        var yAlignDist = textAlignTop ? (distY - 5) : (height - distY + 5),
+            divStyle = 'position:absolute;' + (textAlignTop ? 'top' : 'bottom') + ':' + yAlignDist + 'px;'; //@todo: change
+        if (textAlignRight)
+          divStyle += 'right:'+(this.canvasWidth - distX)+'px;text-align:right;';
+        else 
+          divStyle += 'left:'+distX+'px;text-align:left;';
+        html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
       }
-    }, this);
+      else {
+        style.textAlign = alignRight ? 'right' : 'left';
+        style.textBaseline = alignTop ? 'top' : 'bottom';
+        Flotr.drawText(context, label, distX, distY, style);
+      }
+    }
     
-    if (options.HtmlText || !this.textEnabled) {
-      var div = Flotr.DOM.node('<div style="color:' + this.options.grid.color + '" class="flotr-labels"></div>');
+    if (options.htmlText || !options.textEnabled) {
+      var div = Flotr.DOM.node('<div style="color:' + options.fontColor + '" class="flotr-labels"></div>');
       Flotr.DOM.insert(div, html.join(''));
       Flotr.DOM.insert(this.el, div);
     }
     
-    ctx.restore();
-    options.pie.drawn = true;
+    context.restore();
+
+    // New start angle
+    this.startAngle = endAngle;
+  },
+  plotSlice : function (x, y, radius, startAngle, endAngle, context) {
+    context.beginPath();
+    context.moveTo(x, y);
+    context.arc(x, y, radius, startAngle, endAngle, false);
+    context.lineTo(x, y);
+    context.closePath();
   },
   hit: function(mouse, n){
 
