@@ -26,42 +26,45 @@ Flotr.addType('pie', {
     labelFormatter: Flotr.defaultPieLabelFormatter,
     pie3D: false,          // => whether to draw the pie in 3 dimenstions or not (ineffective) 
     pie3DviewAngle: (Math.PI/2 * 0.8),
-    pie3DspliceThickness: 20
+    pie3DspliceThickness: 20,
+    stacked : true
   },
-  /**
-   * Draws a pie in the canvas element.
-   * @param {Object} series - Series with options.pie.show = true.
-   */
-  draw: function(series) {
-    if (this.options.pie.drawn) return;
-    var ctx = this.ctx,
-        options = this.options,
-        lw = series.pie.lineWidth,
-        sw = series.shadowSize,
-        data = series.data,
-        plotOffset = this.plotOffset,
-        radius = (Math.min(this.canvasWidth, this.canvasHeight) * series.pie.sizeRatio) / 2,
-        html = [],
-      vScale = 1,//Math.cos(series.pie.viewAngle);
-      plotTickness = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale,
-    
+
+  draw : function (options) {
+
+    var
+      // Options       = this.options,
+      data          = options.data,
+      context       = options.context,
+      canvas        = context.canvas,
+      lineWidth     = options.lineWidth,
+      shadowSize    = options.shadowSize,
+      startAngle    = options.startAngle,
+      sizeRatio     = options.sizeRatio,
+      radius        = (Math.min(canvas.width, canvas.height) * sizeRatio) / 2,
+      height        = options.plotHeight,
+      html          = [],
+      vScale        = 1,//Math.cos(series.pie.viewAngle);
+      //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
+      //portions      = this._getPortions(),
+      //slices        = this._getSlices(portions, series),
+      style, center;
+
     style = {
-      size: options.fontSize*1.2,
-      color: options.grid.color,
-      weight: 1.5
-    },
+      size : options.fontSize * 1.2,
+      color : options.fontColor,
+      weight : 1.5
+    };
     
     center = {
-      x: plotOffset.left + (this.plotWidth)/2,
-      y: plotOffset.top + (this.plotHeight)/2
-    },
-    
-    portions = this.pie._getPortions(),
-    slices = this.pie._getSlices(portions, series);
+      x : options.offsetLeft + options.width / 2,
+      y : options.offsetTop + height / 2
+    };
 
-    ctx.save();
+    context.save();
     
-    if(sw > 0){
+    // Shadows
+    if (shadowSize > 0) {
       _.each(slices, function (slice) {
         if (slice.startAngle == slice.endAngle) return;
         
@@ -69,7 +72,7 @@ Flotr.addType('pie', {
             xOffset = center.x + Math.cos(bisection) * slice.options.explode + sw,
             yOffset = center.y + Math.sin(bisection) * slice.options.explode + sw;
         
-        this.pie.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
+        plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
         
         if (series.pie.fill) {
           ctx.fillStyle = 'rgba(0,0,0,0.1)';
@@ -77,10 +80,19 @@ Flotr.addType('pie', {
         }
       }, this);
     }
-    
-    if (options.HtmlText || !this.textEnabled)
-      html = [];
-    
+
+    function plotSlice (x, y, radius, startAngle, endAngle, fill, vScale) {
+
+      vScale = vScale || 1;
+
+      context.scale(1, vScale);
+      context.beginPath();
+      context.moveTo(x, y);
+      context.arc(x, y, radius, startAngle, endAngle, fill);
+      context.lineTo(x, y);
+      context.closePath();
+    }
+
     _.each(slices, function (slice, index) {
       if (slice.startAngle == slice.endAngle) return;
       
@@ -90,7 +102,7 @@ Flotr.addType('pie', {
           xOffset = center.x + Math.cos(bisection) * slice.options.explode,
           yOffset = center.y + Math.sin(bisection) * slice.options.explode;
       
-      this.pie.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
+      plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
       
       if(series.pie.fill){
         ctx.fillStyle = this.processColor(fillColor, {opacity: series.pie.fillOpacity});
@@ -109,7 +121,7 @@ Flotr.addType('pie', {
       
       if (slice.fraction && label) {
         if (options.HtmlText || !this.textEnabled) {
-          var yAlignDist = textAlignTop ? (distY - 5) : (this.plotHeight - distY + 5),
+          var yAlignDist = textAlignTop ? (distY - 5) : (height - distY + 5),
               divStyle = 'position:absolute;' + (textAlignTop ? 'top' : 'bottom') + ':' + yAlignDist + 'px;'; //@todo: change
           if (textAlignRight)
             divStyle += 'right:'+(this.canvasWidth - distX)+'px;text-align:right;';
@@ -133,17 +145,6 @@ Flotr.addType('pie', {
     
     ctx.restore();
     options.pie.drawn = true;
-  },
-  plotSlice: function(x, y, radius, startAngle, endAngle, fill, vScale) {
-    var ctx = this.ctx;
-    vScale = vScale || 1;
-
-    ctx.scale(1, vScale);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.arc   (x, y, radius, startAngle, endAngle, fill);
-    ctx.lineTo(x, y);
-    ctx.closePath();
   },
   hit: function(mouse, n){
 
@@ -260,6 +261,7 @@ Flotr.addType('pie', {
       2*(radius + margin)
     );
   },
+  /*
   _getPortions: function(){
     return _.map(this.series, function(hash, index){
       if (hash.pie.show && hash.data[0][1] !== null)
@@ -271,11 +273,22 @@ Flotr.addType('pie', {
         };
     });
   },
+  */
+  extendYRange : function (axis, data) {
+                   console.log(this.pie);
+    this.pie.total = (this.pie.total || 0) + data[0][1];
+  },
+  getEmptyStack : function () {
+    return {
+      startAngle : null
+    }
+  },
+  /*
   _getSum: function(portions){
     // Sum of the portions' angles
     return _.inject(_.pluck(_.pluck(portions, 'value'), 1), function(acc, n) { return acc + n; }, 0);
   },
-  _getSlices: function(portions, series, startAngle){
+  _getSlices: function (portions, series, startAngle) {
     var sum = this.pie._getSum(portions),
       fraction = 0.0,
       angle = (!_.isUndefined(startAngle) ? startAngle : series.pie.startAngle),
@@ -297,5 +310,6 @@ Flotr.addType('pie', {
       };
     });
   }
+  */
 });
 })();
