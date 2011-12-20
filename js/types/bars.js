@@ -41,19 +41,13 @@ Flotr.addType('bars', {
     context.restore();
   },
 
-  getStack: function (series) {
-    var stack = false;
-    if(series.bars.stacked) {
-      stack = (series.bars.horizontal ? series.yaxis : series.xaxis).getStack('bars');
-      if (Flotr._.isEmpty(stack)) {
-        stack.positive = [];
-        stack.negative = [];
-        stack._positive = []; // Shadow
-        stack._negative = []; // Shadow
-      }
-    }
-
-    return stack;
+  getEmptyStack : function () {
+    return { 
+      positive : [],
+      negative : [],
+      _positive : [], // Shadow
+      _negative : []  // Shadow
+    };
   },
 
   plot : function (options) {
@@ -69,8 +63,7 @@ Flotr.addType('bars', {
       shadowSize  = options.shadowSize,
       horizontal  = options.horizontal,
       centered    = options.centered,
-      stack       = false,
-      //stack     = this.bars.getStack(series),
+      stack       = options.stack,
       barOffset,
       stackIndex,
       stackValue,

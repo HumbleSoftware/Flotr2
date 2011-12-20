@@ -236,30 +236,39 @@ Graph.prototype = {
   drawSeries: function(series){
     series = series || this.series;
 
-    function drawChart (series, type) {
+    function drawChart (series, typeKey) {
 
-      var options = {
-        context     : this.ctx,
-        width       : this.plotWidth,
-        height      : this.plotHeight,
-        offsetLeft  : this.plotOffset.left,
-        offsetTop   : this.plotOffset.top,
-        data        : series.data,
-        color       : series.color,
-        shadowSize  : series.shadowSize,
-        xScale      : _.bind(series.xaxis.d2p, series.xaxis),
-        yScale      : _.bind(series.yaxis.d2p, series.yaxis)
-      };
+      var
+        type = series[typeKey],
+        graphType = flotr.graphTypes[typeKey],
+        options = {
+          context     : this.ctx,
+          width       : this.plotWidth,
+          height      : this.plotHeight,
+          offsetLeft  : this.plotOffset.left,
+          offsetTop   : this.plotOffset.top,
+          data        : series.data,
+          color       : series.color,
+          shadowSize  : series.shadowSize,
+          xScale      : _.bind(series.xaxis.d2p, series.xaxis),
+          yScale      : _.bind(series.yaxis.d2p, series.yaxis)
+        };
 
-      options = flotr.merge(series[type], options);
+      options = flotr.merge(type, options);
 
       // Lines
       options.fillStyle = this.processColor(
-        series[type].fillColor || series.color,
-        {opacity: series[type].fillOpacity}
+        type.fillColor || series.color,
+        {opacity: type.fillOpacity}
       );
 
-      flotr.graphTypes[type].draw(options);
+      // Stack
+      if (type.stacked) {
+        options.stack = (type.horizontal ? series.yaxis : series.xaxis).getStack(typeKey);
+        if (_.isEmpty(options.stack)) flotr.merge(graphType.getEmptyStack(), options.stack);
+      }
+
+      graphType.draw(options);
     }
 
     var drawn = false;
