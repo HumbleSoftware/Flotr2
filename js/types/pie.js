@@ -104,8 +104,6 @@ Flotr.addType('pie', {
       weight : 1.5
     };
 
-    console.log(style);
-
     if (label) {
       if (options.htmlText || !options.textEnabled) {
         // TODO HTML text is broken here.
