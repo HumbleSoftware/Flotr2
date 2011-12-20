@@ -234,7 +234,6 @@ Graph.prototype = {
    * @param {Object} series - series to draw
    */
   drawSeries: function(series){
-    series = series || this.series;
 
     function drawChart (series, typeKey) {
 
@@ -272,24 +271,16 @@ Graph.prototype = {
     }
 
     var drawn = false;
-    _.each(flotr.graphTypes, function(handler, name) {
-      if(series[name] && series[name].show){
+    series = series || this.series;
+
+    _.each(flotr.graphTypes, function (type, typeKey) {
+      if (series[typeKey] && series[typeKey].show){
         drawn = true;
-        if (name === 'lines' || name === 'bars') {
-          drawChart.call(this, series, name);
-        } else {
-          handler.draw.call(this, series);
-        }
+        drawChart.call(this, series, typeKey);
       }
     }, this);
 
-    if(!drawn){
-      if (this.options.defaultType === 'lines') {
-        drawChart.call(this, series, this.options.defaultType);
-      } else {
-        this[this.options.defaultType].draw(series);
-      }
-    }
+    if (!drawn) drawChart.call(this, series, this.options.defaultType);
   },
   /**
    * Calculates the coordinates from a mouse event object.
