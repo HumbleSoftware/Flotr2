@@ -236,16 +236,46 @@ Graph.prototype = {
   drawSeries: function(series){
     series = series || this.series;
 
+    function drawLines (series) {
+      var options = {
+        context     : this.ctx,
+        width       : this.plotWidth,
+        height      : this.plotHeight,
+        offsetLeft  : this.plotOffset.left,
+        offsetTop   : this.plotOffset.top,
+        data        : series.data,
+        color       : series.color,
+        shadowSize  : series.shadowSize,
+        xScale      : _.bind(series.xaxis.d2p, series.xaxis),
+        yScale      : _.bind(series.yaxis.d2p, series.yaxis)
+      };
+      options = flotr.merge(series.lines, options);
+      options.fillStyle = this.processColor(
+        series.lines.fillColor || series.color,
+        {opacity: series.lines.fillOpacity}
+      );
+      console.log(options);
+      flotr.graphTypes.lines.draw(options);
+    }
+
     var drawn = false;
     _.each(flotr.graphTypes, function(handler, name) {
       if(series[name] && series[name].show){
         drawn = true;
-        handler.draw.call(this, series);
+        if (name === 'lines') {
+          drawLines.call(this, series);
+        } else {
+          handler.draw.call(this, series);
+        }
       }
     }, this);
 
     if(!drawn){
-      this[this.options.defaultType].draw(series);
+      if (this.options.defaultType === 'lines') {
+        drawLines.call(this, series);
+      } else {
+        this[this.options.defaultType].draw(series);
+      }
     }
   },
   /**

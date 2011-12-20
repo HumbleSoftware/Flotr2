@@ -10,44 +10,47 @@ Flotr.addType('lines', {
   },
   /**
    * Draws lines series in the canvas element.
-   * @param {Object} series - Series with options.lines.show = true.
+   * @param {Object} options
    */
-  draw: function(series){
+  draw : function (options) {
 
-    var ctx = this.ctx,
-      lineWidth = series.lines.lineWidth,
-      shadowSize = series.shadowSize,
+    var
+      context     = options.context,
+      offsetLeft  = options.offsetLeft,
+      offsetTop   = options.offsetTop,
+      lineWidth   = options.lineWidth,
+      shadowSize  = options.shadowSize,
+      color       = options.color,
       offset;
 
-    series = series || this.series;
+    context.save();
+    context.translate(offsetLeft, offsetTop);
+    context.lineJoin = 'round';
 
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    ctx.lineJoin = 'round';
+    if (shadowSize) {
 
-    if(shadowSize){
-
-      ctx.lineWidth = shadowSize / 2;
-      offset = lineWidth/2 + ctx.lineWidth/2;
+      context.lineWidth = shadowSize / 2;
+      offset = lineWidth / 2 + context.lineWidth / 2;
       
-      ctx.strokeStyle = "rgba(0,0,0,0.1)";
-      this.lines.plot(series, offset + shadowSize/2, false);
+      // @TODO do this instead with a linear gradient
+      context.strokeStyle = "rgba(0,0,0,0.1)";
+      this.plot(options, offset + shadowSize / 2, false);
 
-      ctx.strokeStyle = "rgba(0,0,0,0.2)";
-      this.lines.plot(series, offset, false);
+      context.strokeStyle = "rgba(0,0,0,0.2)";
+      this.plot(options, offset, false);
     }
 
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = series.color;
+    context.lineWidth = lineWidth;
+    context.strokeStyle = color;
 
-    this.lines.plot(series, 0, true);
+    this.plot(options, 0, true);
 
-    ctx.restore();
+    context.restore();
   },
 
   getStack: function (series) {
     var stack = false;
-    if(series.lines.stacked) {
+    if (series.lines.stacked) {
       stack = series.xaxis.getStack('lines');
       if (Flotr._.isEmpty(stack)) {
         stack.values = [];
@@ -57,36 +60,40 @@ Flotr.addType('lines', {
     return stack;
   },
 
-  plot: function(series, shadowOffset, incStack){
+  plot: function (options, shadowOffset, incStack){
 
-    var ctx = this.ctx,
-      xa = series.xaxis,
-      ya = series.yaxis,
-      data = series.data, 
-      length = data.length - 1,
-      width = this.plotWidth, 
-      height = this.plotHeight,
-      prevx = null,
-      prevy = null,
-      stack = this.lines.getStack(series),
-      zero = ya.d2p(0),
+    var
+      context   = options.context,
+      width     = options.plotWidth, 
+      height    = options.plotHeight,
+      xScale    = options.xScale,
+      yScale    = options.yScale,
+      data      = options.data, 
+      fill      = options.fill,
+      length    = data.length - 1,
+      prevx     = null,
+      prevy     = null,
+      stack     = false,
+      // stack     = this.lines.getStack(series),
+      zero      = yScale(0),
       x1, x2, y1, y2, stack1, stack2, i;
       
-    if(length < 1) return;
+    if (length < 1) return;
 
-    ctx.beginPath();
+    context.beginPath();
 
-    for(i = 0; i < length; ++i){
+    for (i = 0; i < length; ++i) {
 
       // To allow empty values
       if (data[i][1] === null || data[i+1][1] === null) continue;
 
       // Zero is infinity for log scales
-      if (xa.options.scaling === 'logarithmic' && (data[i][0] <= 0 || data[i+1][0] <= 0)) continue;
-      if (ya.options.scaling === 'logarithmic' && (data[i][1] <= 0 || data[i+1][1] <= 0)) continue;
+      // TODO handle zero for logarithmic
+      // if (xa.options.scaling === 'logarithmic' && (data[i][0] <= 0 || data[i+1][0] <= 0)) continue;
+      // if (ya.options.scaling === 'logarithmic' && (data[i][1] <= 0 || data[i+1][1] <= 0)) continue;
       
-      x1 = xa.d2p(data[i][0]);
-      x2 = xa.d2p(data[i+1][0]);
+      x1 = xScale(data[i][0]);
+      x2 = xScale(data[i+1][0]);
       
       if (stack) {
 
@@ -104,8 +111,8 @@ Flotr.addType('lines', {
         }
       }
       else{
-        y1 = ya.d2p(data[i][1]);
-        y2 = ya.d2p(data[i+1][1]);
+        y1 = yScale(data[i][1]);
+        y2 = yScale(data[i+1][1]);
       }
 
       if ((y1 >= height && y2 >= width) || 
@@ -114,25 +121,25 @@ Flotr.addType('lines', {
         (x1 >= width && x2 >= width)) continue;
 
       if((prevx != x1) || (prevy != y1 + shadowOffset))
-        ctx.moveTo(x1, y1 + shadowOffset);
+        context.moveTo(x1, y1 + shadowOffset);
       
       prevx = x2;
       prevy = y2 + shadowOffset;
-      ctx.lineTo(prevx, prevy);
+      context.lineTo(prevx, prevy);
     }
     
-    ctx.stroke();
+    context.stroke();
 
     // TODO stacked lines
-    if(!shadowOffset && series.lines.fill){
-      ctx.fillStyle = this.processColor(series.lines.fillColor || series.color, {opacity: series.lines.fillOpacity});
-      ctx.lineTo(x2, zero);
-      ctx.lineTo(xa.d2p(data[0][0]), zero);
-      ctx.lineTo(xa.d2p(data[0][0]), ya.d2p(data[0][1]));
-      ctx.fill();
+    if(!shadowOffset && fill){
+      context.fillStyle = options.fillStyle;
+      context.lineTo(x2, zero);
+      context.lineTo(xScale(data[0][0]), zero);
+      context.lineTo(xScale(data[0][0]), yScale(data[0][1]));
+      context.fill();
     }
 
-    ctx.closePath();
+    context.closePath();
   },
 
   extendYRange : function (axis, data, options, lines) {
