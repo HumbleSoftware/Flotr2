@@ -9,35 +9,32 @@ Flotr.addType('timeline', {
     centered: true
   },
 
-  draw : function (series) {
+  draw : function (options) {
 
     var
-      ctx       = this.ctx,
-      barWidth  = series.timeline.barWidth,
-      lineWidth = series.timeline.lineWidth,
-      color     = series.color,
-      fillColor = series.timeline.fillColor || color,
-      opacity   = series.timeline.fillOpacity;
+      context = options.context;
 
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    ctx.lineJoin    = 'miter';
-    ctx.lineWidth   = lineWidth;
-    ctx.strokeStyle = color;
-    ctx.fillStyle   = this.processColor(fillColor, {opacity: opacity});
+    context.save();
+    context.translate(options.offsetLeft, options.offsetTop);
+    context.lineJoin    = 'miter';
+    context.lineWidth   = options.lineWidth;
+    context.strokeStyle = options.color;
+    context.fillStyle   = options.fillStyle;
 
-    this.timeline.plot(series, barWidth, lineWidth);
+    this.plot(options);
 
-    ctx.restore();
+    context.restore();
   },
 
-  plot : function (series, barWidth, lineWidth) {
+  plot : function (options) {
 
     var
-      data  = series.data,
-      xa    = series.xaxis,
-      ya    = series.yaxis,
-      ctx   = this.ctx,
+      data      = options.data,
+      context   = options.context,
+      xScale    = options.xScale,
+      yScale    = options.yScale,
+      barWidth  = options.barWidth,
+      lineWidth = options.lineWidth,
       i;
 
     Flotr._.each(data, function (timeline) {
@@ -48,18 +45,18 @@ Flotr.addType('timeline', {
         w   = timeline[2],
         h   = barWidth,
 
-        xt  = Math.ceil(xa.d2p(x)),
-        wt  = Math.ceil(xa.d2p(x + w)) - xt,
-        yt  = Math.round(ya.d2p(y)),
-        ht  = Math.round(ya.d2p(y - h)) - yt,
+        xt  = Math.ceil(xScale(x)),
+        wt  = Math.ceil(xScale(x + w)) - xt,
+        yt  = Math.round(yScale(y)),
+        ht  = Math.round(yScale(y - h)) - yt,
 
         x0  = xt - lineWidth / 2,
         y0  = Math.round(yt - ht / 2) - lineWidth / 2;
 
-      ctx.strokeRect(x0, y0, wt, ht);
-      ctx.fillRect(x0, y0, wt, ht);
+      context.strokeRect(x0, y0, wt, ht);
+      context.fillRect(x0, y0, wt, ht);
 
-    }, this);
+    });
   },
 
   extendRange : function (series) {
