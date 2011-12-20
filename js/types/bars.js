@@ -13,10 +13,6 @@ Flotr.addType('bars', {
     centered: true         // => center the bars to their x axis value
   },
 
-  /**
-   * Draws bar series in the canvas element.
-   * @param {Object} series - Series with options.bars.show = true.
-   */
   draw : function (options) {
     var
       context     = options.context,
