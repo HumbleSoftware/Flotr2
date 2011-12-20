@@ -76,7 +76,7 @@ Flotr.addType('pie', {
       context.scale(1, vScale);
       context.beginPath();
       context.moveTo(x, y);
-      context.arc(x, y, radius, startAngle, endAngle, fill);
+      context.arc(x, y, radius, startAngle, endAngle, false);
       context.lineTo(x, y);
       context.closePath();
     }
