@@ -256,7 +256,7 @@ Graph.prototype = {
 
       options = flotr.merge(type, options);
 
-      // Lines
+      // Fill
       options.fillStyle = this.processColor(
         type.fillColor || series.color,
         {opacity: type.fillOpacity}
