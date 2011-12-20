@@ -26,18 +26,13 @@ Flotr.addType('markers', {
     stackingType: 'b',     // => define staching behavior, (b- bars like, a - area like) (see Issue 125 for details)
     horizontal: false      // => true if markers should be horizontal (For now only in a case on horizontal stacked bars, stacks should be calculated horizontaly)
   },
-  getStack: function (series) {
-    var stack = false;
-    if(series.bars.stacked) {
-      stack = (series.bars.horizontal ? series.yaxis : series.xaxis).getStack('bars');
-      if (Flotr._.isEmpty(stack)) {
-        stack.positive = [];
-        stack.negative = [];
-        stack.values = [];
-      }
-    }
 
-    return stack;
+  getEmptyStack : function () {
+    return {
+        positive : [],
+        negative : [],
+        values : []
+    };
   },
   /**
    * Draws lines series in the canvas element.
