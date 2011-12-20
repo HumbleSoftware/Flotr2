@@ -64,14 +64,6 @@ Flotr.addType('candles', {
       top2    = yScale(Math.max(open, close));
 
       /*
-      TODO old min / max
-      bottom  = Math.max(ya.min, low),
-      top     = Math.min(ya.max, high),
-      bottom2 = Math.max(ya.min, Math.min(open, close)),
-      top2    = Math.min(ya.max, Math.max(open, close));
-      */
-
-      /*
       // TODO skipping
       if(right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
         continue;
