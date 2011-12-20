@@ -26,8 +26,6 @@ Flotr.addType('candles', {
     // @TODO linewidth not interpreted the right way.
     context.lineWidth = options.wickLineWidth || options.lineWidth;
 
-
-    this.plotShadows(options, width);
     this.plot(options, width);
 
     context.restore();
@@ -41,12 +39,14 @@ Flotr.addType('candles', {
       xScale        = options.xScale,
       yScale        = options.yScale,
       width         = options.candleWidth / 2,
+      shadowSize    = options.shadowSize,
       wickLineWidth = options.wickLineWidth,
       pixelOffset   = (wickLineWidth % 2) / 2,
       color,
       datum, x, y,
       open, high, low, close,
       left, right, bottom, top, bottom2, top2,
+      width, height,
       i;
 
     if (data.length < 1) return;
@@ -83,13 +83,15 @@ Flotr.addType('candles', {
 
       // Fill the candle.
       // TODO Test the barcharts option
-      context.save();
       if (options.fill && !options.barcharts) {
+        context.fillStyle = 'rgba(0,0,0,0.05)';
+        context.fillRect(left + shadowSize, top2 + shadowSize, right - left, bottom2 - top2);
+        context.save();
         context.globalAlpha = options.fillOpacity;
         context.fillStyle = color;
         context.fillRect(left, top2 + offset, right - left, bottom2 - top2);
+        context.restore();
       }
-      context.restore();
 
       // Draw candle outline/border, high, low.
       if (options.lineWidth || wickLineWidth) {
@@ -124,38 +126,6 @@ Flotr.addType('candles', {
         context.closePath();
         context.stroke();
       }
-    }
-  },
-  plotShadows: function(series, offset){
-    return;
-    var data = series.data;
-    if(data.length < 1 || series.candles.barcharts) return;
-    
-    var xa = series.xaxis,
-        ya = series.yaxis,
-        sw = this.options.shadowSize;
-    
-    for(var i = 0; i < data.length; i++){
-      var d     = data[i],
-          x     = d[0],
-          open  = d[1],
-          high  = d[2],
-          low   = d[3],
-          close = d[4];
-      
-      var left   = x - series.candles.candleWidth/2,
-          right  = x + series.candles.candleWidth/2,
-          bottom = Math.max(ya.min, Math.min(open, close)),
-          top    = Math.min(ya.max, Math.max(open, close));
-      
-      if(right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
-        continue;
-      
-      var width =  xa.d2p(right)-xa.d2p(left)-((xa.d2p(right)+sw <= this.plotWidth) ? 0 : sw);
-      var height = Math.max(0, ya.d2p(bottom)-ya.d2p(top)-((ya.d2p(bottom)+sw <= this.plotHeight) ? 0 : sw));
-      
-      this.ctx.fillStyle = 'rgba(0,0,0,0.05)';
-      this.ctx.fillRect(Math.min(xa.d2p(left)+sw, this.plotWidth), Math.min(ya.d2p(top)+sw, this.plotWidth), width, height);
     }
   },
   extendXRange: function (axis, data, options) {
