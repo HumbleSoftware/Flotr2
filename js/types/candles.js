@@ -9,108 +9,125 @@ Flotr.addType('candles', {
     upFillColor: '#00A8F0',// => up sticks fill color
     downFillColor: '#CB4B4B',// => down sticks fill color
     fillOpacity: 0.5,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
+    // TODO Test this barcharts option.
     barcharts: false       // => draw as barcharts (not standard bars but financial barcharts)
   },
-  /**
-   * Draws candles series in the canvas element.
-   * @param {Object} series - Series with options.candles.show = true.
-   */
-  draw: function(series) {
-    var ctx = this.ctx,
-        bw = series.candles.candleWidth;
-    
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    ctx.lineJoin = 'miter';
 
-    /**
-     * @todo linewidth not interpreted the right way.
-     */
-    ctx.lineWidth = series.candles.lineWidth;
-    this.candles.plotShadows(series, bw/2);
-    this.candles.plot(series, bw/2);
-    
-    ctx.restore();
+  draw : function (options) {
+
+    var
+      context = options.context,
+      width   = options.candleWidth / 2;
+
+    context.save();
+    context.translate(options.offsetLeft, options.offsetTop);
+    context.lineJoin = 'miter';
+    context.lineCap = 'butt';
+    // @TODO linewidth not interpreted the right way.
+    context.lineWidth = options.wickLineWidth || options.lineWidth;
+
+
+    this.plotShadows(options, width);
+    this.plot(options, width);
+
+    context.restore();
   },
-  plot: function(series, offset){
-    var data = series.data;
-    if(data.length < 1) return;
-    
-    var xa = series.xaxis,
-        ya = series.yaxis,
-        ctx = this.ctx;
 
-    for(var i = 0; i < data.length; i++){
-      var d     = data[i],
-          x     = d[0],
-          open  = d[1],
-          high  = d[2],
-          low   = d[3],
-          close = d[4];
+  plot : function (options, offset) {
 
-      var left    = x - series.candles.candleWidth/2,
-          right   = x + series.candles.candleWidth/2,
-          bottom  = Math.max(ya.min, low),
-          top     = Math.min(ya.max, high),
-          bottom2 = Math.max(ya.min, Math.min(open, close)),
-          top2    = Math.min(ya.max, Math.max(open, close));
+    var
+      data          = options.data,
+      context       = options.context,
+      xScale        = options.xScale,
+      yScale        = options.yScale,
+      width         = options.candleWidth / 2,
+      wickLineWidth = options.wickLineWidth,
+      pixelOffset   = (wickLineWidth % 2) / 2,
+      color,
+      datum, x, y,
+      open, high, low, close,
+      left, right, bottom, top, bottom2, top2,
+      i;
 
+    if (data.length < 1) return;
+
+    for (i = 0; i < data.length; i++) {
+      datum   = data[i];
+      x       = datum[0];
+      open    = datum[1];
+      high    = datum[2];
+      low     = datum[3];
+      close   = datum[4];
+      left    = xScale(x - width);
+      right   = xScale(x + width);
+      bottom  = yScale(low);
+      top     = yScale(high);
+      bottom2 = yScale(Math.min(open, close));
+      top2    = yScale(Math.max(open, close));
+
+      /*
+      TODO old min / max
+      bottom  = Math.max(ya.min, low),
+      top     = Math.min(ya.max, high),
+      bottom2 = Math.max(ya.min, Math.min(open, close)),
+      top2    = Math.min(ya.max, Math.max(open, close));
+      */
+
+      /*
+      // TODO skipping
       if(right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
         continue;
+      */
 
-      var color = series.candles[open>close?'downFillColor':'upFillColor'];
-      /**
-       * Fill the candle.
-       */
-      if(series.candles.fill && !series.candles.barcharts){
-        ctx.fillStyle = this.processColor(color, {opacity: series.candles.fillOpacity});
-        ctx.fillRect(xa.d2p(left), ya.d2p(top2) + offset, xa.d2p(right) - xa.d2p(left), ya.d2p(bottom2) - ya.d2p(top2));
+      color = options[open > close ? 'downFillColor' : 'upFillColor'];
+
+      // Fill the candle.
+      // TODO Test the barcharts option
+      context.save();
+      if (options.fill && !options.barcharts) {
+        context.globalAlpha = options.fillOpacity;
+        context.fillStyle = color;
+        context.fillRect(left, top2 + offset, right - left, bottom2 - top2);
       }
+      context.restore();
 
-      /**
-       * Draw candle outline/border, high, low.
-       */
-      if(series.candles.lineWidth || series.candles.wickLineWidth){
-        var x, y, pixelOffset = (series.candles.wickLineWidth % 2) / 2;
+      // Draw candle outline/border, high, low.
+      if (options.lineWidth || wickLineWidth) {
 
-        x = Math.floor(xa.d2p((left + right) / 2)) + pixelOffset;
-        
-        ctx.save();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = series.candles.wickLineWidth;
-        ctx.lineCap = 'butt';
-        
-        if (series.candles.barcharts) {
-          ctx.beginPath();
+        x = Math.floor((left + right) / 2) + pixelOffset;
+
+        context.strokeStyle = color;
+        context.beginPath();
+
+        // TODO Again with the bartcharts
+        if (options.barcharts) {
           
-          ctx.moveTo(x, Math.floor(ya.d2p(top) + offset));
-          ctx.lineTo(x, Math.floor(ya.d2p(bottom) + offset));
+          context.moveTo(x, Math.floor(top + offset));
+          context.lineTo(x, Math.floor(bottom + offset));
           
-          y = Math.floor(ya.d2p(open) + offset)+0.5;
-          ctx.moveTo(Math.floor(xa.d2p(left))+pixelOffset, y);
-          ctx.lineTo(x, y);
+          y = Math.floor(open + offset) + 0.5;
+          context.moveTo(Math.floor(left) + pixelOffset, y);
+          context.lineTo(x, y);
           
-          y = Math.floor(ya.d2p(close) + offset)+0.5;
-          ctx.moveTo(Math.floor(xa.d2p(right))+pixelOffset, y);
-          ctx.lineTo(x, y);
-        } 
-        else {
-          ctx.strokeRect(xa.d2p(left), ya.d2p(top2) + offset, xa.d2p(right) - xa.d2p(left), ya.d2p(bottom2) - ya.d2p(top2));
-          
-          ctx.beginPath();
-          ctx.moveTo(x, Math.floor(ya.d2p(top2   ) + offset));
-          ctx.lineTo(x, Math.floor(ya.d2p(top    ) + offset));
-          ctx.moveTo(x, Math.floor(ya.d2p(bottom2) + offset));
-          ctx.lineTo(x, Math.floor(ya.d2p(bottom ) + offset));
+          y = Math.floor(close + offset) + 0.5;
+          context.moveTo(Math.floor(right) + pixelOffset, y);
+          context.lineTo(x, y);
+        } else {
+          context.strokeRect(left, top2 + offset, right - left, bottom2 - top2);
+
+          context.moveTo(x, Math.floor(top2 + offset));
+          context.lineTo(x, Math.floor(top + offset));
+          context.moveTo(x, Math.floor(bottom2 + offset));
+          context.lineTo(x, Math.floor(bottom + offset));
         }
         
-        ctx.stroke();
-        ctx.closePath();
-        ctx.restore();
+        context.closePath();
+        context.stroke();
       }
     }
   },
   plotShadows: function(series, offset){
+    return;
     var data = series.data;
     if(data.length < 1 || series.candles.barcharts) return;
     
