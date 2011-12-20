@@ -10,14 +10,11 @@ Flotr.addType('bubbles', {
   draw : function (options) {
     var
       context     = options.context,
-      offsetLeft  = options.offsetLeft,
-      offsetTop   = options.offsetTop,
-      lineWidth   = options.lineWidth,
       shadowSize  = options.shadowSize;
 
     context.save();
-    context.translate(offsetLeft, offsetTop);
-    context.lineWidth = lineWidth;
+    context.translate(options.offsetLeft, options.offsetTop);
+    context.lineWidth = options.lineWidth;
     
     // Shadows
     context.fillStyle = 'rgba(0,0,0,0.05)';
@@ -38,24 +35,20 @@ Flotr.addType('bubbles', {
     var
       data    = options.data,
       context = options.context,
-      radius  = options.baseRadius,
-      xScale  = options.xScale,
-      yScale  = options.yScale,
-      fill    = options.fill,
       i, x, y, z;
 
     offset = offset || 0;
     
     for (i = 0; i < data.length; ++i){
 
-      x = xScale(data[i][0]) + offset,
-      y = yScale(data[i][1]) + offset,
-      z = data[i][2] * radius;
+      x = options.xScale(data[i][0]) + offset,
+      y = options.yScale(data[i][1]) + offset,
+      z = data[i][2] * options.radius;
 
       context.beginPath();
       context.arc(x, y, z, 0, Math.PI*2, true);
       context.stroke();
-      if (fill) context.fill();
+      if (options.fill) context.fill();
       context.closePath();
     }
   },
