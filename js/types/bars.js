@@ -15,22 +15,15 @@ Flotr.addType('bars', {
 
   draw : function (options) {
     var
-      context     = options.context,
-      barWidth    = options.barWidth,
-      lineWidth   = Math.min(options.lineWidth, barWidth),
-      offsetLeft  = options.offsetLeft,
-      offsetTop   = options.offsetTop,
-      fill        = options.fill,
-      fillStyle   = options.fillStyle,
-      color       = options.color;
+      context = options.context;
 
     context.save();
-    context.translate(offsetLeft, offsetTop);
+    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'miter';
     // @TODO linewidth not interpreted the right way.
-    context.lineWidth = lineWidth;
-    context.strokeStyle = color;
-    if (fill) context.fillStyle = fillStyle
+    context.lineWidth = Math.min(options.lineWidth, options.barWidth);
+    context.strokeStyle = options.color;
+    if (options.fill) context.fillStyle = options.fillStyle
     
     this.plot(options);
 
@@ -51,9 +44,7 @@ Flotr.addType('bars', {
     var
       data        = options.data,
       context     = options.context,
-      lineWidth   = options.lineWidth,
       barWidth    = options.barWidth,
-      fill        = options.fill,
       xScale      = options.xScale,
       yScale      = options.yScale,
       shadowSize  = options.shadowSize,
@@ -134,6 +125,7 @@ Flotr.addType('bars', {
       }
       
       /*
+       * TODO Skipping...
       if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
         continue;
 
@@ -151,7 +143,7 @@ Flotr.addType('bars', {
       width    = xaRight - xaLeft;
       height   = yaBottom - yaTop;
 
-      if (fill) context.fillRect(xaLeft, yaTop, width, height);
+      if (options.fill) context.fillRect(xaLeft, yaTop, width, height);
 
       if (shadowSize) {
         context.save();
@@ -160,7 +152,7 @@ Flotr.addType('bars', {
         context.restore();
       }
 
-      if (lineWidth != 0) {
+      if (options.lineWidth != 0) {
         context.strokeRect(xaLeft, yaTop, width, height);
       }
     }
