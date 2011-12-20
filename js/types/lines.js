@@ -16,15 +16,12 @@ Flotr.addType('lines', {
 
     var
       context     = options.context,
-      offsetLeft  = options.offsetLeft,
-      offsetTop   = options.offsetTop,
       lineWidth   = options.lineWidth,
       shadowSize  = options.shadowSize,
-      color       = options.color,
       offset;
 
     context.save();
-    context.translate(offsetLeft, offsetTop);
+    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'round';
 
     if (shadowSize) {
@@ -41,7 +38,7 @@ Flotr.addType('lines', {
     }
 
     context.lineWidth = lineWidth;
-    context.strokeStyle = color;
+    context.strokeStyle = options.color;
 
     this.plot(options, 0, true);
 
@@ -61,7 +58,6 @@ Flotr.addType('lines', {
       xScale    = options.xScale,
       yScale    = options.yScale,
       data      = options.data, 
-      fill      = options.fill,
       stack     = options.stack,
       length    = data.length - 1,
       prevx     = null,
@@ -91,8 +87,8 @@ Flotr.addType('lines', {
         stack1 = stack.values[data[i][0]] || 0;
         stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
 
-        y1 = ya.d2p(data[i][1] + stack1);
-        y2 = ya.d2p(data[i+1][1] + stack2);
+        y1 = yScale(data[i][1] + stack1);
+        y2 = yScale(data[i+1][1] + stack2);
         
         if(incStack){
           stack.values[data[i][0]] = data[i][1]+stack1;
@@ -122,7 +118,7 @@ Flotr.addType('lines', {
     context.stroke();
 
     // TODO stacked lines
-    if(!shadowOffset && fill){
+    if(!shadowOffset && options.fill){
       context.fillStyle = options.fillStyle;
       context.lineTo(x2, zero);
       context.lineTo(xScale(data[0][0]), zero);
