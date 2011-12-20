@@ -31,8 +31,9 @@ Flotr.addType('pie', {
 
   draw : function (options) {
 
+    // TODO 3D charts what?
+
     var
-      // Options       = this.options,
       data          = options.data,
       context       = options.context,
       canvas        = context.canvas,
