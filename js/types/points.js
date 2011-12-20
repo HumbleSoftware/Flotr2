@@ -51,8 +51,7 @@ Flotr.addType('points', {
       x = xScale(data[i][0]);
       y = yScale(y);
 
-      // TODO skipping
-      //if (x < xa.min || x > xa.max || y < ya.min || y > ya.max) continue;
+      if (x < 0 || x > options.width || y < 0 || y > options.height) continue;
       
       context.beginPath();
       if (offset) {
