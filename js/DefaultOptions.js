@@ -9,6 +9,7 @@ Flotr.defaultOptions = {
   shadowSize: 4,           // => size of the 'fake' shadow
   defaultType: null,       // => default series type
   HtmlText: true,          // => wether to draw the text using HTML or on the canvas
+  fontColor: '#545454',    // => default font color
   fontSize: 7.5,           // => canvas' text font size
   resolution: 1,           // => resolution of the graph, to have printer-friendly graphs !
   parseFloat: true,        // => whether to preprocess data for floats (ie. if input is string)
