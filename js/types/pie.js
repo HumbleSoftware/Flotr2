@@ -26,8 +26,7 @@ Flotr.addType('pie', {
     labelFormatter: Flotr.defaultPieLabelFormatter,
     pie3D: false,          // => whether to draw the pie in 3 dimenstions or not (ineffective) 
     pie3DviewAngle: (Math.PI/2 * 0.8),
-    pie3DspliceThickness: 20,
-    stacked : true
+    pie3DspliceThickness: 20
   },
 
   draw : function (options) {
@@ -39,16 +38,23 @@ Flotr.addType('pie', {
       canvas        = context.canvas,
       lineWidth     = options.lineWidth,
       shadowSize    = options.shadowSize,
-      startAngle    = options.startAngle,
       sizeRatio     = options.sizeRatio,
-      radius        = (Math.min(canvas.width, canvas.height) * sizeRatio) / 2,
-      height        = options.plotHeight,
+      height        = options.height,
+      explode       = options.explode,
+      color         = options.color,
+      fill          = options.fill,
+      fillStyle     = options.fillStyle,
+      radius        = Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      value         = data[0][1],
       html          = [],
       vScale        = 1,//Math.cos(series.pie.viewAngle);
+      measure       = Math.PI * 2 * value / this.total,
+      startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
+      endAngle      = startAngle + measure,
+      bisection     = startAngle + measure / 2,
       //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
-      //portions      = this._getPortions(),
-      //slices        = this._getSlices(portions, series),
-      style, center;
+      style, center,
+      x, y;
 
     style = {
       size : options.fontSize * 1.2,
@@ -62,26 +68,8 @@ Flotr.addType('pie', {
     };
 
     context.save();
-    
-    // Shadows
-    if (shadowSize > 0) {
-      _.each(slices, function (slice) {
-        if (slice.startAngle == slice.endAngle) return;
-        
-        var bisection = (slice.startAngle + slice.endAngle) / 2,
-            xOffset = center.x + Math.cos(bisection) * slice.options.explode + sw,
-            yOffset = center.y + Math.sin(bisection) * slice.options.explode + sw;
-        
-        plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
-        
-        if (series.pie.fill) {
-          ctx.fillStyle = 'rgba(0,0,0,0.1)';
-          ctx.fill();
-        }
-      }, this);
-    }
 
-    function plotSlice (x, y, radius, startAngle, endAngle, fill, vScale) {
+    function plotSlice (x, y) {
 
       vScale = vScale || 1;
 
@@ -93,25 +81,35 @@ Flotr.addType('pie', {
       context.closePath();
     }
 
-    _.each(slices, function (slice, index) {
-      if (slice.startAngle == slice.endAngle) return;
-      
-      var bisection = (slice.startAngle + slice.endAngle) / 2,
-          color = slice.series.color,
-          fillColor = slice.options.fillColor || color,
-          xOffset = center.x + Math.cos(bisection) * slice.options.explode,
-          yOffset = center.y + Math.sin(bisection) * slice.options.explode;
-      
-      plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
-      
-      if(series.pie.fill){
-        ctx.fillStyle = this.processColor(fillColor, {opacity: series.pie.fillOpacity});
-        ctx.fill();
+    // TODO wtf is this for?
+    if (startAngle == endAngle) return;
+
+    x = center.x + Math.cos(bisection) * explode;
+    y = center.y + Math.sin(bisection) * explode;
+
+    // Shadows
+    if (shadowSize > 0) {
+      plotSlice(x + shadowSize, y + shadowSize);
+      if (fill) {
+        context.fillStyle = 'rgba(0,0,0,0.1)';
+        context.fill();
       }
-      ctx.lineWidth = lw;
-      ctx.strokeStyle = color;
-      ctx.stroke();
-      
+    }
+
+    plotSlice(x, y);
+    if (fill) {
+      context.fillStyle = fillStyle;
+      context.fill();
+    }
+    context.lineWidth = lineWidth;
+    context.strokeStyle = color;
+    context.stroke();
+
+    this.startAngle = endAngle;
+
+    return;
+
+    _.each(slices, function (slice, index) {
       var label = options.pie.labelFormatter(slice),
           textAlignRight = (Math.cos(bisection) < 0),
           textAlignTop = (Math.sin(bisection) > 0),
@@ -261,55 +259,8 @@ Flotr.addType('pie', {
       2*(radius + margin)
     );
   },
-  /*
-  _getPortions: function(){
-    return _.map(this.series, function(hash, index){
-      if (hash.pie.show && hash.data[0][1] !== null)
-        return {
-          name: (hash.label || hash.data[0][1]),
-          value: [index, hash.data[0][1]],
-          options: hash.pie,
-          series: hash
-        };
-    });
-  },
-  */
   extendYRange : function (axis, data) {
-                   console.log(this.pie);
     this.pie.total = (this.pie.total || 0) + data[0][1];
-  },
-  getEmptyStack : function () {
-    return {
-      startAngle : null
-    }
-  },
-  /*
-  _getSum: function(portions){
-    // Sum of the portions' angles
-    return _.inject(_.pluck(_.pluck(portions, 'value'), 1), function(acc, n) { return acc + n; }, 0);
-  },
-  _getSlices: function (portions, series, startAngle) {
-    var sum = this.pie._getSum(portions),
-      fraction = 0.0,
-      angle = (!_.isUndefined(startAngle) ? startAngle : series.pie.startAngle),
-      value = 0.0;
-    return _.map(portions, function(slice){
-      angle += fraction;
-      value = parseFloat(slice.value[1]); // @warning : won't support null values !!
-      fraction = value/sum;
-      return {
-        name:     slice.name,
-        fraction: fraction,
-        x:        slice.value[0],
-        y:        value,
-        value:    value,
-        options:  slice.options,
-        series:   slice.series,
-        startAngle: 2 * angle * Math.PI,
-        endAngle:   2 * (angle + fraction) * Math.PI
-      };
-    });
   }
-  */
 });
 })();
