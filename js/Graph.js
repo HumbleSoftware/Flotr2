@@ -248,6 +248,8 @@ Graph.prototype = {
           offsetTop   : this.plotOffset.top,
           fontSize    : this.options.fontSize,
           fontColor   : this.options.fontColor,
+          textEnabled : this.textEnabled,
+          htmlText    : this.options.HtmlText,
           data        : series.data,
           color       : series.color,
           shadowSize  : series.shadowSize,
