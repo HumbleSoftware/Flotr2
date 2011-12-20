@@ -239,7 +239,7 @@ Graph.prototype = {
 
       var
         type = series[typeKey],
-        graphType = flotr.graphTypes[typeKey],
+        graphType = this[typeKey],
         options = {
           context     : this.ctx,
           width       : this.plotWidth,
@@ -274,7 +274,7 @@ Graph.prototype = {
     series = series || this.series;
 
     _.each(flotr.graphTypes, function (type, typeKey) {
-      if (series[typeKey] && series[typeKey].show){
+      if (series[typeKey] && series[typeKey].show && this[typeKey]) {
         drawn = true;
         drawChart.call(this, series, typeKey);
       }
@@ -438,6 +438,7 @@ Graph.prototype = {
       this[graphType] = _.clone(handler);
       _.each(handler, function(fn, name){
         if (_.isFunction(fn))
+          if (name === 'draw' || name === 'plot') return;
           this[graphType][name] = _.bind(fn, this);
       }, this);
     }, this);
