@@ -17,28 +17,28 @@ Flotr.addType('bars', {
    * Draws bar series in the canvas element.
    * @param {Object} series - Series with options.bars.show = true.
    */
-  draw: function(series) {
-    var ctx = this.ctx,
-      bw = series.bars.barWidth,
-      lw = Math.min(series.bars.lineWidth, bw);
-    
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    ctx.lineJoin = 'miter';
+  draw : function (options) {
+    var
+      context     = options.context,
+      barWidth    = options.barWidth,
+      lineWidth   = Math.min(options.lineWidth, barWidth),
+      offsetLeft  = options.offsetLeft,
+      offsetTop   = options.offsetTop,
+      fill        = options.fill,
+      fillStyle   = options.fillStyle,
+      color       = options.color;
 
-    /**
-     * @todo linewidth not interpreted the right way.
-     */
-    ctx.lineWidth = lw;
-    ctx.strokeStyle = series.color;
+    context.save();
+    context.translate(offsetLeft, offsetTop);
+    context.lineJoin = 'miter';
+    // @TODO linewidth not interpreted the right way.
+    context.lineWidth = lineWidth;
+    context.strokeStyle = color;
+    if (fill) context.fillStyle = fillStyle
     
-    if(series.bars.fill){
-      var color = series.bars.fillColor || series.color;
-      ctx.fillStyle = this.processColor(color, {opacity: series.bars.fillOpacity});
-    }
-    
-    this.bars.plot(series, bw, 0, series.bars.fill);
-    ctx.restore();
+    this.plot(options);
+
+    context.restore();
   },
 
   getStack: function (series) {
@@ -56,16 +56,21 @@ Flotr.addType('bars', {
     return stack;
   },
 
-  plot: function(series, barWidth, offset, fill){
-    if(series.data.length < 1) return;
-    
+  plot : function (options) {
+
     var
-      data            = series.data,
-      xa              = series.xaxis,
-      ya              = series.yaxis,
-      ctx             = this.ctx,
-      stack           = this.bars.getStack(series),
-      shadowSize      = this.options.shadowSize,
+      data        = options.data,
+      context     = options.context,
+      lineWidth   = options.lineWidth,
+      barWidth    = options.barWidth,
+      fill        = options.fill,
+      xScale      = options.xScale,
+      yScale      = options.yScale,
+      shadowSize  = options.shadowSize,
+      horizontal  = options.horizontal,
+      centered    = options.centered,
+      stack       = false,
+      //stack     = this.bars.getStack(series),
       barOffset,
       stackIndex,
       stackValue,
@@ -76,19 +81,22 @@ Flotr.addType('bars', {
       left, right, top, bottom,
       i, x, y;
 
-    for(i = 0; i < data.length; i++){
+    if (data.length < 1) return;
+    
+    for (i = 0; i < data.length; i++) {
+
       x = data[i][0];
       y = data[i][1];
-      
+
       if (y === null) continue;
-      
+
       // Stacked bars
       stackOffsetPos = 0;
       stackOffsetNeg = 0;
 
       if (stack) {
 
-        if(series.bars.horizontal) {
+        if (horizontal) {
           stackIndex = y;
           stackValue = x;
         } else {
@@ -108,9 +116,9 @@ Flotr.addType('bars', {
       
       // @todo: fix horizontal bars support
       // Horizontal bars
-      barOffset = series.bars.centered ? barWidth/2 : 0;
+      barOffset = centered ? barWidth/2 : 0;
       
-      if(series.bars.horizontal){ 
+      if (horizontal) { 
         if (x > 0){
           left = stackOffsetPos;
           right = x + stackOffsetPos;
@@ -136,6 +144,7 @@ Flotr.addType('bars', {
         right = x + barWidth - barOffset;
       }
       
+      /*
       if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
         continue;
 
@@ -143,28 +152,27 @@ Flotr.addType('bars', {
       if (right   > xa.max) right   = xa.max;
       if (bottom  < ya.min) bottom  = ya.min;
       if (top     > ya.max) top     = ya.max;
+      */
       
       // Cache d2p values
-      xaLeft   = xa.d2p(left);
-      xaRight  = xa.d2p(right);
-      yaTop    = ya.d2p(top);
-      yaBottom = ya.d2p(bottom);
+      xaLeft   = xScale(left);
+      xaRight  = xScale(right);
+      yaTop    = yScale(top);
+      yaBottom = yScale(bottom);
       width    = xaRight - xaLeft;
       height   = yaBottom - yaTop;
 
-      if (fill){
-        ctx.fillRect(xaLeft, yaTop, width, height);
-      }
+      if (fill) context.fillRect(xaLeft, yaTop, width, height);
 
       if (shadowSize) {
-        ctx.save();
-        ctx.fillStyle = 'rgba(0,0,0,0.05)';
-        ctx.fillRect(xaLeft + shadowSize, yaTop + shadowSize, width, height);
-        ctx.restore();
+        context.save();
+        context.fillStyle = 'rgba(0,0,0,0.05)';
+        context.fillRect(xaLeft + shadowSize, yaTop + shadowSize, width, height);
+        context.restore();
       }
 
-      if (series.bars.lineWidth != 0) {
-        ctx.strokeRect(xaLeft, yaTop, width, height);
+      if (lineWidth != 0) {
+        context.strokeRect(xaLeft, yaTop, width, height);
       }
     }
   },

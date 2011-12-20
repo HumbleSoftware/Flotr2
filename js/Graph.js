@@ -236,7 +236,8 @@ Graph.prototype = {
   drawSeries: function(series){
     series = series || this.series;
 
-    function drawLines (series) {
+    function drawChart (series, type) {
+
       var options = {
         context     : this.ctx,
         width       : this.plotWidth,
@@ -249,21 +250,24 @@ Graph.prototype = {
         xScale      : _.bind(series.xaxis.d2p, series.xaxis),
         yScale      : _.bind(series.yaxis.d2p, series.yaxis)
       };
-      options = flotr.merge(series.lines, options);
+
+      options = flotr.merge(series[type], options);
+
+      // Lines
       options.fillStyle = this.processColor(
-        series.lines.fillColor || series.color,
-        {opacity: series.lines.fillOpacity}
+        series[type].fillColor || series.color,
+        {opacity: series[type].fillOpacity}
       );
-      console.log(options);
-      flotr.graphTypes.lines.draw(options);
+
+      flotr.graphTypes[type].draw(options);
     }
 
     var drawn = false;
     _.each(flotr.graphTypes, function(handler, name) {
       if(series[name] && series[name].show){
         drawn = true;
-        if (name === 'lines') {
-          drawLines.call(this, series);
+        if (name === 'lines' || name === 'bars') {
+          drawChart.call(this, series, name);
         } else {
           handler.draw.call(this, series);
         }
@@ -272,7 +276,7 @@ Graph.prototype = {
 
     if(!drawn){
       if (this.options.defaultType === 'lines') {
-        drawLines.call(this, series);
+        drawChart.call(this, series, this.options.defaultType);
       } else {
         this[this.options.defaultType].draw(series);
       }
