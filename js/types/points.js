@@ -8,56 +8,60 @@ Flotr.addType('points', {
     fillColor: '#FFFFFF',  // => fill color
     fillOpacity: 0.4       // => opacity of color inside the points
   },
-  /**
-   * Draws point series in the canvas element.
-   * @param {Object} series - Series with options.points.show = true.
-   */
-  draw: function(series) {
-    var ctx = this.ctx,
-        lw = series.lines.lineWidth,
-        sw = series.shadowSize;
-    
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    
-    if(sw > 0){
-      ctx.lineWidth = sw / 2;
-      
-      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-      this.points.plotShadows(series, sw/2 + ctx.lineWidth/2, series.points.radius);
 
-      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-      this.points.plotShadows(series, ctx.lineWidth/2, series.points.radius);
+  draw : function (options) {
+    var
+      context     = options.context,
+      lineWidth   = options.lineWidth,
+      shadowSize  = options.shadowSize;
+
+    context.save();
+    context.translate(options.offsetLeft, options.offsetTop);
+    
+    if (shadowSize > 0) {
+      context.lineWidth = shadowSize / 2;
+      
+      context.strokeStyle = 'rgba(0,0,0,0.1)';
+      this.plotShadows(options, shadowSize / 2 + context.lineWidth / 2)
+
+      context.strokeStyle = 'rgba(0,0,0,0.2)';
+      this.plotShadows(options, context.lineWidth / 2)
     }
 
-    ctx.lineWidth = series.points.lineWidth;
-    ctx.strokeStyle = series.color;
-    ctx.fillStyle = series.points.fillColor ? series.points.fillColor : series.color;
-    this.points.plot(series, series.points.radius, series.points.fill);
-    ctx.restore();
+    context.lineWidth = options.lineWidth;
+    context.strokeStyle = options.color;
+    context.fillStyle = options.fillStyle;
+
+    this.plot(options);
+    context.restore();
   },
-  plot: function (series, radius, fill) {
-    var xa = series.xaxis,
-        ya = series.yaxis,
-        ctx = this.ctx,
-        data = series.data,
-        i, x, y;
+
+  plot : function (options, offset) {
+    var
+      data    = options.data,
+      context = options.context,
+      xScale  = options.xScale,
+      yScale  = options.yScale,
+      i, x, y;
       
-    for(i = data.length - 1; i > -1; --i){
+    for (i = data.length - 1; i > -1; --i) {
       x = data[i][0];
       y = data[i][1];
-      // To allow empty values
-      if(y === null || x < xa.min || x > xa.max || y < ya.min || y > ya.max)
-        continue;
+
+      if (y === null) continue;
+
+      // TODO skipping
+      //if (x < xa.min || x > xa.max || y < ya.min || y > ya.max) continue;
       
-      ctx.beginPath();
-      ctx.arc(xa.d2p(x), ya.d2p(y), radius, 0, 2 * Math.PI, true);
-      if(fill) ctx.fill();
-      ctx.stroke();
-      ctx.closePath();
+      context.beginPath();
+      context.arc(xScale(x), yScale(y), options.radius, 0, 2 * Math.PI, true);
+      if (options.fill) context.fill();
+      context.stroke();
+      context.closePath();
     }
   },
-  plotShadows: function(series, offset, radius){
+  plotShadows : function (series, offset, radius) {
+    return;
     var xa = series.xaxis,
         ya = series.yaxis,
         ctx = this.ctx,
