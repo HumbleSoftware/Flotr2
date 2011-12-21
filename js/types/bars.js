@@ -42,15 +42,19 @@ Flotr.addType('bars', {
   plot : function (options) {
 
     var
-      data        = options.data,
-      context     = options.context,
-      barWidth    = options.barWidth,
-      xScale      = options.xScale,
-      yScale      = options.yScale,
-      shadowSize  = options.shadowSize,
-      horizontal  = options.horizontal,
-      centered    = options.centered,
-      stack       = options.stack,
+      data            = options.data,
+      context         = options.context,
+      barWidth        = options.barWidth,
+      shadowSize      = options.shadowSize,
+      horizontal      = options.horizontal,
+      centered        = options.centered,
+      stack           = options.stack,
+      xIndex          = horizontal ? 1 : 0,
+      yIndex          = horizontal ? 0 : 1,
+      xScale          = horizontal ? options.yScale : options.xScale,
+      yScale          = horizontal ? options.xScale : options.yScale,
+      stackOffsetPos  = 0,
+      stackOffsetNeg  = 0,
       barOffset,
       stackIndex,
       stackValue,
@@ -62,67 +66,43 @@ Flotr.addType('bars', {
       i, x, y;
 
     if (data.length < 1) return;
-    
+
+    if (horizontal) {
+      context.rotate(-Math.PI / 2)
+      context.scale(-1, 1);
+    }
+
     for (i = 0; i < data.length; i++) {
 
-      x = data[i][0];
-      y = data[i][1];
+      x = data[i][xIndex];
+      y = data[i][yIndex];
 
       if (y === null) continue;
 
       // Stacked bars
-      stackOffsetPos = 0;
-      stackOffsetNeg = 0;
-
       if (stack) {
+        stackOffsetPos = stack.positive[x] || stackOffsetPos;
+        stackOffsetNeg = stack.negative[x] || stackOffsetNeg;
 
-        if (horizontal) {
-          stackIndex = y;
-          stackValue = x;
+        if (y > 0) {
+          stack.positive[x] = stackOffsetPos + y;
         } else {
-          stackIndex = x;
-          stackValue = y;
-        }
-
-        stackOffsetPos = stack.positive[stackIndex] || 0;
-        stackOffsetNeg = stack.negative[stackIndex] || 0;
-
-        if (stackValue > 0) {
-          stack.positive[stackIndex] = stackOffsetPos + stackValue;
-        } else {
-          stack.negative[stackIndex] = stackOffsetNeg + stackValue;
+          stack.negative[x] = stackOffsetNeg + y;
         }
       }
       
-      // Horizontal bars
+      if (y > 0) {
+        bottom = stackOffsetPos;
+        top = y + stackOffsetPos;
+      } else {
+        top = stackOffsetNeg;
+        bottom = y + stackOffsetNeg;
+      }
+        
       barOffset = centered ? barWidth/2 : 0;
-      
-      if (horizontal) { 
-        if (x > 0){
-          left = stackOffsetPos;
-          right = x + stackOffsetPos;
-        }
-        else {
-          right = stackOffsetNeg;
-          left = x + stackOffsetNeg;
-        }
-        bottom = y - barOffset;
-        top = y + barWidth - barOffset;
-      }
-      else {
-        if (y > 0){
-          bottom = stackOffsetPos;
-          top = y + stackOffsetPos;
-        }
-        else{
-          top = stackOffsetNeg;
-          bottom = y + stackOffsetNeg;
-        }
-          
-        left = x - barOffset;
-        right = x + barWidth - barOffset;
-      }
-      
+      left = x - barOffset;
+      right = x + barWidth - barOffset;
+
       /*
        * TODO Skipping...
       if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
