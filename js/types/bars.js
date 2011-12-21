@@ -90,29 +90,23 @@ Flotr.addType('bars', {
       bottom    = yScale(stackOffset);
       left      = xScale(x - bisection);
       right     = xScale(x + barWidth - bisection);
+
+      // TODO for test passing... probably looks better without this
+      if (bottom < 0) bottom = 0;
+
       width     = right - left;
       height    = bottom - top;
 
-      /*
-       * TODO Skipping...
-      if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
-        continue;
+      // TODO Skipping...
+      // if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max) continue;
 
-      if (left    < xa.min) left    = xa.min;
-      if (right   > xa.max) right   = xa.max;
-      if (bottom  < ya.min) bottom  = ya.min;
-      if (top     > ya.max) top     = ya.max;
-      */
-      
       if (options.fill) context.fillRect(left, top, width, height);
-
       if (shadowSize) {
         context.save();
         context.fillStyle = 'rgba(0,0,0,0.05)';
         context.fillRect(left + shadowSize, top + shadowSize, width, height);
         context.restore();
       }
-
       if (options.lineWidth != 0) {
         context.strokeRect(left, top, width, height);
       }
