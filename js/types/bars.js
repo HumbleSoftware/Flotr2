@@ -53,15 +53,9 @@ Flotr.addType('bars', {
       yIndex          = horizontal ? 0 : 1,
       xScale          = horizontal ? options.yScale : options.xScale,
       yScale          = horizontal ? options.xScale : options.yScale,
-      stackOffsetPos  = 0,
-      stackOffsetNeg  = 0,
-      barOffset,
-      stackIndex,
-      stackValue,
-      stackOffsetPos,
-      stackOffsetNeg,
+      stackOffset     = 0,
+      bisection,
       width, height,
-      xaLeft, xaRight, yaTop, yaBottom,
       left, right, top, bottom,
       i, x, y;
 
@@ -81,27 +75,23 @@ Flotr.addType('bars', {
 
       // Stacked bars
       if (stack) {
-        stackOffsetPos = stack.positive[x] || stackOffsetPos;
-        stackOffsetNeg = stack.negative[x] || stackOffsetNeg;
-
         if (y > 0) {
-          stack.positive[x] = stackOffsetPos + y;
+          stackOffset = stack.positive[x] || stackOffset;
+          stack.positive[x] = stackOffset + y;
         } else {
-          stack.negative[x] = stackOffsetNeg + y;
+          stackOffset = stack.negative[x] || stackOffset;
+          stack.negative[x] = stackOffset + y;
         }
       }
-      
-      if (y > 0) {
-        bottom = stackOffsetPos;
-        top = y + stackOffsetPos;
-      } else {
-        top = stackOffsetNeg;
-        bottom = y + stackOffsetNeg;
-      }
-        
-      barOffset = centered ? barWidth/2 : 0;
-      left = x - barOffset;
-      right = x + barWidth - barOffset;
+
+      // edge values
+      bisection = centered ? barWidth/2 : 0;
+      top       = yScale(y + stackOffset);
+      bottom    = yScale(stackOffset);
+      left      = xScale(x - bisection);
+      right     = xScale(x + barWidth - bisection);
+      width     = right - left;
+      height    = bottom - top;
 
       /*
        * TODO Skipping...
@@ -114,25 +104,17 @@ Flotr.addType('bars', {
       if (top     > ya.max) top     = ya.max;
       */
       
-      // Cache d2p values
-      xaLeft   = xScale(left);
-      xaRight  = xScale(right);
-      yaTop    = yScale(top);
-      yaBottom = yScale(bottom);
-      width    = xaRight - xaLeft;
-      height   = yaBottom - yaTop;
-
-      if (options.fill) context.fillRect(xaLeft, yaTop, width, height);
+      if (options.fill) context.fillRect(left, top, width, height);
 
       if (shadowSize) {
         context.save();
         context.fillStyle = 'rgba(0,0,0,0.05)';
-        context.fillRect(xaLeft + shadowSize, yaTop + shadowSize, width, height);
+        context.fillRect(left + shadowSize, top + shadowSize, width, height);
         context.restore();
       }
 
       if (options.lineWidth != 0) {
-        context.strokeRect(xaLeft, yaTop, width, height);
+        context.strokeRect(left, top, width, height);
       }
     }
   },
