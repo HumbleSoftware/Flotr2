@@ -64,7 +64,7 @@ function basic (container) {
 (function () {
 
 Flotr.ExampleList.add({
-  key : 'basic-axi',
+  key : 'basic-axis',
   name : 'Basic Axis',
   callback : basic_axis
 });
@@ -142,7 +142,8 @@ Flotr.ExampleList.add({
   key : 'basic-bars-horizontal',
   name : 'Horizontal Bars',
   args : [true],
-  callback : basic_bars
+  callback : basic_bars,
+  tolerance : 5
 });
 
 function basic_bars (container, horizontal) {
@@ -209,7 +210,8 @@ Flotr.ExampleList.add({
   key : 'basic-stacked-horizontal',
   name : 'Stacked Horizontal Bars',
   args : [true],
-  callback : bars_stacked
+  callback : bars_stacked,
+  tolerance : 5
 });
 
 function bars_stacked (container, horizontal) {
