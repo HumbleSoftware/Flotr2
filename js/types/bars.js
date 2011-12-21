@@ -8,7 +8,7 @@ Flotr.addType('bars', {
     fill: true,            // => true to fill the area from the line to the x axis, false for (transparent) no fill
     fillColor: null,       // => fill color
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
-    horizontal: false,     // => horizontal bars (x and y inverted) @todo: needs fix
+    horizontal: false,     // => horizontal bars (x and y inverted)
     stacked: false,        // => stacked bar charts
     centered: true         // => center the bars to their x axis value
   },
@@ -94,7 +94,6 @@ Flotr.addType('bars', {
         }
       }
       
-      // @todo: fix horizontal bars support
       // Horizontal bars
       barOffset = centered ? barWidth/2 : 0;
       
