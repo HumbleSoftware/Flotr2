@@ -442,7 +442,12 @@ Graph.prototype = {
       this[graphType] = _.clone(handler);
       _.each(handler, function(fn, name){
         if (_.isFunction(fn))
-          if (name === 'draw' || name === 'plot') return;
+          var skipped = [
+            'draw',
+            'plot',
+            'getEmptyStack'
+          ];
+          if (_.contains(skipped, name)) return;
           this[graphType][name] = _.bind(fn, this);
       }, this);
     }, this);
