@@ -445,7 +445,10 @@ Graph.prototype = {
           var skipped = [
             'draw',
             'plot',
-            'getEmptyStack'
+            'getEmptyStack',
+            'extendXRange',
+            'extendYRange',
+            '_extendRange'
           ];
           if (_.contains(skipped, name)) return;
           this[graphType][name] = _.bind(fn, this);

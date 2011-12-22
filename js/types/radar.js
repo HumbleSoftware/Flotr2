@@ -56,6 +56,6 @@ Flotr.addType('radar', {
     context.stroke();
   },
   extendYRange : function (axis, data) {
-    this.radar.max = Math.max(axis.max, this.max || -Number.MAX_VALUE);
+    this.max = Math.max(axis.max, this.max || -Number.MAX_VALUE);
   }
 });

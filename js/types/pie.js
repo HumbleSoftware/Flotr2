@@ -254,7 +254,7 @@ Flotr.addType('pie', {
     );
   },
   extendYRange : function (axis, data) {
-    this.pie.total = (this.pie.total || 0) + data[0][1];
+    this.total = (this.total || 0) + data[0][1];
   }
 });
 })();

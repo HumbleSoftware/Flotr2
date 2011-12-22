@@ -114,11 +114,11 @@ Flotr.addType('bars', {
   },
 
   extendXRange : function (axis, data, options, bars) {
-    this.bars._extendRange(axis, data, options, bars);
+    this._extendRange(axis, data, options, bars);
   },
 
   extendYRange : function (axis, data, options, bars) {
-    this.bars._extendRange(axis, data, options, bars);
+    this._extendRange(axis, data, options, bars);
   },
   _extendRange: function (axis, data, options, bars) {
 
