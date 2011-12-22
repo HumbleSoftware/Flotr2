@@ -129,13 +129,32 @@ Flotr.addType('lines', {
     context.closePath();
   },
 
+  // Perform any pre-render precalculations (this should be run on data first)
+  // - Pie chart total for calculating measures
+  // - Stacks for lines and bars
+  // precalculate : function () {
+  // }
+  //
+  //
+  // Get any bounds after pre calculation (axis can fetch this if does not have explicit min/max)
+  // getBounds : function () {
+  // }
+  // getMin : function () {
+  // }
+  // getMax : function () {
+  // }
+  //
+  //
+  // Padding around rendered elements
+  // getPadding : function () {
+  // }
+
   extendYRange : function (axis, data, options, lines) {
 
-    var
-      o = axis.options;
+    var o = axis.options;
 
-    if (options.stacked
-      && ((!o.max && o.max !== 0) || (!o.min && o.min !== 0))) {
+    // If stacked and auto-min
+    if (options.stacked && ((!o.max && o.max !== 0) || (!o.min && o.min !== 0))) {
 
       var
         newmax = axis.max,
