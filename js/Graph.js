@@ -236,42 +236,8 @@ Graph.prototype = {
   drawSeries: function(series){
 
     function drawChart (series, typeKey) {
-
-      var
-        type = series[typeKey],
-        graphType = this[typeKey],
-        options = {
-          context     : this.ctx,
-          width       : this.plotWidth,
-          height      : this.plotHeight,
-          offsetLeft  : this.plotOffset.left,
-          offsetTop   : this.plotOffset.top,
-          fontSize    : this.options.fontSize,
-          fontColor   : this.options.fontColor,
-          textEnabled : this.textEnabled,
-          htmlText    : this.options.HtmlText,
-          data        : series.data,
-          color       : series.color,
-          shadowSize  : series.shadowSize,
-          xScale      : _.bind(series.xaxis.d2p, series.xaxis),
-          yScale      : _.bind(series.yaxis.d2p, series.yaxis)
-        };
-
-      options = flotr.merge(type, options);
-
-      // Fill
-      options.fillStyle = this.processColor(
-        type.fillColor || series.color,
-        {opacity: type.fillOpacity}
-      );
-
-      // Stack
-      if (type.stacked) {
-        options.stack = (type.horizontal ? series.yaxis : series.xaxis).getStack(typeKey);
-        if (_.isEmpty(options.stack)) flotr.merge(graphType.getEmptyStack(), options.stack);
-      }
-
-      graphType.draw(options);
+      var options = this.getOptions(series, typeKey);
+      this[typeKey].draw(options);
     }
 
     var drawn = false;
@@ -285,6 +251,44 @@ Graph.prototype = {
     }, this);
 
     if (!drawn) drawChart.call(this, series, this.options.defaultType);
+  },
+
+  getOptions : function (series, typeKey) {
+    var
+      type = series[typeKey],
+      graphType = this[typeKey],
+      options = {
+        context     : this.ctx,
+        width       : this.plotWidth,
+        height      : this.plotHeight,
+        offsetLeft  : this.plotOffset.left,
+        offsetTop   : this.plotOffset.top,
+        fontSize    : this.options.fontSize,
+        fontColor   : this.options.fontColor,
+        textEnabled : this.textEnabled,
+        htmlText    : this.options.HtmlText,
+        data        : series.data,
+        color       : series.color,
+        shadowSize  : series.shadowSize,
+        xScale      : _.bind(series.xaxis.d2p, series.xaxis),
+        yScale      : _.bind(series.yaxis.d2p, series.yaxis)
+      };
+
+    options = flotr.merge(type, options);
+
+    // Fill
+    options.fillStyle = this.processColor(
+      type.fillColor || series.color,
+      {opacity: type.fillOpacity}
+    );
+
+    // Stack
+    if (type.stacked) {
+      options.stack = (type.horizontal ? series.yaxis : series.xaxis).getStack(typeKey);
+      if (_.isEmpty(options.stack)) flotr.merge(graphType.getEmptyStack(), options.stack);
+    }
+
+    return options;
   },
   /**
    * Calculates the coordinates from a mouse event object.
