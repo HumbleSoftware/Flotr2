@@ -67,16 +67,6 @@ Graph.prototype = {
     this._handles.push(arguments);
     return this;
   },
-
-  /**
-   * Get graph type for a series
-   * @param {Object} series - the series
-   * @return {Object} the graph type
-   */
-  getType: function(series){
-    var t = (series && series.type) ? series.type : this.options.defaultType;
-    return this[t];
-  },
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
