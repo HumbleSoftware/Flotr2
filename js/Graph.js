@@ -103,18 +103,28 @@ Graph.prototype = {
       axis.calculateRange();
     });
 
-    var types = _.keys(flotr.graphTypes);
+    var
+      types = _.keys(flotr.graphTypes),
+      drawn = false;
 
     _.each(this.series, function (series) {
       if (series.hide) return;
       _.each(types, function (type) {
         if (series[type] && series[type].show) {
-          if (this[type].extendRange) this[type].extendRange(series, series.data, series[type], this[type]);
-          if (this[type].extendYRange) this[type].extendYRange(series.yaxis, series.data, series[type], this[type]);
-          if (this[type].extendXRange) this[type].extendXRange(series.xaxis, series.data, series[type], this[type]);
+          this.extendRange(type, series);
+          drawn = true;
         }
       }, this);
+      if (!drawn) {
+        this.extendRange(this.options.defaultType, series);
+      }
     }, this);
+  },
+
+  extendRange : function (type, series) {
+    if (this[type].extendRange) this[type].extendRange(series, series.data, series[type], this[type]);
+    if (this[type].extendYRange) this[type].extendYRange(series.yaxis, series.data, series[type], this[type]);
+    if (this[type].extendXRange) this[type].extendXRange(series.xaxis, series.data, series[type], this[type]);
   },
 
   /**
