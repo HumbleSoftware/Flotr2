@@ -58,16 +58,14 @@ Flotr.addType('pie', {
       alignRight    = (Math.cos(bisection) < 0),
       alignTop      = (Math.sin(bisection) > 0),
       explodeCoeff  = explode + radius + 4,
-      style, center,
+      style,
       x, y,
       distX, distY;
     
-    center = {
-      x : options.offsetLeft + options.width / 2,
-      y : options.offsetTop + height / 2
-    };
-
     context.save();
+
+    context.translate(options.offsetLeft, options.offsetTop);
+    context.translate(options.width / 2, options.height / 2);
 
     context.scale(1, vScale);
 
@@ -75,8 +73,8 @@ Flotr.addType('pie', {
     // TODO wtf is this for?
     if (startAngle == endAngle) return;
 
-    x = center.x + Math.cos(bisection) * explode;
-    y = center.y + Math.sin(bisection) * explode;
+    x = Math.cos(bisection) * explode;
+    y = Math.sin(bisection) * explode;
 
     // Shadows
     if (shadowSize > 0) {
@@ -96,8 +94,8 @@ Flotr.addType('pie', {
     context.strokeStyle = color;
     context.stroke();
 
-    distX = center.x + Math.cos(bisection) * explodeCoeff;
-    distY = center.y + Math.sin(bisection) * explodeCoeff;
+    distX = Math.cos(bisection) * explodeCoeff;
+    distY = Math.sin(bisection) * explodeCoeff;
     style = {
       size : options.fontSize * 1.2,
       color : options.fontColor,
