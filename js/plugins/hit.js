@@ -38,6 +38,7 @@ Flotr.addPlugin('hit', {
           options.fill = !s.mouse.fillColor;
           options.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
           options.color = s.mouse.lineColor;
+          options.context = this.octx;
 
           if (args) options.args = args;
           this[type][method].call(this[type], options);
