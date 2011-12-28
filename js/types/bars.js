@@ -208,13 +208,18 @@ Flotr.addType('bars', {
       left        = x - width/2;
 
     context.save();
+    context.strokeStyle = options.color;
+    context.lineWidth = Math.min(options.lineWidth, options.barWidth);
     context.translate(options.offsetLeft, options.offsetTop);
-    context.beginPath();
     context.strokeRect(left, top, width, height);
-    //if (s.mouse.fillColor) context.fill();
-    console.log(left, top, width, height);
+
+    if (options.fill) {
+      context.fillStyle = options.fillStyle;
+      console.log(context.fillStyle);
+      context.fillRect(left, top, width, height);
+    }
+
     context.restore();
-    return;
   },
 
   clearHit: function() {

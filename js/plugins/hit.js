@@ -34,6 +34,11 @@ Flotr.addPlugin('hit', {
       _.each(_.keys(flotr.graphTypes), function (type) {
         if (s[type] && s[type].show && this[type][method]) {
           options = this.getOptions(s, type);
+
+          options.fill = !s.mouse.fillColor;
+          options.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
+          options.color = s.mouse.lineColor;
+
           if (args) options.args = args;
           this[type][method].call(this[type], options);
           success = true;
