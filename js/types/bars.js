@@ -155,50 +155,26 @@ Flotr.addType('bars', {
     context.restore();
   },
 
-  clearHit: function() {
-    var prevHit = this.prevHit,
-      plotOffset = this.plotOffset,
-      s = prevHit.series,
-      xa = prevHit.xaxis,
-      ya = prevHit.yaxis,
-      lw = s.bars.lineWidth,
-      bw = s.bars.barWidth;
-        
-    if(!s.bars.horizontal){ // vertical bars (default)
-      var lastY = ya.d2p(prevHit.y >= 0 ? prevHit.y : 0);
-      if(s.bars.centered) {
-        this.octx.clearRect(
-            xa.d2p(prevHit.x - bw/2) + plotOffset.left - lw, 
-            lastY + plotOffset.top - lw, 
-            xa.d2p(bw + xa.min) + lw * 2, 
-            ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + lw * 2
-        );
-      } else {
-        this.octx.clearRect(
-            xa.d2p(prevHit.x) + plotOffset.left - lw, 
-            lastY + plotOffset.top - lw, 
-            xa.d2p(bw + xa.min) + lw * 2, 
-            ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + lw * 2
-        ); 
-      }
-    } else { // horizontal bars
-      var lastX = xa.d2p(prevHit.x >= 0 ? prevHit.x : 0);
-      if(s.bars.centered) {
-        this.octx.clearRect(
-            lastX + plotOffset.left + lw, 
-            ya.d2p(prevHit.y + bw/2) + plotOffset.top - lw, 
-            xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - lw*2,
-            ya.d2p(bw + ya.min) + lw * 2
-        );
-      } else {
-        this.octx.clearRect(
-            lastX + plotOffset.left + lw, 
-            ya.d2p(prevHit.y + bw) + plotOffset.top - lw, 
-            xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - lw*2,
-            ya.d2p(bw + ya.min) + lw * 2
-        );
-      }
-    }
+  clearHit: function (options) {
+    var
+      context     = options.context,
+      xScale      = options.xScale,
+      yScale      = options.yScale,
+      barWidth    = options.barWidth,
+      horizontal  = options.horizontal,
+      args        = options.args,
+      x           = xScale(args.x),
+      y           = yScale(args.y),
+      width       = xScale(barWidth)/2,
+      height      = Math.abs(y - yScale(0)),
+      top         = y,
+      left        = x - width/2,
+      lineWidth   = 2 * Math.min(options.lineWidth, width);
+
+    context.save();
+    context.translate(options.offsetLeft, options.offsetTop);
+    context.clearRect(left - lineWidth, top - lineWidth, width + 2 * lineWidth, height + 2 * lineWidth);
+    context.restore();
   },
 
   extendXRange : function (axis, data, options, bars) {
