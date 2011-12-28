@@ -42,5 +42,6 @@ spec_files:
   - "Flotr.js"
   - "Color.js"
   - "Graph.js"
+  - "Chart.js"
 src_dir: "."
 spec_dir: "spec/"
