@@ -29,14 +29,12 @@ Flotr.addPlugin('hit', {
 
     function e(s) {
       _.each(_.keys(flotr.graphTypes), function (type) {
-        if (s[type] && s[type].show) {
-          try {
+        if (s[type] && s[type].show && this[type][method]) {
             if (!_.isUndefined(args))
                 this[type][method].apply(this[type], args);
             else
                 this[type][method].apply(this[type]);
             success = true;
-          } catch (e) {}
         }
       }, this);
     }
