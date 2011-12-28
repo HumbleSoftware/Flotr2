@@ -128,70 +128,6 @@ Flotr.addType('bars', {
     };
   },
 
-  extendXRange : function (axis, data, options, bars) {
-    this._extendRange(axis, data, options, bars);
-  },
-
-  extendYRange : function (axis, data, options, bars) {
-    this._extendRange(axis, data, options, bars);
-  },
-  _extendRange: function (axis, data, options, bars) {
-
-    var
-      max = axis.options.max;
-
-    if (_.isNumber(max) || _.isString(max)) return; 
-
-    var
-      newmin = axis.min,
-      newmax = axis.max,
-      orientation = axis.orientation,
-      positiveSums = bars.positiveSums || {},
-      negativeSums = bars.negativeSums || {},
-      value, datum, index, j;
-
-    // Sides of bars
-    if ((orientation == 1 && !options.horizontal) || (orientation == -1 && options.horizontal)) {
-      if (options.centered) {
-        newmax = Math.max(axis.datamax + 0.5, newmax);
-        newmin = Math.min(axis.datamin - 0.5, newmin);
-      }
-    }
-
-    // End of bars
-    if ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal)) {
-      if (options.barWidth + axis.datamax >= newmax)
-        newmax = axis.max + (options.centered ? options.barWidth/2 : options.barWidth);
-    }
-
-    if (options.stacked && 
-        ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal))){
-
-      for (j = data.length; j--;) {
-        value = data[j][(orientation == 1 ? 1 : 0)]+'';
-        datum = data[j][(orientation == 1 ? 0 : 1)];
-
-        // Positive
-        if (datum > 0) {
-          positiveSums[value] = (positiveSums[value] || 0) + datum;
-          newmax = Math.max(newmax, positiveSums[value]);
-        }
-
-        // Negative
-        else {
-          negativeSums[value] = (negativeSums[value] || 0) + datum;
-          newmin = Math.min(newmin, negativeSums[value]);
-        }
-      }
-    }
-
-    bars.negativeSums = negativeSums;
-    bars.positiveSums = positiveSums;
-
-    axis.max = newmax;
-    axis.min = newmin;
-  },
-
   drawHit : function (options) {
     var
       context     = options.context,
@@ -263,5 +199,70 @@ Flotr.addType('bars', {
         );
       }
     }
+  },
+
+  extendXRange : function (axis, data, options, bars) {
+    this._extendRange(axis, data, options, bars);
+  },
+
+  extendYRange : function (axis, data, options, bars) {
+    this._extendRange(axis, data, options, bars);
+  },
+  _extendRange: function (axis, data, options, bars) {
+
+    var
+      max = axis.options.max;
+
+    if (_.isNumber(max) || _.isString(max)) return; 
+
+    var
+      newmin = axis.min,
+      newmax = axis.max,
+      orientation = axis.orientation,
+      positiveSums = bars.positiveSums || {},
+      negativeSums = bars.negativeSums || {},
+      value, datum, index, j;
+
+    // Sides of bars
+    if ((orientation == 1 && !options.horizontal) || (orientation == -1 && options.horizontal)) {
+      if (options.centered) {
+        newmax = Math.max(axis.datamax + 0.5, newmax);
+        newmin = Math.min(axis.datamin - 0.5, newmin);
+      }
+    }
+
+    // End of bars
+    if ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal)) {
+      if (options.barWidth + axis.datamax >= newmax)
+        newmax = axis.max + (options.centered ? options.barWidth/2 : options.barWidth);
+    }
+
+    if (options.stacked && 
+        ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal))){
+
+      for (j = data.length; j--;) {
+        value = data[j][(orientation == 1 ? 1 : 0)]+'';
+        datum = data[j][(orientation == 1 ? 0 : 1)];
+
+        // Positive
+        if (datum > 0) {
+          positiveSums[value] = (positiveSums[value] || 0) + datum;
+          newmax = Math.max(newmax, positiveSums[value]);
+        }
+
+        // Negative
+        else {
+          negativeSums[value] = (negativeSums[value] || 0) + datum;
+          newmin = Math.min(newmin, negativeSums[value]);
+        }
+      }
+    }
+
+    bars.negativeSums = negativeSums;
+    bars.positiveSums = positiveSums;
+
+    axis.max = newmax;
+    axis.min = newmin;
   }
+
 });
