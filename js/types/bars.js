@@ -223,55 +223,10 @@ Flotr.addType('bars', {
     */
 
     context.strokeRect(left, top, width, height);
+    //if (s.mouse.fillColor) context.fill();
     console.log(left, top, width, height);
     context.restore();
     return;
-
-    if(!s.bars.horizontal){ //vertical bars (default)
-      ly = ya.d2p(ya.min<0? 0 : ya.min); //lower vertex y value (in points)
-      
-      if(s.bars.centered){
-        lx = xa.d2p(n.x-(bw/2));
-        rx = xa.d2p(n.x+(bw/2));
-      
-        context.moveTo(lx, ly);
-        context.lineTo(lx, y);
-        context.lineTo(rx, y);
-        context.lineTo(rx, ly);
-      } else {
-        rx = xa.d2p(n.x+bw); //right vertex x value (in points)
-        
-        context.moveTo(x, ly);
-        context.lineTo(x, y);
-        context.lineTo(rx, y);
-        context.lineTo(rx, ly);
-      }
-    } else { //horizontal bars
-      lx = xa.d2p(xa.min<0? 0 : xa.min); //left vertex y value (in points)
-        
-      if(s.bars.centered){
-        ly = ya.d2p(n.y-(bw/2));
-        uy = ya.d2p(n.y+(bw/2));
-                     
-        context.moveTo(lx, ly);
-        context.lineTo(x, ly);
-        context.lineTo(x, uy);
-        context.lineTo(lx, uy);
-      } else {
-        uy = ya.d2p(n.y+bw); //upper vertex y value (in points)
-      
-        context.moveTo(lx, y);
-        context.lineTo(x, y);
-        context.lineTo(x, uy);
-        context.lineTo(lx, uy);
-      }
-
-      if(s.mouse.fillColor) context.fill();
-    }
-
-    context.stroke();
-    context.closePath();
-    context.restore();
   },
 
   clearHit: function() {
