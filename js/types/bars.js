@@ -211,13 +211,11 @@ Flotr.addType('bars', {
     context.strokeStyle = options.color;
     context.lineWidth = Math.min(options.lineWidth, options.barWidth);
     context.translate(options.offsetLeft, options.offsetTop);
-    context.strokeRect(left, top, width, height);
-
     if (options.fill) {
       context.fillStyle = options.fillStyle;
       context.fillRect(left, top, width, height);
     }
-
+    context.strokeRect(left, top, width, height);
     context.restore();
   },
 
