@@ -82,7 +82,7 @@ Flotr.addPlugin('hit', {
    */
   clearHit: function(){
     var prev = this.prevHit;
-    if(prev && !this.hit.executeOnType(prev.series, 'clearHit')){
+    if(prev && !this.hit.executeOnType(prev.series, 'clearHit', this.prevHit)){
       var plotOffset = this.plotOffset,
         s = prev.series,
         lw = (s.bars ? s.bars.lineWidth : 1),
