@@ -215,7 +215,6 @@ Flotr.addType('bars', {
 
     if (options.fill) {
       context.fillStyle = options.fillStyle;
-      console.log(context.fillStyle);
       context.fillRect(left, top, width, height);
     }
 
