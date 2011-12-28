@@ -210,18 +210,6 @@ Flotr.addType('bars', {
     context.save();
     context.translate(options.offsetLeft, options.offsetTop);
     context.beginPath();
-    
-    /*
-     * TODO wtf is this?
-    if (s.mouse.trackAll) {
-      context.moveTo(xa.d2p(n.x), ya.d2p(0));
-      context.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
-    }
-    else {
-
-    }
-    */
-
     context.strokeRect(left, top, width, height);
     //if (s.mouse.fillColor) context.fill();
     console.log(left, top, width, height);
