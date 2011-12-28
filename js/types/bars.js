@@ -177,72 +177,86 @@ Flotr.addType('bars', {
     axis.min = newmin;
   },
 
-  drawHit: function (n) {
-    var octx = this.octx,
-      s = n.series,
-      xa = n.xaxis,
-      ya = n.yaxis,
-      lx, rx, ly, uy;
+  drawHit : function (options) {
+    var
+      context     = options.context,
+      xScale      = options.xScale,
+      yScale      = options.yScale,
+      barWidth    = options.barWidth,
+      horizontal  = options.horizontal,
+      args        = options.args,
+      x           = xScale(args.x),
+      y           = yScale(args.y),
+      width       = xScale(barWidth),
+      height      = Math.abs(y - yScale(0)),
+      top         = y,
+      left        = x - width / 2;
 
-    octx.save();
-    octx.translate(this.plotOffset.left, this.plotOffset.top);
-    octx.beginPath();
+    context.save();
+    context.translate(options.offsetLeft, options.offsetTop);
+    context.beginPath();
     
+    /*
+     * TODO wtf is this?
     if (s.mouse.trackAll) {
-      octx.moveTo(xa.d2p(n.x), ya.d2p(0));
-      octx.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
+      context.moveTo(xa.d2p(n.x), ya.d2p(0));
+      context.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
     }
     else {
-      var bw = s.bars.barWidth,
-        y = ya.d2p(n.y), 
-        x = xa.d2p(n.x);
+
+    }
+    */
+
+    context.strokeRect(left, top, width, height);
+    console.log(left, top, width, height);
+    context.restore();
+    return;
+
+    if(!s.bars.horizontal){ //vertical bars (default)
+      ly = ya.d2p(ya.min<0? 0 : ya.min); //lower vertex y value (in points)
+      
+      if(s.bars.centered){
+        lx = xa.d2p(n.x-(bw/2));
+        rx = xa.d2p(n.x+(bw/2));
+      
+        context.moveTo(lx, ly);
+        context.lineTo(lx, y);
+        context.lineTo(rx, y);
+        context.lineTo(rx, ly);
+      } else {
+        rx = xa.d2p(n.x+bw); //right vertex x value (in points)
         
-      if(!s.bars.horizontal){ //vertical bars (default)
-        ly = ya.d2p(ya.min<0? 0 : ya.min); //lower vertex y value (in points)
+        context.moveTo(x, ly);
+        context.lineTo(x, y);
+        context.lineTo(rx, y);
+        context.lineTo(rx, ly);
+      }
+    } else { //horizontal bars
+      lx = xa.d2p(xa.min<0? 0 : xa.min); //left vertex y value (in points)
         
-        if(s.bars.centered){
-          lx = xa.d2p(n.x-(bw/2));
-          rx = xa.d2p(n.x+(bw/2));
-        
-          octx.moveTo(lx, ly);
-          octx.lineTo(lx, y);
-          octx.lineTo(rx, y);
-          octx.lineTo(rx, ly);
-        } else {
-          rx = xa.d2p(n.x+bw); //right vertex x value (in points)
-          
-          octx.moveTo(x, ly);
-          octx.lineTo(x, y);
-          octx.lineTo(rx, y);
-          octx.lineTo(rx, ly);
-        }
-      } else { //horizontal bars
-        lx = xa.d2p(xa.min<0? 0 : xa.min); //left vertex y value (in points)
-          
-        if(s.bars.centered){
-          ly = ya.d2p(n.y-(bw/2));
-          uy = ya.d2p(n.y+(bw/2));
-                       
-          octx.moveTo(lx, ly);
-          octx.lineTo(x, ly);
-          octx.lineTo(x, uy);
-          octx.lineTo(lx, uy);
-        } else {
-          uy = ya.d2p(n.y+bw); //upper vertex y value (in points)
-        
-          octx.moveTo(lx, y);
-          octx.lineTo(x, y);
-          octx.lineTo(x, uy);
-          octx.lineTo(lx, uy);
-        }
+      if(s.bars.centered){
+        ly = ya.d2p(n.y-(bw/2));
+        uy = ya.d2p(n.y+(bw/2));
+                     
+        context.moveTo(lx, ly);
+        context.lineTo(x, ly);
+        context.lineTo(x, uy);
+        context.lineTo(lx, uy);
+      } else {
+        uy = ya.d2p(n.y+bw); //upper vertex y value (in points)
+      
+        context.moveTo(lx, y);
+        context.lineTo(x, y);
+        context.lineTo(x, uy);
+        context.lineTo(lx, uy);
       }
 
-      if(s.mouse.fillColor) octx.fill();
+      if(s.mouse.fillColor) context.fill();
     }
 
-    octx.stroke();
-    octx.closePath();
-    octx.restore();
+    context.stroke();
+    context.closePath();
+    context.restore();
   },
 
   clearHit: function() {
