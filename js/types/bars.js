@@ -113,6 +113,21 @@ Flotr.addType('bars', {
     }
   },
 
+  getBarGeometry : function (x, y, options) {
+    var
+      barWidth        = options.barWidth,
+      centered        = options.centered,
+      bisection       = centered ? barWidth / 2 : 0,
+      x, y, width, height;
+
+    return {
+      top       : yScale(y + stackOffset),
+      bottom    : yScale(stackOffset),
+      left      : xScale(x - bisection),
+      right     : xScale(x + barWidth - bisection)
+    };
+  },
+
   extendXRange : function (axis, data, options, bars) {
     this._extendRange(axis, data, options, bars);
   },
