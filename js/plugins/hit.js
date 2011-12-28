@@ -24,17 +24,19 @@ Flotr.addPlugin('hit', {
    * @return executed successfully or failed.
    */
   executeOnType: function(s, method, args){
-    var success = false;
+    var
+      success = false,
+      options;
+
     if (!_.isArray(s)) s = [s];
 
     function e(s) {
       _.each(_.keys(flotr.graphTypes), function (type) {
         if (s[type] && s[type].show && this[type][method]) {
-            if (!_.isUndefined(args))
-                this[type][method].apply(this[type], args);
-            else
-                this[type][method].apply(this[type]);
-            success = true;
+          options = this.getOptions(s, type);
+          if (args) options.args = args;
+          this[type][method].call(this[type], options);
+          success = true;
         }
       }, this);
     }
@@ -55,7 +57,7 @@ Flotr.addPlugin('hit', {
       octx.strokeStyle = s.mouse.lineColor;
       octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
 
-      if (!this.hit.executeOnType(s, 'drawHit', [n])) {
+      if (!this.hit.executeOnType(s, 'drawHit', n)) {
         var xa = n.xaxis,
           ya = n.yaxis;
 
