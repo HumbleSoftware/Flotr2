@@ -202,10 +202,10 @@ Flotr.addType('bars', {
       args        = options.args,
       x           = xScale(args.x),
       y           = yScale(args.y),
-      width       = xScale(barWidth),
+      width       = xScale(barWidth)/2,
       height      = Math.abs(y - yScale(0)),
       top         = y,
-      left        = x - width / 2;
+      left        = x - width/2;
 
     context.save();
     context.translate(options.offsetLeft, options.offsetTop);
