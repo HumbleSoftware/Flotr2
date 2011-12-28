@@ -145,13 +145,19 @@ Flotr.addType('bars', {
 
     context.save();
     context.strokeStyle = options.color;
-    context.lineWidth = Math.min(options.lineWidth, options.barWidth);
+    context.lineWidth = Math.min(options.lineWidth, width);
     context.translate(options.offsetLeft, options.offsetTop);
+    context.beginPath();
+    context.moveTo(left, top + height);
+    context.lineTo(left, top);
+    context.lineTo(left + width, top);
+    context.lineTo(left + width, top + height);
     if (options.fill) {
       context.fillStyle = options.fillStyle;
-      context.fillRect(left, top, width, height);
+      context.fill();
     }
-    context.strokeRect(left, top, width, height);
+    context.stroke();
+    context.closePath();
     context.restore();
   },
 
