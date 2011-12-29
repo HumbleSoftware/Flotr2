@@ -80,7 +80,7 @@ Flotr.addType('bubbles', {
 
     var
       context = options.context,
-      geometry = this.getGeometry(options.data[options.args.index], options);
+      geometry = this.getGeometry(options.data[options.args.index], options),
       offset = geometry.z + options.lineWidth;
 
     context.save();
