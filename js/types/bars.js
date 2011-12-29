@@ -131,17 +131,12 @@ Flotr.addType('bars', {
   drawHit : function (options) {
     var
       context     = options.context,
-      xScale      = options.xScale,
-      yScale      = options.yScale,
-      barWidth    = options.barWidth,
-      horizontal  = options.horizontal,
       args        = options.args,
-      x           = xScale(args.x),
-      y           = yScale(args.y),
-      width       = xScale(barWidth)/2,
-      height      = Math.abs(y - yScale(0)),
-      top         = y,
-      left        = x - width/2;
+      geometry    = this.getBarGeometry(args.x, args.y, options),
+      left        = geometry.left,
+      top         = geometry.top,
+      width       = geometry.width,
+      height      = geometry.height;
 
     context.save();
     context.strokeStyle = options.color;
