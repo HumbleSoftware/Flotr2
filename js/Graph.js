@@ -453,7 +453,8 @@ Graph.prototype = {
             'extendXRange',
             'extendYRange',
             '_extendRange',
-            'drawHit'
+            'drawHit',
+            'clearHit'
           ];
           if (_.contains(skipped, name)) return;
           this[graphType][name] = _.bind(fn, this);
