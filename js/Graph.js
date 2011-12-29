@@ -452,7 +452,8 @@ Graph.prototype = {
             'getEmptyStack',
             'extendXRange',
             'extendYRange',
-            '_extendRange'
+            '_extendRange',
+            'drawHit'
           ];
           if (_.contains(skipped, name)) return;
           this[graphType][name] = _.bind(fn, this);
