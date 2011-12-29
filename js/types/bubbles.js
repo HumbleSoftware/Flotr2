@@ -74,23 +74,26 @@ Flotr.addType('bubbles', {
     context.closePath();
     context.restore();
   },
-  clearHit: function(){
-    var prevHit = this.prevHit,
-        plotOffset = this.plotOffset,
-        s = prevHit.series,
-        lw = s.bars.lineWidth,
-        xa = prevHit.xaxis,
-        ya = prevHit.yaxis,
-        z = s.data[0][2],
-        r = this.options.bubbles.baseRadius,
-        offset = z*r+lw;
+  clearHit : function (options) {
 
-    this.context.clearRect(
-      plotOffset.left + xa.d2p(prevHit.x) - offset,
-      plotOffset.top  + ya.d2p(prevHit.y) - offset,
-      offset*2,
-      offset*2
+    var
+      data    = options.data,
+      args    = options.args,
+      context = options.context,
+      x       = options.xScale(args.x),
+      y       = options.yScale(args.y),
+      z       = data[args.index][2] * options.baseRadius,
+      offset  = z + options.lineWidth;
+
+    context.save();
+    context.translate(options.offsetLeft, options.offsetTop);
+    context.clearRect(
+      x - offset, 
+      y - offset,
+      2 * offset,
+      2 * offset
     );
+    context.restore();
   }
 
 /*,
