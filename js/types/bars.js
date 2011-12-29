@@ -169,6 +169,7 @@ Flotr.addType('bars', {
 
     context.save();
     context.translate(options.offsetLeft, options.offsetTop);
+    this.translate(context, options.horizontal);
     context.clearRect(
       geometry.left - lineWidth,
       geometry.top - lineWidth,
