@@ -163,22 +163,18 @@ Flotr.addType('bars', {
   clearHit: function (options) {
     var
       context     = options.context,
-      xScale      = options.xScale,
-      yScale      = options.yScale,
-      barWidth    = options.barWidth,
-      horizontal  = options.horizontal,
       args        = options.args,
-      x           = xScale(args.x),
-      y           = yScale(args.y),
-      width       = xScale(barWidth)/2,
-      height      = Math.abs(y - yScale(0)),
-      top         = y,
-      left        = x - width/2,
-      lineWidth   = 2 * Math.min(options.lineWidth, width);
+      geometry    = this.getBarGeometry(args.x, args.y, options),
+      lineWidth   = 2 * Math.min(options.lineWidth, geometry.width);
 
     context.save();
     context.translate(options.offsetLeft, options.offsetTop);
-    context.clearRect(left - lineWidth, top - lineWidth, width + 2 * lineWidth, height + 2 * lineWidth);
+    context.clearRect(
+      geometry.left - lineWidth,
+      geometry.top - lineWidth,
+      geometry.width + 2 * lineWidth,
+      geometry.height + 2 * lineWidth
+    );
     context.restore();
   },
 
