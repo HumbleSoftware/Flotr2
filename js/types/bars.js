@@ -65,9 +65,6 @@ Flotr.addType('bars', {
       width   = geometry.width;
       height  = geometry.height;
 
-      // TODO Skipping...
-      // if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max) continue;
-
       if (options.fill) context.fillRect(left, top, width, height);
       if (shadowSize) {
         context.save();
@@ -110,6 +107,9 @@ Flotr.addType('bars', {
 
     // TODO for test passing... probably looks better without this
     if (bottom < 0) bottom = 0;
+
+    // TODO Skipping...
+    // if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max) continue;
 
     return (x === null || y === null) ? null : {
       x         : xValue,
