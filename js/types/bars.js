@@ -142,6 +142,9 @@ Flotr.addType('bars', {
     context.strokeStyle = options.color;
     context.lineWidth = Math.min(options.lineWidth, width);
     context.translate(options.offsetLeft, options.offsetTop);
+    this.translate(context, options.horizontal);
+
+    // Draw highlight
     context.beginPath();
     context.moveTo(left, top + height);
     context.lineTo(left, top);
@@ -153,6 +156,7 @@ Flotr.addType('bars', {
     }
     context.stroke();
     context.closePath();
+
     context.restore();
   },
 
