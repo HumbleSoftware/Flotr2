@@ -35,32 +35,35 @@ Flotr.addType('bubbles', {
     var
       data    = options.data,
       context = options.context,
+      geometry,
       i, x, y, z;
 
     offset = offset || 0;
     
     for (i = 0; i < data.length; ++i){
 
-      x = options.xScale(data[i][0]) + offset,
-      y = options.yScale(data[i][1]) + offset,
-      z = data[i][2] * options.baseRadius;
+      geometry = this.getGeometry(data[i], options);
 
       context.beginPath();
       context.arc(x, y, z, 0, Math.PI*2, true);
+      context.arc(geometry.x + offset, geometry.y + offset, geometry.z, 0, 2 * Math.PI, true);
       context.stroke();
       if (options.fill) context.fill();
       context.closePath();
     }
   },
+  getGeometry : function (point, options) {
+    return {
+      x : options.xScale(point[0]),
+      y : options.yScale(point[1]),
+      z : point[2] * options.baseRadius
+    }
+  },
   drawHit : function (options) {
 
     var
-      data    = options.data,
-      args    = options.args,
       context = options.context,
-      x       = options.xScale(args.x),
-      y       = options.yScale(args.y),
-      z       = data[args.index][2] * options.baseRadius;
+      geometry = this.getGeometry(options.data[options.args.index], options);
 
     context.save();
     context.lineWidth = options.lineWidth;
@@ -68,7 +71,7 @@ Flotr.addType('bubbles', {
     context.strokeStyle = options.color;
     context.translate(options.offsetLeft, options.offsetTop);
     context.beginPath();
-    context.arc(x, y, z, 0, 2 * Math.PI, true);
+    context.arc(geometry.x, geometry.y, geometry.z, 0, 2 * Math.PI, true);
     context.fill();
     context.stroke();
     context.closePath();
@@ -77,19 +80,15 @@ Flotr.addType('bubbles', {
   clearHit : function (options) {
 
     var
-      data    = options.data,
-      args    = options.args,
       context = options.context,
-      x       = options.xScale(args.x),
-      y       = options.yScale(args.y),
-      z       = data[args.index][2] * options.baseRadius,
-      offset  = z + options.lineWidth;
+      geometry = this.getGeometry(options.data[options.args.index], options);
+      offset = geometry.z + options.lineWidth;
 
     context.save();
     context.translate(options.offsetLeft, options.offsetTop);
     context.clearRect(
-      x - offset, 
-      y - offset,
+      geometry.x - offset, 
+      geometry.y - offset,
       2 * offset,
       2 * offset
     );
