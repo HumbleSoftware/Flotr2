@@ -63,42 +63,5 @@ Flotr.addType('points', {
       context.stroke();
       context.closePath();
     }
-  },
-  getHit: function(series, pos) {
-    var xdiff, ydiff, i, d, dist, x, y,
-        o = series.points,
-        data = series.data,
-        sens = series.mouse.sensibility * (o.lineWidth + o.radius),
-        hit = {
-        index: null,
-        series: series,
-        distance: Number.MAX_VALUE,
-        x: null,
-        y: null,
-        precision: 1
-        };
-    
-    for (i = data.length-1; i > -1; --i) {
-      d = data[i];
-      x = series.xaxis.d2p(d[0]);
-      y = series.yaxis.d2p(d[1]);
-      xdiff = x - pos.relX;
-      ydiff = y - pos.relY;
-      dist = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
-      
-      if (dist < sens && dist < hit.distance) {
-        hit = {
-          index: i,
-          series: series,
-          distance: dist,
-          data: d,
-          x: x,
-          y: y,
-          precision: 1
-        };
-      }
-    }
-    
-    return hit;
   }
 });

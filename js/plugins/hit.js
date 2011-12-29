@@ -191,12 +191,7 @@ Flotr.addPlugin('hit', {
         ysens = sens/ya.scale;
         mx = xa.p2d(mouse.relX);
         my = ya.p2d(mouse.relY);
-        
-        //if (s.points) {
-        //  var h = this.points.getHit(s, mouse);
-        //  if (h.index !== undefined) console.log(h);
-        //}
-                
+
         for(var j = 0, xpow, ypow; j < data.length; j++){
           x = data[j][0];
           y = data[j][1];
