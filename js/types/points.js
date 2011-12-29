@@ -100,11 +100,5 @@ Flotr.addType('points', {
     }
     
     return hit;
-  },
-  drawHit: function(series, index) {
-    
-  },
-  clearHit: function(series, index) {
-    
   }
 });

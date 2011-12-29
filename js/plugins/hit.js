@@ -69,7 +69,8 @@ Flotr.addPlugin('hit', {
 
         octx.translate(this.plotOffset.left, this.plotOffset.top);
         octx.beginPath();
-          octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.mouse.radius, 0, 2 * Math.PI, true);
+          // TODO fix this (points) should move to general testable graph mixin
+          octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.points.radius || s.mouse.radius, 0, 2 * Math.PI, true);
           octx.fill();
           octx.stroke();
         octx.closePath();
@@ -84,10 +85,11 @@ Flotr.addPlugin('hit', {
   clearHit: function(){
     var prev = this.prevHit;
     if(prev && !this.hit.executeOnType(prev.series, 'clearHit', this.prevHit)){
+      // TODO fix this (points) should move to general testable graph mixin
       var plotOffset = this.plotOffset,
         s = prev.series,
         lw = (s.bars ? s.bars.lineWidth : 1),
-        offset = s.mouse.radius + lw;
+        offset = (s.points.radius || s.mouse.radius) + lw;
       this.octx.clearRect(
         plotOffset.left + prev.xaxis.d2p(prev.x) - offset,
         plotOffset.top  + prev.yaxis.d2p(prev.y) - offset,
