@@ -45,15 +45,11 @@ Flotr.addType('bars', {
       data            = options.data,
       context         = options.context,
       shadowSize      = options.shadowSize,
-      horizontal      = options.horizontal,
       i, geometry, left, top, width, height;
 
     if (data.length < 1) return;
 
-    if (horizontal) {
-      context.rotate(-Math.PI / 2)
-      context.scale(-1, 1);
-    }
+    this.translate(context, options.horizontal);
 
     for (i = 0; i < data.length; i++) {
 
@@ -75,6 +71,13 @@ Flotr.addType('bars', {
       if (options.lineWidth != 0) {
         context.strokeRect(left, top, width, height);
       }
+    }
+  },
+
+  translate : function (context, horizontal) {
+    if (horizontal) {
+      context.rotate(-Math.PI / 2)
+      context.scale(-1, 1);
     }
   },
 
