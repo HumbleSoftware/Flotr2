@@ -45,7 +45,6 @@ Flotr.addType('bubbles', {
       geometry = this.getGeometry(data[i], options);
 
       context.beginPath();
-      context.arc(x, y, z, 0, Math.PI*2, true);
       context.arc(geometry.x + offset, geometry.y + offset, geometry.z, 0, 2 * Math.PI, true);
       context.stroke();
       if (options.fill) context.fill();
