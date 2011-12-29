@@ -93,4 +93,5 @@ Flotr.addType('bubbles', {
     );
     context.restore();
   }
+  // TODO Add a hit calculation method (like pie)
 });
