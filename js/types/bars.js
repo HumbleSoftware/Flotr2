@@ -120,9 +120,7 @@ Flotr.addType('bars', {
       xScale    : xScale,
       yScale    : yScale,
       top       : top,
-      bottom    : bottom,
       left      : left,
-      right     : right,
       width     : right - left,
       height    : bottom - top
     };
