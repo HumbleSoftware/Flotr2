@@ -88,23 +88,19 @@ Flotr.addType('bars', {
       barWidth      = options.barWidth,
       centered      = options.centered,
       stack         = options.stack,
-      stackOffset   = 0,
       bisection     = centered ? barWidth / 2 : 0,
       xScale        = horizontal ? options.yScale : options.xScale,
       yScale        = horizontal ? options.xScale : options.yScale,
       xValue        = horizontal ? y : x,
       yValue        = horizontal ? x : y,
-      left, right, top, bottom;
+      stackOffset   = 0,
+      stackValue, left, right, top, bottom;
 
     // Stacked bars
     if (stack) {
-      if (yValue > 0) {
-        stackOffset = stack.positive[xValue] || stackOffset;
-        stack.positive[xValue] = stackOffset + yValue;
-      } else {
-        stackOffset = stack.negative[xValue] || stackOffset;
-        stack.negative[xValue] = stackOffset + yValue;
-      }
+      stackValue          = yValue > 0 ? stack.positive : stack.negative;
+      stackOffset         = stackValue[xValue] || stackOffset;
+      stackValue[xValue]  = stackOffset + yValue;
     }
 
     left    = xScale(xValue - bisection);
