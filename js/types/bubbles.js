@@ -52,27 +52,27 @@ Flotr.addType('bubbles', {
       context.closePath();
     }
   },
-  drawHit: function(n){
+  drawHit : function (options) {
 
-    var octx = this.octx,
-        s = n.series,
-        xa = n.xaxis,
-        ya = n.yaxis,
-        z = s.data[0][2],
-        r = this.options.bubbles.baseRadius;
+    var
+      data    = options.data,
+      args    = options.args,
+      context = options.context,
+      x       = options.xScale(args.x),
+      y       = options.yScale(args.y),
+      z       = data[args.index][2] * options.baseRadius;
 
-    octx.save();
-    octx.lineWidth = s.points.lineWidth;
-    octx.strokeStyle = s.mouse.lineColor;
-    octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
-
-    octx.translate(this.plotOffset.left, this.plotOffset.top);
-    octx.beginPath();
-      octx.arc(xa.d2p(n.x), ya.d2p(n.y), z*r, 0, 2 * Math.PI, true);
-      octx.fill();
-      octx.stroke();
-    octx.closePath();
-    octx.restore();
+    context.save();
+    context.lineWidth = options.lineWidth;
+    context.fillStyle = options.fillStyle;
+    context.strokeStyle = options.color;
+    context.translate(options.offsetLeft, options.offsetTop);
+    context.beginPath();
+    context.arc(x, y, z, 0, 2 * Math.PI, true);
+    context.fill();
+    context.stroke();
+    context.closePath();
+    context.restore();
   },
   clearHit: function(){
     var prevHit = this.prevHit,
@@ -85,7 +85,7 @@ Flotr.addType('bubbles', {
         r = this.options.bubbles.baseRadius,
         offset = z*r+lw;
 
-    this.octx.clearRect(
+    this.context.clearRect(
       plotOffset.left + xa.d2p(prevHit.x) - offset,
       plotOffset.top  + ya.d2p(prevHit.y) - offset,
       offset*2,
