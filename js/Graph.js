@@ -454,7 +454,8 @@ Graph.prototype = {
             'extendYRange',
             '_extendRange',
             'drawHit',
-            'clearHit'
+            'clearHit',
+            'hit'
           ];
           if (_.contains(skipped, name)) return;
           this[graphType][name] = _.bind(fn, this);
