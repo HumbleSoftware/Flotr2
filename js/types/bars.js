@@ -129,6 +129,7 @@ Flotr.addType('bars', {
   },
 
   drawHit : function (options) {
+    // TODO hits for stacked bars; implement using calculateStack option?
     var
       context     = options.context,
       args        = options.args,
