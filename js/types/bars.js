@@ -44,20 +44,9 @@ Flotr.addType('bars', {
     var
       data            = options.data,
       context         = options.context,
-      barWidth        = options.barWidth,
       shadowSize      = options.shadowSize,
       horizontal      = options.horizontal,
-      centered        = options.centered,
-      stack           = options.stack,
-      xIndex          = horizontal ? 1 : 0,
-      yIndex          = horizontal ? 0 : 1,
-      xScale          = horizontal ? options.yScale : options.xScale,
-      yScale          = horizontal ? options.xScale : options.yScale,
-      stackOffset     = 0,
-      bisection,
-      width, height,
-      left, right, top, bottom,
-      i, x, y;
+      i, geometry, left, top, width, height;
 
     if (data.length < 1) return;
 
@@ -68,34 +57,13 @@ Flotr.addType('bars', {
 
     for (i = 0; i < data.length; i++) {
 
-      x = data[i][xIndex];
-      y = data[i][yIndex];
+      geometry = this.getBarGeometry(data[i][0], data[i][1], options);
+      if (geometry === null) continue;
 
-      if (y === null) continue;
-
-      // Stacked bars
-      if (stack) {
-        if (y > 0) {
-          stackOffset = stack.positive[x] || stackOffset;
-          stack.positive[x] = stackOffset + y;
-        } else {
-          stackOffset = stack.negative[x] || stackOffset;
-          stack.negative[x] = stackOffset + y;
-        }
-      }
-
-      // edge values
-      bisection = centered ? barWidth/2 : 0;
-      top       = yScale(y + stackOffset);
-      bottom    = yScale(stackOffset);
-      left      = xScale(x - bisection);
-      right     = xScale(x + barWidth - bisection);
-
-      // TODO for test passing... probably looks better without this
-      if (bottom < 0) bottom = 0;
-
-      width     = right - left;
-      height    = bottom - top;
+      left    = geometry.left;
+      top     = geometry.top;
+      width   = geometry.width;
+      height  = geometry.height;
 
       // TODO Skipping...
       // if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max) continue;
@@ -114,17 +82,50 @@ Flotr.addType('bars', {
   },
 
   getBarGeometry : function (x, y, options) {
-    var
-      barWidth        = options.barWidth,
-      centered        = options.centered,
-      bisection       = centered ? barWidth / 2 : 0,
-      x, y, width, height;
 
-    return {
-      top       : yScale(y + stackOffset),
-      bottom    : yScale(stackOffset),
-      left      : xScale(x - bisection),
-      right     : xScale(x + barWidth - bisection)
+    var
+      horizontal    = options.horizontal,
+      barWidth      = options.barWidth,
+      centered      = options.centered,
+      stack         = options.stack,
+      stackOffset   = 0,
+      bisection     = centered ? barWidth / 2 : 0,
+      xScale        = horizontal ? options.yScale : options.xScale,
+      yScale        = horizontal ? options.xScale : options.yScale,
+      xValue        = horizontal ? y : x,
+      yValue        = horizontal ? x : y,
+      left, right, top, bottom;
+
+    // Stacked bars
+    if (stack) {
+      if (yValue > 0) {
+        stackOffset = stack.positive[xValue] || stackOffset;
+        stack.positive[xValue] = stackOffset + yValue;
+      } else {
+        stackOffset = stack.negative[xValue] || stackOffset;
+        stack.negative[xValue] = stackOffset + yValue;
+      }
+    }
+
+    left    = xScale(xValue - bisection);
+    right   = xScale(xValue + barWidth - bisection);
+    top     = yScale(yValue + stackOffset);
+    bottom  = yScale(stackOffset);
+
+    // TODO for test passing... probably looks better without this
+    if (bottom < 0) bottom = 0;
+
+    return (x === null || y === null) ? null : {
+      x         : xValue,
+      y         : yValue,
+      xScale    : xScale,
+      yScale    : yScale,
+      top       : top,
+      bottom    : bottom,
+      left      : left,
+      right     : right,
+      width     : right - left,
+      height    : bottom - top
     };
   },
 
