@@ -144,63 +144,46 @@ Flotr.addType('pie', {
     context.lineTo(x, y);
     context.closePath();
   },
-  hit: function(mouse, n){
+  hit : function (options) {
 
-    var series = this.series,
-      options = this.options,
-      radius = (Math.min(this.canvasWidth, this.canvasHeight) * options.pie.sizeRatio) / 2,
-      vScale = 1,//Math.cos(series.pie.viewAngle),
-      angle = options.pie.startAngle,
-      center, // Center of the pie
-      s, x, y;
+    var
+      data      = options.data[0],
+      context   = options.context,
+      canvas    = context.canvas,
+      args      = options.args,
+      sizeRatio = options.sizeRatio,
+      index     = options.index,
+      slice     = this.slices[index],
+      mouse     = args[0],
+      n         = args[1],
+      radius    = Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      dx        = mouse.relX - options.width / 2,
+      dy        = mouse.relY - options.height / 2,
+      dr        = Math.sqrt(dx * dx + dy * dy);
+      theta     = Math.atan(dy / dx),
+      circle    = Math.PI * 2,
+      explode   = slice.explode || options.explode,
+      start     = slice.start % circle,
+      end       = slice.end % circle;
 
-    center = {
-      x: (this.plotWidth)/2,
-      y: (this.plotHeight)/2
-    };
-
-    portions = this.pie._getPortions();
-    slices = this.pie._getSlices(portions, series, angle);
-
-    // Add a circle
-    function circle (angle) {
-      return angle > 0 ? angle: angle + (2 * Math.PI);
+    if (dx < 0) {
+      theta += Math.PI;
+    } else if (dx > 0 && dy < 0) {
+      theta += circle;
     }
 
-    //
-    for (i = 0; i < series.length; i++){
+    if (dr < radius + explode && dr > explode) {
+      if ((start > end && (theta < end || theta > start))
+        || (theta > start && theta < end)) {
 
-      s = series[i];
-      x = s.data[0][0];
-      y = s.data[0][1];
-
-      if (y === null) continue;
-      
-      var a = (mouse.relX-center.x),
-        b = (mouse.relY-center.y),
-        c = Math.sqrt(Math.pow(a, 2)+Math.pow(b, 2)),
-        sAngle = circle((slices[i].startAngle)%(2 * Math.PI)),
-        eAngle = circle((slices[i].endAngle)%(2 * Math.PI)),
-        xSin = b/c,
-        kat = circle(Math.asin(xSin)%(2 * Math.PI)),
-        kat2 = Math.asin(-xSin)+(Math.PI);
-
-      //if (c<radius && (a>0 && sAngle < kat && eAngle > kat)) //I i IV quarter
-      //if (c<radius && (a<0 && sAngle < kat2 && eAngle > kat2)) //II i III quarter
-      //if(sAngle>aAngle && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2)))) //if a slice is crossing 0 angle
-      
-      if (c<radius+10 && ((((a>0 && sAngle < kat && eAngle > kat)) || (a<0 && sAngle < kat2 && eAngle > kat2)) || 
-          ( (sAngle>eAngle || slices[i].fraction==1) && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2))))))
-      { 
-        n.x = x;
-        n.y = y;
-        n.sAngle = sAngle;
-        n.eAngle = eAngle;
-        n.mouse = s.mouse;
-        n.series = s;
-        n.allSeries = series;
-        n.seriesIndex = i;
-        n.fraction = slices[i].fraction;
+        // TODO Decouple this from hit plugin (chart shouldn't know what n means)
+         n.x = data[0];
+         n.y = data[1];
+         n.sAngle = start;
+         n.eAngle = end;
+         n.index = 0;
+         n.seriesIndex = index;
+         n.fraction = data[1] / this.total;
       }
     }
   },

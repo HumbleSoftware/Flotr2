@@ -179,8 +179,15 @@ Flotr.addPlugin('hit', {
         }
       }
     }
-    else if(!this.hit.executeOnType(series, 'hit', [mouse, n])) {
-      for(i = 0; i < series.length; i++){
+    else if (this.hit.executeOnType(series, 'hit', [mouse, n])) {
+      if (n.seriesIndex !== null) {
+        n.series = series[n.seriesIndex];
+        n.mouse = n.series.mouse;
+        n.xaxis = n.series.xaxis;
+        n.yaxis = n.series.yaxis;
+      }
+    } else {
+      for (i = 0; i < series.length; i++) {
         s = series[i];
         if(!s.mouse.track) continue;
         
