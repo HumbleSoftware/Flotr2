@@ -157,22 +157,22 @@ Flotr.addType('pie', {
       mouse     = args[0],
       n         = args[1],
       slice     = this.slices[index],
-      dx        = mouse.relX - options.width / 2,
-      dy        = mouse.relY - options.height / 2,
-      dr        = Math.sqrt(dx * dx + dy * dy);
-      theta     = Math.atan(dy / dx),
+      x         = mouse.relX - options.width / 2,
+      y         = mouse.relY - options.height / 2,
+      r         = Math.sqrt(x * x + y * y);
+      theta     = Math.atan(y / x),
       circle    = Math.PI * 2,
       explode   = slice.explode || options.explode,
       start     = slice.start % circle,
       end       = slice.end % circle;
 
-    if (dx < 0) {
+    if (x < 0) {
       theta += Math.PI;
-    } else if (dx > 0 && dy < 0) {
+    } else if (x > 0 && y < 0) {
       theta += circle;
     }
 
-    if (dr < slice.radius + explode && dr > explode) {
+    if (r < slice.radius + explode && r > explode) {
       if ((start > end && (theta < end || theta > start))
         || (theta > start && theta < end)) {
 
