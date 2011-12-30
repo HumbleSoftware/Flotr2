@@ -30,7 +30,7 @@ Flotr.addPlugin('hit', {
 
     if (!_.isArray(s)) s = [s];
 
-    function e(s) {
+    function e(s, index) {
       _.each(_.keys(flotr.graphTypes), function (type) {
         if (s[type] && s[type].show && this[type][method]) {
           options = this.getOptions(s, type);
@@ -39,6 +39,7 @@ Flotr.addPlugin('hit', {
           options.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
           options.color = s.mouse.lineColor;
           options.context = this.octx;
+          options.index = index;
 
           if (args) options.args = args;
           this[type][method].call(this[type], options);
