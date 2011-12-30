@@ -104,7 +104,6 @@ Flotr.addType('markers', {
   },
 
   _plot: function(x, y, label, options) {
-    // TODO Coupled with Graph...
     var context = options.context,
         margin = 2,
         left = x,
@@ -114,7 +113,7 @@ Flotr.addType('markers', {
     if (isImage(label))
       dim = {height : label.height, width: label.width};
     else
-      dim = this._text.canvas(label);
+      dim = options.text.canvas(label);
 
     dim.width = Math.floor(dim.width+margin*2);
     dim.height = Math.floor(dim.height+margin*2);

@@ -267,6 +267,7 @@ Graph.prototype = {
         fontColor   : this.options.fontColor,
         textEnabled : this.textEnabled,
         htmlText    : this.options.HtmlText,
+        text        : this._text, // TODO Is this necessary?
         data        : series.data,
         color       : series.color,
         shadowSize  : series.shadowSize,
