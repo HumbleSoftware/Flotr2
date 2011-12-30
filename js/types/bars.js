@@ -30,15 +30,6 @@ Flotr.addType('bars', {
     context.restore();
   },
 
-  getEmptyStack : function () {
-    return { 
-      positive : [],
-      negative : [],
-      _positive : [], // Shadow
-      _negative : []  // Shadow
-    };
-  },
-
   plot : function (options) {
 
     var
@@ -87,7 +78,7 @@ Flotr.addType('bars', {
       horizontal    = options.horizontal,
       barWidth      = options.barWidth,
       centered      = options.centered,
-      stack         = options.stack,
+      stack         = options.stacked ? this.stack : false,
       bisection     = centered ? barWidth / 2 : 0,
       xScale        = horizontal ? options.yScale : options.xScale,
       yScale        = horizontal ? options.xScale : options.yScale,
@@ -179,6 +170,13 @@ Flotr.addType('bars', {
   },
 
   extendXRange : function (axis, data, options, bars) {
+    // TODO construction:
+    this.stack = { 
+      positive : [],
+      negative : [],
+      _positive : [], // Shadow
+      _negative : []  // Shadow
+    };
     this._extendRange(axis, data, options, bars);
   },
 

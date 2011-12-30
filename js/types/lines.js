@@ -45,10 +45,6 @@ Flotr.addType('lines', {
     context.restore();
   },
 
-  getEmptyStack : function () {
-    return { values : [] };
-  },
-
   plot: function (options, shadowOffset, incStack){
 
     var
@@ -58,7 +54,7 @@ Flotr.addType('lines', {
       xScale    = options.xScale,
       yScale    = options.yScale,
       data      = options.data, 
-      stack     = options.stack,
+      stack     = options.stacked ? this.stack : false,
       length    = data.length - 1,
       prevx     = null,
       prevy     = null,
@@ -150,6 +146,8 @@ Flotr.addType('lines', {
   // }
 
   extendYRange : function (axis, data, options, lines) {
+    // TODO construction:
+    this.stack = { values : [] };
 
     var o = axis.options;
 

@@ -283,12 +283,6 @@ Graph.prototype = {
       {opacity: type.fillOpacity}
     );
 
-    // Stack
-    if (type.stacked) {
-      options.stack = (type.horizontal ? series.yaxis : series.xaxis).getStack(typeKey);
-      if (_.isEmpty(options.stack)) flotr.merge(graphType.getEmptyStack(), options.stack);
-    }
-
     return options;
   },
   /**
