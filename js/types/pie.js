@@ -152,14 +152,11 @@ Flotr.addType('pie', {
     var
       data      = options.data[0],
       context   = options.context,
-      canvas    = context.canvas,
       args      = options.args,
-      sizeRatio = options.sizeRatio,
       index     = options.index,
-      slice     = this.slices[index],
       mouse     = args[0],
       n         = args[1],
-      radius    = Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      slice     = this.slices[index],
       dx        = mouse.relX - options.width / 2,
       dy        = mouse.relY - options.height / 2,
       dr        = Math.sqrt(dx * dx + dy * dy);
@@ -175,7 +172,7 @@ Flotr.addType('pie', {
       theta += circle;
     }
 
-    if (dr < radius + explode && dr > explode) {
+    if (dr < slice.radius + explode && dr > explode) {
       if ((start > end && (theta < end || theta > start))
         || (theta > start && theta < end)) {
 
