@@ -130,6 +130,12 @@ Flotr.addType('pie', {
 
     // New start angle
     this.startAngle = endAngle;
+    this.slices = this.slices || [];
+    this.slices.push({
+      explode : explode,
+      start : startAngle,
+      end : endAngle
+    });
   },
   plotSlice : function (x, y, radius, startAngle, endAngle, context) {
     context.beginPath();
