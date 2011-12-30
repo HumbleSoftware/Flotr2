@@ -444,24 +444,7 @@ Graph.prototype = {
   _initGraphTypes: function() {
     _.each(flotr.graphTypes, function(handler, graphType){
       this[graphType] = _.clone(handler);
-      _.each(handler, function(fn, name){
-        if (_.isFunction(fn))
-          var skipped = [
-            'draw',
-            'plot',
-            'getEmptyStack',
-            'extendXRange',
-            'extendYRange',
-            '_extendRange',
-            'drawHit',
-            'clearHit',
-            'hit'
-          ];
-          if (_.contains(skipped, name)) return;
-          this[graphType][name] = _.bind(fn, this);
-      }, this);
     }, this);
-
   },
 
   _initEvents: function () {
