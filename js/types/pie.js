@@ -132,6 +132,9 @@ Flotr.addType('pie', {
     this.startAngle = endAngle;
     this.slices = this.slices || [];
     this.slices.push({
+      radius : Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      x : x,
+      y : y,
       explode : explode,
       start : startAngle,
       end : endAngle
@@ -187,44 +190,19 @@ Flotr.addType('pie', {
       }
     }
   },
-  drawHit: function(n){
-    var octx = this.octx,
-      s = n.series,
-      xa = n.xaxis,
-      ya = n.yaxis;
+  drawHit: function (options) {
+    var
+      context = options.context,
+      args = options.args,
+      index = args.seriesIndex,
+      slice = this.slices[index];
 
-    octx.save();
-    octx.translate(this.plotOffset.left, this.plotOffset.top);
-    octx.beginPath();
-
-    if (s.mouse.trackAll) {
-      octx.moveTo(xa.d2p(n.x), ya.d2p(0));
-      octx.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
-    }
-    else {
-      var center = {
-        x: (this.plotWidth)/2,
-        y: (this.plotHeight)/2
-      },
-      radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
-
-      bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2 : (n.sAngle + n.eAngle + 2* Math.PI) / 2,
-      xOffset = center.x + Math.cos(bisection) * n.series.pie.explode,
-      yOffset = center.y + Math.sin(bisection) * n.series.pie.explode;
-      
-      octx.beginPath();
-      octx.moveTo(xOffset, yOffset);
-      if (n.fraction != 1)
-        octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle, false);
-      else
-        octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle-0.00001, false);
-      octx.lineTo(xOffset, yOffset);
-      octx.closePath();
-    }
-
-    octx.stroke();
-    octx.closePath();
-    octx.restore();
+    context.save();
+    context.translate(options.offsetLeft, options.offsetTop);
+    context.translate(options.width / 2, options.height / 2);
+    this.plotSlice(slice.x, slice.y, slice.radius, slice.start, slice.end, context);
+    context.stroke();
+    context.restore();
   },
   clearHit: function(){
     var center = {
