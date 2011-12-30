@@ -193,9 +193,7 @@ Flotr.addType('pie', {
   drawHit: function (options) {
     var
       context = options.context,
-      args = options.args,
-      index = args.seriesIndex,
-      slice = this.slices[index];
+      slice = this.slices[options.args.seriesIndex];
 
     context.save();
     context.translate(options.offsetLeft, options.offsetTop);
@@ -204,21 +202,22 @@ Flotr.addType('pie', {
     context.stroke();
     context.restore();
   },
-  clearHit: function(){
-    var center = {
-      x: this.plotOffset.left + (this.plotWidth)/2,
-      y: this.plotOffset.top + (this.plotHeight)/2
-    },
-    pie = this.prevHit.series.pie,
-    radius = (Math.min(this.canvasWidth, this.canvasHeight) * pie.sizeRatio) / 2,
-    margin = (pie.explode + pie.lineWidth) * 4;
-      
-    this.octx.clearRect(
-      center.x - radius - margin, 
-      center.y - radius - margin, 
-      2*(radius + margin), 
-      2*(radius + margin)
+  clearHit : function (options) {
+    var
+      context = options.context,
+      slice = this.slices[options.args.seriesIndex],
+      radius = slice.radius + options.lineWidth;
+
+    context.save();
+    context.translate(options.offsetLeft, options.offsetTop);
+    context.translate(options.width / 2, options.height / 2);
+    context.clearRect(
+      slice.x - radius,
+      slice.y - radius,
+      2 * radius,
+      2 * radius
     );
+    context.restore();
   },
   extendYRange : function (axis, data) {
     this.total = (this.total || 0) + data[0][1];
