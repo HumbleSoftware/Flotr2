@@ -130,7 +130,6 @@ Flotr.addType('bars', {
     context.save();
     context.strokeStyle = options.color;
     context.lineWidth = Math.min(options.lineWidth, width);
-    context.translate(options.offsetLeft, options.offsetTop);
     this.translate(context, options.horizontal);
 
     // Draw highlight
@@ -157,7 +156,6 @@ Flotr.addType('bars', {
       lineWidth   = 2 * Math.min(options.lineWidth, geometry.width);
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     this.translate(context, options.horizontal);
     context.clearRect(
       geometry.left - lineWidth,

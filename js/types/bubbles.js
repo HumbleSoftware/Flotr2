@@ -67,7 +67,6 @@ Flotr.addType('bubbles', {
     context.lineWidth = options.lineWidth;
     context.fillStyle = options.fillStyle;
     context.strokeStyle = options.color;
-    context.translate(options.offsetLeft, options.offsetTop);
     context.beginPath();
     context.arc(geometry.x, geometry.y, geometry.z, 0, 2 * Math.PI, true);
     context.fill();
@@ -83,7 +82,6 @@ Flotr.addType('bubbles', {
       offset = geometry.z + options.lineWidth;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.clearRect(
       geometry.x - offset, 
       geometry.y - offset,
