@@ -71,6 +71,24 @@ describe('Charts', function () {
         StableFlotr.graphTypes.lines.draw(options);
         expect(b).toImageDiffEqual(a);
       });
+
+      it('draws two lines', function () {
+
+        // First line
+        options.data = [[0, 0], [240, 160], [480, 320]];
+        TestFlotr.graphTypes.lines.draw(options);
+        options.context = b.getContext('2d');
+        StableFlotr.graphTypes.lines.draw(options);
+
+        // Second Line
+        options.context = a.getContext('2d');
+        options.data = [[0, 320], [240, 160], [480, 0]];
+        TestFlotr.graphTypes.lines.draw(options);
+        options.context = b.getContext('2d');
+        StableFlotr.graphTypes.lines.draw(options);
+
+        expect(b).toImageDiffEqual(a);
+      });
     });
   });
 });
