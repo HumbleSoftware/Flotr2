@@ -29,6 +29,16 @@ describe('Charts', function () {
     yScale : function (y) { return height - y; }
   };
 
+  function drawTest (data) {
+    options.data = data;
+
+    TestFlotr.graphTypes.lines.draw(options);
+    options.context = b.getContext('2d');
+    StableFlotr.graphTypes.lines.draw(options);
+
+    expect(b).toImageDiffEqual(a);
+  }
+
   describe('Lines', function () {
 
     describe('Draw', function () {
@@ -42,52 +52,31 @@ describe('Charts', function () {
       });
 
       it('draws a line chart', function () {
-
-        options.data = [
+        drawTest([
           [0, 0],
           [240, 300],
           [480, 0]
-        ];
-
-        TestFlotr.graphTypes.lines.draw(options);
-        options.context = b.getContext('2d');
-        StableFlotr.graphTypes.lines.draw(options);
-
-        expect(b).toImageDiffEqual(a);
+        ]);
       });
 
       it('skips null values', function () {
-        options.data = [
+        drawTest([
           [0, 0],
           [100, 50],
           [200, null],
           [300, 150],
           [400, 200],
           [480, 240]
-        ];
-
-        TestFlotr.graphTypes.lines.draw(options);
-        options.context = b.getContext('2d');
-        StableFlotr.graphTypes.lines.draw(options);
-        expect(b).toImageDiffEqual(a);
+        ]);
       });
 
       it('draws two lines', function () {
-
         // First line
-        options.data = [[0, 0], [240, 160], [480, 320]];
-        TestFlotr.graphTypes.lines.draw(options);
-        options.context = b.getContext('2d');
-        StableFlotr.graphTypes.lines.draw(options);
+        drawTest([[0, 0], [240, 160], [480, 320]]);
 
         // Second Line
         options.context = a.getContext('2d');
-        options.data = [[0, 320], [240, 160], [480, 0]];
-        TestFlotr.graphTypes.lines.draw(options);
-        options.context = b.getContext('2d');
-        StableFlotr.graphTypes.lines.draw(options);
-
-        expect(b).toImageDiffEqual(a);
+        drawTest([[0, 320], [240, 160], [480, 0]]);
       });
     });
   });
