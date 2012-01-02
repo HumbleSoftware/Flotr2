@@ -184,6 +184,6 @@ Flotr.addType('lines', {
       axis.max = newmax;
       axis.min = newmin;
     }
-  },
+  }
 
 });
