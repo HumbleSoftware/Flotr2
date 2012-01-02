@@ -29,11 +29,14 @@ describe('Charts', function () {
     yScale : function (y) { return height - y; }
   };
 
-  function drawTest (data, o) {
+  /**
+   * @param skip bool  Skip test against development version (use this when developing test)
+   */
+  function drawTest (data, o, skip) {
     options.data = data;
     if (o) _.extend(options, o);
 
-    TestFlotr.graphTypes.lines.draw(options);
+    if (!skip) TestFlotr.graphTypes.lines.draw(options);
     options.context = b.getContext('2d');
     StableFlotr.graphTypes.lines.draw(options);
 
