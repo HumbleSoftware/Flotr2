@@ -269,8 +269,6 @@ Graph.prototype = {
         context     : this.ctx,
         width       : this.plotWidth,
         height      : this.plotHeight,
-        offsetLeft  : this.plotOffset.left,
-        offsetTop   : this.plotOffset.top,
         fontSize    : this.options.fontSize,
         fontColor   : this.options.fontColor,
         textEnabled : this.textEnabled,

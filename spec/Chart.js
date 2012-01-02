@@ -8,8 +8,6 @@ describe('Charts', function () {
   defaults = {
     width : 480,
     height : 320,
-    offsetLeft : 0,
-    offsetRight : 0,
     color : "rgb(192,216,0)",
     context : null,
     data : null,
