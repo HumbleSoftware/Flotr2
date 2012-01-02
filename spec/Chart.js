@@ -50,11 +50,25 @@ describe('Charts', function () {
         ];
 
         TestFlotr.graphTypes.lines.draw(options);
-
         options.context = b.getContext('2d');
-
         StableFlotr.graphTypes.lines.draw(options);
 
+        expect(b).toImageDiffEqual(a);
+      });
+
+      it('skips null values', function () {
+        options.data = [
+          [0, 0],
+          [100, 50],
+          [200, null],
+          [300, 150],
+          [400, 200],
+          [480, 240]
+        ];
+
+        TestFlotr.graphTypes.lines.draw(options);
+        options.context = b.getContext('2d');
+        StableFlotr.graphTypes.lines.draw(options);
         expect(b).toImageDiffEqual(a);
       });
     });
