@@ -29,8 +29,9 @@ describe('Charts', function () {
     yScale : function (y) { return height - y; }
   };
 
-  function drawTest (data) {
+  function drawTest (data, o) {
     options.data = data;
+    if (o) _.extend(options, o);
 
     TestFlotr.graphTypes.lines.draw(options);
     options.context = b.getContext('2d');
