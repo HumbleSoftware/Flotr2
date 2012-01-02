@@ -82,6 +82,16 @@ describe('Charts', function () {
         options.context = a.getContext('2d');
         drawTest([[0, 320], [240, 160], [480, 0]]);
       });
+
+      it('fills a line', function () {
+        drawTest([
+          [0, 0],
+          [240, 300],
+          [480, 0]
+        ], {
+          fill : true
+        });
+      });
     });
   });
 });
