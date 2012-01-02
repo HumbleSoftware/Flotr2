@@ -92,6 +92,16 @@ describe('Charts', function () {
           fill : true
         });
       });
+
+      it('draws no shadow', function () {
+        drawTest([
+          [0, 0],
+          [240, 300],
+          [480, 0]
+        ], {
+          shadowSize : 0
+        });
+      });
     });
   });
 });
