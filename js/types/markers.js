@@ -92,12 +92,7 @@ Flotr.addType('markers', {
   plot: function(x, y, label, options) {
     var context = options.context;
     if (isImage(label) && !label.complete) {
-      Flotr.EventAdapter.observe(label, 'load', Flotr._.bind(function () {
-        context.save();
-        context.translate(options.offsetLeft, options.offsetTop);
-        this._plot(x, y, label, options);
-        context.restore();
-      }, this));
+      throw 'Marker image not loaded.';
     } else {
       this._plot(x, y, label, options);
     }
