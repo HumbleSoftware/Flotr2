@@ -48,7 +48,6 @@ Flotr.addType('markers', {
       i, x, y, label;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'round';
     context.lineWidth = options.lineWidth;
     context.strokeStyle = 'rgba(0,0,0,0.5)';

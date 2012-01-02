@@ -63,12 +63,8 @@ Flotr.addType('pie', {
       distX, distY;
     
     context.save();
-
-    context.translate(options.offsetLeft, options.offsetTop);
     context.translate(options.width / 2, options.height / 2);
-
     context.scale(1, vScale);
-
 
     // TODO wtf is this for?
     if (startAngle == endAngle) return;

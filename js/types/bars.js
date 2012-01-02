@@ -18,7 +18,6 @@ Flotr.addType('bars', {
       context = options.context;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'miter';
     // @TODO linewidth not interpreted the right way.
     context.lineWidth = Math.min(options.lineWidth, options.barWidth);

@@ -215,15 +215,22 @@ Graph.prototype = {
    */
   draw: function(after) {
 
-    var i;
+    var
+      context = this.ctx,
+      i;
 
     E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
 
     if (this.series.length) {
+
+      context.save();
+      context.translate(this.plotOffset.left, this.plotOffset.top);
+
       for (i = 0; i < this.series.length; i++) {
         if (!this.series[i].hide) this.drawSeries(this.series[i]);
       }
 
+      context.restore();
       this.clip();
     }
 

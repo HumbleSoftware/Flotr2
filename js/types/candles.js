@@ -19,7 +19,6 @@ Flotr.addType('candles', {
       context = options.context;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'miter';
     context.lineCap = 'butt';
     // @TODO linewidth not interpreted the right way.

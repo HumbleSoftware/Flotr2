@@ -13,7 +13,6 @@ Flotr.addType('radar', {
       shadowSize = options.shadowSize;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.translate(options.width / 2, options.height / 2);
     context.lineWidth = options.lineWidth;
     

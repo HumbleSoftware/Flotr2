@@ -13,7 +13,6 @@ Flotr.addType('bubbles', {
       shadowSize  = options.shadowSize;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineWidth = options.lineWidth;
     
     // Shadows

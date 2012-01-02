@@ -21,7 +21,6 @@ Flotr.addType('lines', {
       offset;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'round';
 
     if (shadowSize) {
