@@ -215,12 +215,13 @@ Graph.prototype = {
    */
   draw: function(after) {
 
+    var i;
+
     E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
 
-    if(this.series.length){
-      for(var i = 0; i < this.series.length; i++){
-        if (!this.series[i].hide)
-          this.drawSeries(this.series[i]);
+    if (this.series.length) {
+      for (i = 0; i < this.series.length; i++) {
+        if (!this.series[i].hide) this.drawSeries(this.series[i]);
       }
 
       this.clip();
