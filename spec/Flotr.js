@@ -27,15 +27,16 @@ describe('Flotr', function () {
 
       it('should draw a `' + example.name + '`line graph', function () {
 
-        a = executeExampleTest(example, StableFlotr, nodeA);
-        b = executeExampleTest(example, TestFlotr, nodeB);
+        executeExampleTest(example, StableFlotr, nodeA);
+        executeExampleTest(example, TestFlotr, nodeB);
+
         if (example.timeout) {
           waits(example.timeout);
           runs (function () {
-            expect(b).toImageDiffEqual(a, example.tolerance || 0);
+            expect(nodeB.graph.ctx).toImageDiffEqual(nodeA.graph.ctx, example.tolerance || 0);
           });
         } else {
-          expect(b).toImageDiffEqual(a, example.tolerance || 0);
+          expect(nodeB.graph.ctx).toImageDiffEqual(nodeA.graph.ctx, example.tolerance || 0);
         }
       });
     });
@@ -46,7 +47,6 @@ describe('Flotr', function () {
       Math.seedrandom(example.key);
       Flotr = flotr;
       example.callback.apply(this, [node].concat(example.args || []));
-      return node.graph.ctx;
     }
 
     function buildNode () {
