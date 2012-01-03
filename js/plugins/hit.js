@@ -212,20 +212,7 @@ Flotr.addPlugin('hit', {
           if (y === null || 
               xa.min > x || xa.max < x || 
               ya.min > y || ya.max < y) continue;
-          
-          if(s.bars.show && s.bars.centered){
-            var xdiff = Math.abs(x - mx),
-              ydiff = Math.abs(y - my);
-          } else {
-            if (s.bars.horizontal){
-              var xdiff = Math.abs(x - mx),
-                ydiff = Math.abs(y + s.bars.barWidth/2 - my);
-            } else {
-              var xdiff = Math.abs(x + s.bars.barWidth/2 - mx),
-                ydiff = Math.abs(y - my);
-            }
-          }
-          
+
           // we use a different set of criteria to determin if there has been a hit
           // depending on what type of graph we have
           if(((!s.bars.show) && xdiff < xsens && (!s.mouse.trackY || ydiff < ysens)) ||
