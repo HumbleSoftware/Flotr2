@@ -13,6 +13,13 @@ Flotr.addType('bars', {
     centered: true         // => center the bars to their x axis value
   },
 
+  stack : { 
+    positive : [],
+    negative : [],
+    _positive : [], // Shadow
+    _negative : []  // Shadow
+  },
+
   draw : function (options) {
     var
       context = options.context;
@@ -167,13 +174,6 @@ Flotr.addType('bars', {
   },
 
   extendXRange : function (axis, data, options, bars) {
-    // TODO construction:
-    this.stack = { 
-      positive : [],
-      negative : [],
-      _positive : [], // Shadow
-      _negative : []  // Shadow
-    };
     this._extendRange(axis, data, options, bars);
   },
 

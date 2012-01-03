@@ -444,7 +444,7 @@ Graph.prototype = {
 
   _initGraphTypes: function() {
     _.each(flotr.graphTypes, function(handler, graphType){
-      this[graphType] = _.clone(handler);
+      this[graphType] = flotr.clone(handler);
     }, this);
   },
 
