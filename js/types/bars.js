@@ -123,6 +123,30 @@ Flotr.addType('bars', {
     };
   },
 
+  hit : function (options) {
+    var
+      data = options.data,
+      args = options.args,
+      mouse = args[0],
+      n = args[1],
+      x = mouse.x,
+      y = mouse.y,
+      hitGeometry = this.getBarGeometry(x, y, options),
+      width = Math.abs(hitGeometry.width / 2),
+      left = hitGeometry.left,
+      geometry, i;
+
+    for (i = data.length; i--;) {
+      geometry = this.getBarGeometry(data[i][0], data[i][1], options);
+      if (geometry.y > hitGeometry.y && Math.abs(left - geometry.left) < width) {
+        n.x = data[i][0];
+        n.y = data[i][1];
+        n.index = i;
+        n.seriesIndex = options.index;
+      }
+    }
+  },
+
   drawHit : function (options) {
     // TODO hits for stacked bars; implement using calculateStack option?
     var
