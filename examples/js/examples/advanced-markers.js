@@ -30,6 +30,7 @@ function advanced_markers (container) {
         }
       }
     },
+    flotr = Flotr,
     point,
     graph,
     i;
@@ -42,7 +43,7 @@ function advanced_markers (container) {
   }
 
   var runner = Flotr._.after(2, function () {
-    graph = Flotr.draw(
+    graph = flotr.draw(
       container,
       [bars, markers], {
         yaxis: {
