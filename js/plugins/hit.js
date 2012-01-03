@@ -141,8 +141,8 @@ Flotr.addPlugin('hit', {
       };
 
     if (options.mouse.trackAll) {
-      for(i = 0; i < series.length; i++){
-        s = series[0];
+      for (i = 0; i < series.length; i++) {
+        s = series[i];
         data = s.data;
         xa = s.xaxis;
         ya = s.yaxis;
