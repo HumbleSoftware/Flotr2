@@ -27,15 +27,14 @@ Flotr.addType('markers', {
     horizontal: false      // => true if markers should be horizontal (For now only in a case on horizontal stacked bars, stacks should be calculated horizontaly)
   },
 
-  draw : function (options) {
+  // TODO test stacked markers.
+  stack : {
+      positive : [],
+      negative : [],
+      values : []
+  },
 
-    // TODO construction...
-    // TODO test stacked markers.
-    this.stack = this.stack || {
-        positive : [],
-        negative : [],
-        values : []
-    };
+  draw : function (options) {
 
     var
       data            = options.data,
@@ -48,7 +47,6 @@ Flotr.addType('markers', {
       i, x, y, label;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'round';
     context.lineWidth = options.lineWidth;
     context.strokeStyle = 'rgba(0,0,0,0.5)';
@@ -92,12 +90,7 @@ Flotr.addType('markers', {
   plot: function(x, y, label, options) {
     var context = options.context;
     if (isImage(label) && !label.complete) {
-      Flotr.EventAdapter.observe(label, 'load', Flotr._.bind(function () {
-        context.save();
-        context.translate(options.offsetLeft, options.offsetTop);
-        this._plot(x, y, label, options);
-        context.restore();
-      }, this));
+      throw 'Marker image not loaded.';
     } else {
       this._plot(x, y, label, options);
     }

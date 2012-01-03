@@ -8,6 +8,11 @@ Flotr.addType('lines', {
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
     stacked: false         // => setting to true will show stacked lines, false will show normal lines
   },
+
+  stack : {
+    values : []
+  },
+
   /**
    * Draws lines series in the canvas element.
    * @param {Object} options
@@ -21,7 +26,6 @@ Flotr.addType('lines', {
       offset;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'round';
 
     if (shadowSize) {
@@ -146,8 +150,6 @@ Flotr.addType('lines', {
   // }
 
   extendYRange : function (axis, data, options, lines) {
-    // TODO construction:
-    this.stack = { values : [] };
 
     var o = axis.options;
 
@@ -184,6 +186,6 @@ Flotr.addType('lines', {
       axis.max = newmax;
       axis.min = newmin;
     }
-  },
+  }
 
 });

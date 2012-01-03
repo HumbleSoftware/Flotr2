@@ -215,14 +215,22 @@ Graph.prototype = {
    */
   draw: function(after) {
 
+    var
+      context = this.ctx,
+      i;
+
     E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
 
-    if(this.series.length){
-      for(var i = 0; i < this.series.length; i++){
-        if (!this.series[i].hide)
-          this.drawSeries(this.series[i]);
+    if (this.series.length) {
+
+      context.save();
+      context.translate(this.plotOffset.left, this.plotOffset.top);
+
+      for (i = 0; i < this.series.length; i++) {
+        if (!this.series[i].hide) this.drawSeries(this.series[i]);
       }
 
+      context.restore();
       this.clip();
     }
 
@@ -261,8 +269,6 @@ Graph.prototype = {
         context     : this.ctx,
         width       : this.plotWidth,
         height      : this.plotHeight,
-        offsetLeft  : this.plotOffset.left,
-        offsetTop   : this.plotOffset.top,
         fontSize    : this.options.fontSize,
         fontColor   : this.options.fontColor,
         textEnabled : this.textEnabled,
@@ -438,7 +444,7 @@ Graph.prototype = {
 
   _initGraphTypes: function() {
     _.each(flotr.graphTypes, function(handler, graphType){
-      this[graphType] = _.clone(handler);
+      this[graphType] = flotr.clone(handler);
     }, this);
   },
 

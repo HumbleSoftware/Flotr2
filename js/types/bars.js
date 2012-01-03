@@ -13,12 +13,18 @@ Flotr.addType('bars', {
     centered: true         // => center the bars to their x axis value
   },
 
+  stack : { 
+    positive : [],
+    negative : [],
+    _positive : [], // Shadow
+    _negative : []  // Shadow
+  },
+
   draw : function (options) {
     var
       context = options.context;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'miter';
     // @TODO linewidth not interpreted the right way.
     context.lineWidth = Math.min(options.lineWidth, options.barWidth);
@@ -131,7 +137,6 @@ Flotr.addType('bars', {
     context.save();
     context.strokeStyle = options.color;
     context.lineWidth = Math.min(options.lineWidth, width);
-    context.translate(options.offsetLeft, options.offsetTop);
     this.translate(context, options.horizontal);
 
     // Draw highlight
@@ -158,7 +163,6 @@ Flotr.addType('bars', {
       lineWidth   = 2 * Math.min(options.lineWidth, geometry.width);
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     this.translate(context, options.horizontal);
     context.clearRect(
       geometry.left - lineWidth,
@@ -170,13 +174,6 @@ Flotr.addType('bars', {
   },
 
   extendXRange : function (axis, data, options, bars) {
-    // TODO construction:
-    this.stack = { 
-      positive : [],
-      negative : [],
-      _positive : [], // Shadow
-      _negative : []  // Shadow
-    };
     this._extendRange(axis, data, options, bars);
   },
 

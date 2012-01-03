@@ -8,8 +8,6 @@ describe('Charts', function () {
   defaults = {
     width : 480,
     height : 320,
-    offsetLeft : 0,
-    offsetRight : 0,
     color : "rgb(192,216,0)",
     context : null,
     data : null,
@@ -29,6 +27,20 @@ describe('Charts', function () {
     yScale : function (y) { return height - y; }
   };
 
+  /**
+   * @param skip bool  Skip test against development version (use this when developing test)
+   */
+  function drawTest (data, o, skip) {
+    options.data = data;
+    if (o) _.extend(options, o);
+
+    if (!skip) TestFlotr.graphTypes.lines.draw(options);
+    options.context = b.getContext('2d');
+    StableFlotr.graphTypes.lines.draw(options);
+
+    expect(b).toImageDiffEqual(a);
+  }
+
   describe('Lines', function () {
 
     describe('Draw', function () {
@@ -42,20 +54,51 @@ describe('Charts', function () {
       });
 
       it('draws a line chart', function () {
-
-        options.data = [
+        drawTest([
           [0, 0],
           [240, 300],
           [480, 0]
-        ];
+        ]);
+      });
 
-        TestFlotr.graphTypes.lines.draw(options);
+      it('skips null values', function () {
+        drawTest([
+          [0, 0],
+          [100, 50],
+          [200, null],
+          [300, 150],
+          [400, 200],
+          [480, 240]
+        ]);
+      });
 
-        options.context = b.getContext('2d');
+      it('draws two lines', function () {
+        // First line
+        drawTest([[0, 0], [240, 160], [480, 320]]);
 
-        StableFlotr.graphTypes.lines.draw(options);
+        // Second Line
+        options.context = a.getContext('2d');
+        drawTest([[0, 320], [240, 160], [480, 0]]);
+      });
 
-        expect(b).toImageDiffEqual(a);
+      it('fills a line', function () {
+        drawTest([
+          [0, 0],
+          [240, 300],
+          [480, 0]
+        ], {
+          fill : true
+        });
+      });
+
+      it('draws no shadow', function () {
+        drawTest([
+          [0, 0],
+          [240, 300],
+          [480, 0]
+        ], {
+          shadowSize : 0
+        });
       });
     });
   });

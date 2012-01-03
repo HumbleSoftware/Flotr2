@@ -16,8 +16,7 @@ Flotr.addType('points', {
       shadowSize  = options.shadowSize;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
-    
+
     if (shadowSize > 0) {
       context.lineWidth = shadowSize / 2;
       

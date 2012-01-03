@@ -15,7 +15,6 @@ Flotr.addType('timeline', {
       context = options.context;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin    = 'miter';
     context.lineWidth   = options.lineWidth;
     context.strokeStyle = options.color;

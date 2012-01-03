@@ -63,12 +63,8 @@ Flotr.addType('pie', {
       distX, distY;
     
     context.save();
-
-    context.translate(options.offsetLeft, options.offsetTop);
     context.translate(options.width / 2, options.height / 2);
-
     context.scale(1, vScale);
-
 
     // TODO wtf is this for?
     if (startAngle == endAngle) return;
@@ -192,7 +188,6 @@ Flotr.addType('pie', {
       slice = this.slices[options.args.seriesIndex];
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.translate(options.width / 2, options.height / 2);
     this.plotSlice(slice.x, slice.y, slice.radius, slice.start, slice.end, context);
     context.stroke();
@@ -205,7 +200,6 @@ Flotr.addType('pie', {
       radius = slice.radius + options.lineWidth;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.translate(options.width / 2, options.height / 2);
     context.clearRect(
       slice.x - radius,

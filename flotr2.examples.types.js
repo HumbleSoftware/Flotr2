@@ -1283,7 +1283,8 @@ function basic_timeline (container) {
 Flotr.ExampleList.add({
   key : 'advanced-markers',
   name : 'Advanced Markers',
-  callback : advanced_markers 
+  callback : advanced_markers,
+  timeout : 100
 });
 
 function advanced_markers (container) {
@@ -1309,6 +1310,7 @@ function advanced_markers (container) {
         }
       }
     },
+    flotr = Flotr,
     point,
     graph,
     i;
@@ -1320,26 +1322,29 @@ function advanced_markers (container) {
     markers.data.push(point);
   }
 
+  var runner = Flotr._.after(2, function () {
+    graph = flotr.draw(
+      container,
+      [bars, markers], {
+        yaxis: {
+          min: 0,
+          max: 11
+        },
+        xaxis: {
+          min: -0.5,
+          max: 7.5
+        },
+        grid: {
+          verticalLines: false
+        }
+      }
+    );
+  });
+
+  xmark.onload = runner;
+  checkmark.onload = runner;
   xmark.src = 'images/xmark.png';
   checkmark.src = 'images/checkmark.png';
-  
-  graph = Flotr.draw(
-    container,
-    [bars, markers], {
-      yaxis: {
-        min: 0,
-        max: 11
-      },
-      xaxis: {
-        min: -0.5,
-        max: 7.5
-      },
-      grid: {
-        verticalLines: false
-      }
-    }
-  );
-
 };
 
 })();

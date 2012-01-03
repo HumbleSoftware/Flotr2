@@ -63,12 +63,12 @@ Flotr.addPlugin('hit', {
       octx.lineWidth = (s.points ? s.points.lineWidth : 1);
       octx.strokeStyle = s.mouse.lineColor;
       octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
+      octx.translate(this.plotOffset.left, this.plotOffset.top);
 
       if (!this.hit.executeOnType(s, 'drawHit', n)) {
         var xa = n.xaxis,
           ya = n.yaxis;
 
-        octx.translate(this.plotOffset.left, this.plotOffset.top);
         octx.beginPath();
           // TODO fix this (points) should move to general testable graph mixin
           octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.points.radius || s.mouse.radius, 0, 2 * Math.PI, true);
@@ -84,21 +84,26 @@ Flotr.addPlugin('hit', {
    * Removes the mouse tracking point from the overlay.
    */
   clearHit: function(){
-    var prev = this.prevHit;
+    var prev = this.prevHit,
+        octx = this.octx,
+        plotOffset = this.plotOffset;
+    octx.save();
+    octx.translate(plotOffset.left, plotOffset.top);
     if(prev && !this.hit.executeOnType(prev.series, 'clearHit', this.prevHit)){
       // TODO fix this (points) should move to general testable graph mixin
-      var plotOffset = this.plotOffset,
+      var
         s = prev.series,
         lw = (s.bars ? s.bars.lineWidth : 1),
         offset = (s.points.radius || s.mouse.radius) + lw;
-      this.octx.clearRect(
-        plotOffset.left + prev.xaxis.d2p(prev.x) - offset,
-        plotOffset.top  + prev.yaxis.d2p(prev.y) - offset,
+      octx.clearRect(
+        prev.xaxis.d2p(prev.x) - offset,
+        prev.yaxis.d2p(prev.y) - offset,
         offset*2,
         offset*2
       );
       D.hide(this.mouseTrack);
     }
+    octx.restore();
   },
   /**
    * Retrieves the nearest data point from the mouse cursor. If it's within
