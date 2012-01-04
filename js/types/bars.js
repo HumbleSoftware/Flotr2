@@ -160,7 +160,7 @@ Flotr.addType('bars', {
 
     context.save();
     context.strokeStyle = options.color;
-    context.lineWidth = Math.min(options.lineWidth, width);
+    context.lineWidth = options.lineWidth;
     this.translate(context, options.horizontal);
 
     // Draw highlight
