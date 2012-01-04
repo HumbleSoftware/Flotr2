@@ -42,7 +42,12 @@ function advanced_markers (container) {
     markers.data.push(point);
   }
 
-  var runner = Flotr._.after(2, function () {
+  var runner = function () {
+    if (!xmark.complete || !checkmark.complete) {
+        setTimeout(runner, 50);
+        return;
+    }
+
     graph = flotr.draw(
       container,
       [bars, markers], {
@@ -59,7 +64,7 @@ function advanced_markers (container) {
         }
       }
     );
-  });
+  }
 
   xmark.onload = runner;
   checkmark.onload = runner;
