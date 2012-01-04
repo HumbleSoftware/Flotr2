@@ -60,18 +60,50 @@ Examples.prototype = {
     var
       styles = {cursor : 'pointer'},
       thumbsNode = this._thumbsNode,
+      list = this.list.get(),
       that = this;
 
-    _.each(this.list.get(), function (example) {
-      _.defer(function () {
-        if (example.type === 'profile' || example.type === 'test') return;
-        var node = $(T_THUMB);
-        node.data('example', example);
-        thumbsNode.append(node);
-        that._example.executeCallback(example, node);
-        node.click(function () {that._loadExample(example)});
-      });
-    });
+    var
+      order = [
+        "basic",
+        "basic-axis",
+        "basic-bars",
+        "basic-bars-horizontal",
+        "basic-bar-stacked",
+        "basic-stacked-horizontal",
+        "basic-pie",
+        "basic-radar",
+        "basic-bubble",
+        "basic-candle",
+        "basic-legend",
+        "mouse-tracking",
+        "mouse-zoom",
+        "mouse-drag",
+        "basic-time",
+        "negative-values",
+        "click-example",
+        "download-image",
+        "download-data",
+        "advanced-titles",
+        "color-gradients",
+        "basic-timeline",
+        "advanced-markers"
+    ];
+
+    (function runner () {
+      var
+        key = order.shift(),
+        example = list[key];
+
+      if (example.type === 'profile' || example.type === 'test') return;
+      var node = $(T_THUMB);
+      node.data('example', example);
+      thumbsNode.append(node);
+      that._example.executeCallback(example, node);
+      node.click(function () {that._loadExample(example)});
+
+      if (order.length)  setTimeout(runner, 20);
+    })();
 
     function zoomHandler (e) {
       var
