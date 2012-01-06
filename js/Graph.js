@@ -449,9 +449,26 @@ Graph.prototype = {
   _initCanvas: function(){
     var el = this.el,
       o = this.options,
+      children = el.children,
+      removedChildren = [],
+      child, i,
       size, style;
 
-    D.empty(el);
+    // Empty the el
+    for (i = children.length; i--;) {
+      child = children[i];
+      if (!this.canvas && child.className === 'flotr-canvas') {
+        this.canvas = child;
+      } else if (!this.overlay && child.className === 'flotr-overlay') {
+        this.overlay = child;
+      } else {
+        removedChildren.push(child);
+      }
+    }
+    for (i = removedChildren.length; i--;) {
+      el.removeChild(removedChildren[i]);
+    }
+
     D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
     size = D.size(el);
 
@@ -459,14 +476,14 @@ Graph.prototype = {
       throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
     }
 
-    // The old canvases are retrieved to avoid memory leaks ...
-    // @TODO Confirm.
-    // this.canvas = el.select('.flotr-canvas')[0];
-    // this.overlay = el.select('.flotr-overlay')[0];
-    this.canvas = getCanvas(this.canvas, 'canvas'); // Main canvas for drawing graph types
-    this.overlay = getCanvas(this.overlay, 'overlay'); // Overlay canvas for interactive features
+    // Main canvas for drawing graph types
+    this.canvas = getCanvas(this.canvas, 'canvas');
+    // Overlay canvas for interactive features
+    this.overlay = getCanvas(this.overlay, 'overlay');
     this.ctx = getContext(this.canvas);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.octx = getContext(this.overlay);
+    this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
     this.canvasHeight = size.height*o.resolution;
     this.canvasWidth = size.width*o.resolution;
     this.textEnabled = !!this.ctx.drawText || !!this.ctx.fillText; // Enable text functions
@@ -479,6 +496,7 @@ Graph.prototype = {
         }
         canvas.className = 'flotr-'+name;
         canvas.style.cssText = 'position:absolute;left:0px;top:0px;';
+        D.insert(el, canvas);
       }
       _.each(size, function(size, attribute){
         canvas.setAttribute(attribute, size*o.resolution);
@@ -486,7 +504,6 @@ Graph.prototype = {
         D.show(canvas);
       });
       canvas.context_ = null; // Reset the ExCanvas context
-      D.insert(el, canvas);
       return canvas;
     }
 
