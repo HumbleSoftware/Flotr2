@@ -513,6 +513,9 @@ Graph.prototype = {
     function getCanvas(canvas, name){
       if(!canvas){
         canvas = D.create('canvas');
+        if (typeof FlashCanvas != "undefined") {
+          FlashCanvas.initElement(canvas);
+        }
         canvas.className = 'flotr-'+name;
         canvas.style.cssText = 'position:absolute;left:0px;top:0px;';
       }
