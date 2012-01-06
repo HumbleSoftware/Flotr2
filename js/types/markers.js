@@ -27,15 +27,14 @@ Flotr.addType('markers', {
     horizontal: false      // => true if markers should be horizontal (For now only in a case on horizontal stacked bars, stacks should be calculated horizontaly)
   },
 
-  draw : function (options) {
+  // TODO test stacked markers.
+  stack : {
+      positive : [],
+      negative : [],
+      values : []
+  },
 
-    // TODO construction...
-    // TODO test stacked markers.
-    this.stack = this.stack || {
-        positive : [],
-        negative : [],
-        values : []
-    };
+  draw : function (options) {
 
     var
       data            = options.data,

@@ -147,7 +147,6 @@ Flotr.addType('pie', {
 
     var
       data      = options.data[0],
-      context   = options.context,
       args      = options.args,
       index     = options.index,
       mouse     = args[0],

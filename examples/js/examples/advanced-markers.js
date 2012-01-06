@@ -30,6 +30,7 @@ function advanced_markers (container) {
         }
       }
     },
+    flotr = Flotr,
     point,
     graph,
     i;
@@ -41,8 +42,13 @@ function advanced_markers (container) {
     markers.data.push(point);
   }
 
-  var runner = Flotr._.after(2, function () {
-    graph = Flotr.draw(
+  var runner = function () {
+    if (!xmark.complete || !checkmark.complete) {
+        setTimeout(runner, 50);
+        return;
+    }
+
+    graph = flotr.draw(
       container,
       [bars, markers], {
         yaxis: {
@@ -58,7 +64,7 @@ function advanced_markers (container) {
         }
       }
     );
-  });
+  }
 
   xmark.onload = runner;
   checkmark.onload = runner;
