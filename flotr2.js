@@ -1207,205 +1207,7 @@
   };
 
 })();
-
-/*
- * Canvas2Image v0.1
- * Copyright (c) 2008 Jacob Seidelin, cupboy@gmail.com
- * MIT License [http://www.opensource.org/licenses/mit-license.php]
- */
-
-var Canvas2Image = (function() {
-  // check if we have canvas support
-  var oCanvas = document.createElement("canvas"),
-      sc = String.fromCharCode,
-      strDownloadMime = "image/octet-stream",
-      bReplaceDownloadMime = false;
-  
-  // no canvas, bail out.
-  if (!oCanvas.getContext) {
-    return {
-      saveAsBMP : function(){},
-      saveAsPNG : function(){},
-      saveAsJPEG : function(){}
-    }
-  }
-
-  var bHasImageData = !!(oCanvas.getContext("2d").getImageData),
-      bHasDataURL = !!(oCanvas.toDataURL),
-      bHasBase64 = !!(window.btoa);
-
-  // ok, we're good
-  var readCanvasData = function(oCanvas) {
-    var iWidth = parseInt(oCanvas.width),
-        iHeight = parseInt(oCanvas.height);
-    return oCanvas.getContext("2d").getImageData(0,0,iWidth,iHeight);
-  }
-
-  // base64 encodes either a string or an array of charcodes
-  var encodeData = function(data) {
-    var i, aData, strData = "";
-    
-    if (typeof data == "string") {
-      strData = data;
-    } else {
-      aData = data;
-      for (i = 0; i < aData.length; i++) {
-        strData += sc(aData[i]);
-      }
-    }
-    return btoa(strData);
-  }
-
-  // creates a base64 encoded string containing BMP data takes an imagedata object as argument
-  var createBMP = function(oData) {
-    var strHeader = '',
-        iWidth = oData.width,
-        iHeight = oData.height;
-
-    strHeader += 'BM';
-  
-    var iFileSize = iWidth*iHeight*4 + 54; // total header size = 54 bytes
-    strHeader += sc(iFileSize % 256); iFileSize = Math.floor(iFileSize / 256);
-    strHeader += sc(iFileSize % 256); iFileSize = Math.floor(iFileSize / 256);
-    strHeader += sc(iFileSize % 256); iFileSize = Math.floor(iFileSize / 256);
-    strHeader += sc(iFileSize % 256);
-
-    strHeader += sc(0, 0, 0, 0, 54, 0, 0, 0); // data offset
-    strHeader += sc(40, 0, 0, 0); // info header size
-
-    var iImageWidth = iWidth;
-    strHeader += sc(iImageWidth % 256); iImageWidth = Math.floor(iImageWidth / 256);
-    strHeader += sc(iImageWidth % 256); iImageWidth = Math.floor(iImageWidth / 256);
-    strHeader += sc(iImageWidth % 256); iImageWidth = Math.floor(iImageWidth / 256);
-    strHeader += sc(iImageWidth % 256);
-  
-    var iImageHeight = iHeight;
-    strHeader += sc(iImageHeight % 256); iImageHeight = Math.floor(iImageHeight / 256);
-    strHeader += sc(iImageHeight % 256); iImageHeight = Math.floor(iImageHeight / 256);
-    strHeader += sc(iImageHeight % 256); iImageHeight = Math.floor(iImageHeight / 256);
-    strHeader += sc(iImageHeight % 256);
-  
-    strHeader += sc(1, 0, 32, 0); // num of planes & num of bits per pixel
-    strHeader += sc(0, 0, 0, 0); // compression = none
-  
-    var iDataSize = iWidth*iHeight*4; 
-    strHeader += sc(iDataSize % 256); iDataSize = Math.floor(iDataSize / 256);
-    strHeader += sc(iDataSize % 256); iDataSize = Math.floor(iDataSize / 256);
-    strHeader += sc(iDataSize % 256); iDataSize = Math.floor(iDataSize / 256);
-    strHeader += sc(iDataSize % 256); 
-  
-    strHeader += sc(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); // these bytes are not used
-  
-    var aImgData = oData.data,
-        strPixelData = "",
-        c, x, y = iHeight,
-        iOffsetX, iOffsetY, strPixelRow;
-    
-    do {
-      iOffsetY = iWidth*(y-1)*4;
-      strPixelRow = "";
-      for (x = 0; x < iWidth; x++) {
-        iOffsetX = 4*x;
-        strPixelRow += sc(
-          aImgData[iOffsetY + iOffsetX + 2], // B
-          aImgData[iOffsetY + iOffsetX + 1], // G
-          aImgData[iOffsetY + iOffsetX],     // R
-          aImgData[iOffsetY + iOffsetX + 3]  // A
-        );
-      }
-      strPixelData += strPixelRow;
-    } while (--y);
-
-    return encodeData(strHeader + strPixelData);
-  }
-
-  // sends the generated file to the client
-  var saveFile = function(strData) {
-    if (!window.open(strData)) {
-      document.location.href = strData;
-    }
-  }
-
-  var makeDataURI = function(strData, strMime) {
-    return "data:" + strMime + ";base64," + strData;
-  }
-
-  // generates a <img> object containing the imagedata
-  var makeImageObject = function(strSource) {
-    var oImgElement = document.createElement("img");
-    oImgElement.src = strSource;
-    return oImgElement;
-  }
-
-  var scaleCanvas = function(oCanvas, iWidth, iHeight) {
-    if (iWidth && iHeight) {
-      var oSaveCanvas = document.createElement("canvas");
-      
-      oSaveCanvas.width = iWidth;
-      oSaveCanvas.height = iHeight;
-      oSaveCanvas.style.width = iWidth+"px";
-      oSaveCanvas.style.height = iHeight+"px";
-
-      var oSaveCtx = oSaveCanvas.getContext("2d");
-
-      oSaveCtx.drawImage(oCanvas, 0, 0, oCanvas.width, oCanvas.height, 0, 0, iWidth, iWidth);
-      
-      return oSaveCanvas;
-    }
-    return oCanvas;
-  }
-
-  return {
-    saveAsPNG : function(oCanvas, bReturnImg, iWidth, iHeight) {
-      if (!bHasDataURL) return false;
-      
-      var oScaledCanvas = scaleCanvas(oCanvas, iWidth, iHeight),
-          strMime = "image/png",
-          strData = oScaledCanvas.toDataURL(strMime);
-        
-      if (bReturnImg) {
-        return makeImageObject(strData);
-      } else {
-        saveFile(bReplaceDownloadMime ? strData.replace(strMime, strDownloadMime) : strData);
-      }
-      return true;
-    },
-
-    saveAsJPEG : function(oCanvas, bReturnImg, iWidth, iHeight) {
-      if (!bHasDataURL) return false;
-
-      var oScaledCanvas = scaleCanvas(oCanvas, iWidth, iHeight),
-          strMime = "image/jpeg",
-          strData = oScaledCanvas.toDataURL(strMime);
-  
-      // check if browser actually supports jpeg by looking for the mime type in the data uri. if not, return false
-      if (strData.indexOf(strMime) != 5) return false;
-
-      if (bReturnImg) {
-        return makeImageObject(strData);
-      } else {
-        saveFile(bReplaceDownloadMime ? strData.replace(strMime, strDownloadMime) : strData);
-      }
-      return true;
-    },
-
-    saveAsBMP : function(oCanvas, bReturnImg, iWidth, iHeight) {
-      if (!(bHasDataURL && bHasImageData && bHasBase64)) return false;
-
-      var oScaledCanvas = scaleCanvas(oCanvas, iWidth, iHeight),
-          strMime = "image/bmp",
-          oData = readCanvasData(oScaledCanvas),
-          strImgData = createBMP(oData);
-        
-      if (bReturnImg) {
-        return makeImageObject(makeDataURI(strImgData, strMime));
-      } else {
-        saveFile(makeDataURI(strImgData, strMime));
-      }
-      return true;
-    }
-  };
-})();(function () {
+(function () {
 /** 
  * @projectDescription Flotr is a javascript plotting library based on the Prototype Javascript Framework.
  * @author Bas Wenneker
@@ -1420,6 +1222,7 @@ var
 
 Flotr = {
   _: _,
+  bean: bean,
   version: "0.2.0-alpha",
   revision: ('$Revision: 192 $'.match(/(\d+)/) || [null,null])[1],
   author: ['Bas Wenneker', 'Fabien Ménager'],
@@ -1496,12 +1299,7 @@ Flotr = {
    * @TODO See if we can't remove this.
    */
   clone: function(object){
-    var i, v, clone = {};
-    for(i in object){
-      v = object[i];
-      clone[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !this._.isElement(v)) ? Flotr.clone(v) : v;
-    }
-    return clone;
+    return Flotr.merge(object, {});
   },
   
   /**
@@ -2128,8 +1926,8 @@ Flotr.DOM = {
    */
   size: function(element){
     return {
-      height : element.scrollHeight,
-      width: element.scrollWidth };
+      height : element.offsetHeight,
+      width : element.offsetWidth };
   }
 };
 
@@ -2138,7 +1936,11 @@ Flotr.DOM = {
 /**
  * Flotr Event Adapter
  */
-Flotr.EventAdapter = {
+(function () {
+var
+  F = Flotr,
+  bean = F.bean;
+F.EventAdapter = {
   observe: function(object, name, callback) {
     bean.add(object, name, callback);
     return this;
@@ -2155,17 +1957,18 @@ Flotr.EventAdapter = {
     return this;
   },
   eventPointer: function(e) {
-    if (!Flotr._.isUndefined(e.touches) && e.touches.length > 0) {
+    if (!F._.isUndefined(e.touches) && e.touches.length > 0) {
       return {x: e.touches[0].pageX, y: e.touches[0].pageY};
-    } else if (!Flotr._.isUndefined(e.changedTouches) && e.changedTouches.length > 0) {
+    } else if (!F._.isUndefined(e.changedTouches) && e.changedTouches.length > 0) {
       return {x: e.changedTouches[0].pageX, y: e.changedTouches[0].pageY};
-    } else if (Flotr.isIE && Flotr.isIE < 9) {
+    } else if (F.isIE && F.isIE < 9) {
       return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
     } else {
       return {x: e.pageX, y: e.pageY};
     }
   }
 };
+})();
 
 /**
  * Text Utilities
@@ -2264,7 +2067,7 @@ Flotr.Text = Text;
 var
   D     = Flotr.DOM,
   E     = Flotr.EventAdapter,
-  _     = Flotr._;
+  _     = Flotr._,
   flotr = Flotr;
 /**
  * Flotr Graph constructor.
@@ -2349,9 +2152,6 @@ Graph.prototype = {
     var a = this.axes,
       xaxis, yaxis, range;
 
-    a.x.datamin = a.x2.datamin = a.y.datamin = a.y2.datamin = Number.MAX_VALUE;
-    a.x.datamax = a.x2.datamax = a.y.datamax = a.y2.datamax = -Number.MAX_VALUE;
-
     _.each(this.series, function (series) {
       range = series.getRange();
       if (range) {
@@ -2361,8 +2161,8 @@ Graph.prototype = {
         xaxis.datamax = Math.max(range.xmax, xaxis.datamax);
         yaxis.datamin = Math.min(range.ymin, yaxis.datamin);
         yaxis.datamax = Math.max(range.ymax, yaxis.datamax);
-        xaxis.used = (xaxis.used || range.xused ? true : false);
-        yaxis.used = (yaxis.used || range.yused ? true : false);
+        xaxis.used = (xaxis.used || range.xused);
+        yaxis.used = (yaxis.used || range.yused);
       }
     }, this);
 
@@ -2474,58 +2274,20 @@ Graph.prototype = {
    * Draws grid, labels, series and outline.
    */
   draw: function(after) {
-    var afterImageLoad = _.bind(function() {
 
-      if(this.series.length){
-        E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
+    E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
 
-        for(var i = 0; i < this.series.length; i++){
-          if (!this.series[i].hide)
-            this.drawSeries(this.series[i]);
-        }
+    if(this.series.length){
+      for(var i = 0; i < this.series.length; i++){
+        if (!this.series[i].hide)
+          this.drawSeries(this.series[i]);
       }
 
       this.clip();
-      E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
-      after();
-    }, this);
-
-    var g = this.options.grid;
-
-    if (g && g.backgroundImage) {
-      if (_.isString(g.backgroundImage)){
-        g.backgroundImage = {src: g.backgroundImage, left: 0, top: 0};
-      }else{
-        g.backgroundImage = _.extend({left: 0, top: 0}, g.backgroundImage);
-      }
-
-      var img = new Image();
-      img.onload = _.bind(function() {
-        var left = this.plotOffset.left + (parseInt(g.backgroundImage.left) || 0);
-        var top = this.plotOffset.top + (parseInt(g.backgroundImage.top) || 0);
-
-        // Store the global alpha to restore it later on.
-        var globalAlpha = this.ctx.globalAlpha;
-
-        // When the watermarkAlpha is < 1 then the watermark is transparent.
-        this.ctx.globalAlpha = (g.backgroundImage.alpha||globalAlpha);
-
-        // Draw the watermark.
-        this.ctx.drawImage(img, left, top);
-
-        // Set the globalAlpha back to the alpha value before changing it to
-        // the grid.watermarkAlpha, otherwise the graph will be transparent also.
-        this.ctx.globalAlpha = globalAlpha;
-
-        afterImageLoad();
-
-      }, this);
-
-      img.onabort = img.onerror = afterImageLoad;
-      img.src = g.backgroundImage.src;
-    } else {
-      afterImageLoad();
     }
+
+    E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
+    if (after) after();
   },
   /**
    * Actually draws the graph.
@@ -2748,9 +2510,26 @@ Graph.prototype = {
   _initCanvas: function(){
     var el = this.el,
       o = this.options,
+      children = el.children,
+      removedChildren = [],
+      child, i,
       size, style;
 
-    D.empty(el);
+    // Empty the el
+    for (i = children.length; i--;) {
+      child = children[i];
+      if (!this.canvas && child.className === 'flotr-canvas') {
+        this.canvas = child;
+      } else if (!this.overlay && child.className === 'flotr-overlay') {
+        this.overlay = child;
+      } else {
+        removedChildren.push(child);
+      }
+    }
+    for (i = removedChildren.length; i--;) {
+      el.removeChild(removedChildren[i]);
+    }
+
     D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
     size = D.size(el);
 
@@ -2758,14 +2537,14 @@ Graph.prototype = {
       throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
     }
 
-    // The old canvases are retrieved to avoid memory leaks ...
-    // @TODO Confirm.
-    // this.canvas = el.select('.flotr-canvas')[0];
-    // this.overlay = el.select('.flotr-overlay')[0];
-    this.canvas = getCanvas(this.canvas, 'canvas'); // Main canvas for drawing graph types
-    this.overlay = getCanvas(this.overlay, 'overlay'); // Overlay canvas for interactive features
+    // Main canvas for drawing graph types
+    this.canvas = getCanvas(this.canvas, 'canvas');
+    // Overlay canvas for interactive features
+    this.overlay = getCanvas(this.overlay, 'overlay');
     this.ctx = getContext(this.canvas);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.octx = getContext(this.overlay);
+    this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
     this.canvasHeight = size.height*o.resolution;
     this.canvasWidth = size.width*o.resolution;
     this.textEnabled = !!this.ctx.drawText || !!this.ctx.fillText; // Enable text functions
@@ -2773,8 +2552,12 @@ Graph.prototype = {
     function getCanvas(canvas, name){
       if(!canvas){
         canvas = D.create('canvas');
+        if (typeof FlashCanvas != "undefined") {
+          FlashCanvas.initElement(canvas);
+        }
         canvas.className = 'flotr-'+name;
         canvas.style.cssText = 'position:absolute;left:0px;top:0px;';
+        D.insert(el, canvas);
       }
       _.each(size, function(size, attribute){
         canvas.setAttribute(attribute, size*o.resolution);
@@ -2782,7 +2565,6 @@ Graph.prototype = {
         D.show(canvas);
       });
       canvas.context_ = null; // Reset the ExCanvas context
-      D.insert(el, canvas);
       return canvas;
     }
 
@@ -2919,7 +2701,7 @@ Flotr.Graph = Graph;
 })();
 
 /**
- * Flotr Series Library
+ * Flotr Axis Library
  */
 
 (function () {
@@ -2933,6 +2715,8 @@ function Axis (o) {
   this.orientation = 1;
   this.offset = 0;
   this.stacks = {};
+  this.datamin = Number.MAX_VALUE;
+  this.datamax = -Number.MAX_VALUE;
 
   _.extend(this, o);
 
@@ -3264,11 +3048,15 @@ Series.prototype = {
 
   getRange: function () {
 
-    var data = this.data,
+    var
+      data = this.data,
       length = data.length,
-      xmin = Number.MAX_VALUE, ymin = Number.MAX_VALUE,
-      xmax = -Number.MAX_VALUE, ymax = -Number.MAX_VALUE,
-      xused, yused,
+      xmin = Number.MAX_VALUE,
+      ymin = Number.MAX_VALUE,
+      xmax = -Number.MAX_VALUE,
+      ymax = -Number.MAX_VALUE,
+      xused = false,
+      yused = false,
       x, y, i;
 
     if (length < 0 || this.hide) return false;
@@ -5208,6 +4996,17 @@ var
   D = Flotr.DOM,
   _ = Flotr._;
 
+function getImage (type, canvas, width, height) {
+
+  // TODO add scaling for w / h
+  var
+    mime = 'image/'+type,
+    data = toDataURL(mime),
+    image = new Image();
+  image.src = data;
+  return image;
+}
+
 Flotr.addPlugin('download', {
 
   saveImage: function (type, width, height, replaceCanvas) {
@@ -5216,14 +5015,11 @@ Flotr.addPlugin('download', {
       image = '<html><body>'+this.canvas.firstChild.innerHTML+'</body></html>';
       return window.open().document.write(image);
     }
-      
-    switch (type) {
-      case 'jpeg':
-      case 'jpg': image = Canvas2Image.saveAsJPEG(this.canvas, replaceCanvas, width, height); break;
-      default:
-      case 'png': image = Canvas2Image.saveAsPNG(this.canvas, replaceCanvas, width, height); break;
-      case 'bmp': image = Canvas2Image.saveAsBMP(this.canvas, replaceCanvas, width, height); break;
-    }
+
+    if (type !== 'jpeg' || type !== 'png') return;
+
+    image = getImage(type, this.canavs, width, height);
+
     if (_.isElement(image) && replaceCanvas) {
       this.download.restoreCanvas();
       D.hide(this.canvas);
@@ -5261,20 +5057,30 @@ Flotr.addPlugin('graphGrid', {
   },
 
   drawGrid: function(){
-    var v, o = this.options,
-        ctx = this.ctx, a;
+
+    var
+      ctx = this.ctx,
+      options = this.options,
+      grid = options.grid,
+      verticalLines = grid.verticalLines,
+      horizontalLines = grid.horizontalLines,
+      minorVerticalLines = grid.minorVerticalLines,
+      minorHorizontalLines = grid.minorHorizontalLines,
+      plotHeight = this.plotHeight,
+      plotWidth = this.plotWidth,
+      a, v, i, j;
         
-    if(o.grid.verticalLines || o.grid.minorVerticalLines || 
-           o.grid.horizontalLines || o.grid.minorHorizontalLines){
-      E.fire(this.el, 'flotr:beforegrid', [this.axes.x, this.axes.y, o, this]);
+    if(verticalLines || minorVerticalLines || 
+           horizontalLines || minorHorizontalLines){
+      E.fire(this.el, 'flotr:beforegrid', [this.axes.x, this.axes.y, options, this]);
     }
     ctx.save();
     ctx.lineWidth = 1;
-    ctx.strokeStyle = o.grid.tickColor;
+    ctx.strokeStyle = grid.tickColor;
     
-    if (o.grid.circular) {
-      ctx.translate(this.plotOffset.left+this.plotWidth/2, this.plotOffset.top+this.plotHeight/2);
-      var radius = Math.min(this.plotHeight, this.plotWidth)*o.radar.radiusRatio/2,
+    if (grid.circular) {
+      ctx.translate(this.plotOffset.left+plotWidth/2, this.plotOffset.top+plotHeight/2);
+      var radius = Math.min(plotHeight, plotWidth)*options.radar.radiusRatio/2,
           sides = this.axes.x.ticks.length,
           coeff = 2*(Math.PI/sides),
           angle = -Math.PI/2;
@@ -5282,33 +5088,27 @@ Flotr.addPlugin('graphGrid', {
       // Draw grid lines in vertical direction.
       ctx.beginPath();
       
-      if(o.grid.horizontalLines){
-        a = this.axes.y;
-        for(var i = 0; i < a.ticks.length; ++i){
-          v = a.ticks[i].v;
-          var ratio = v / a.max;
-          
-          for(var j = 0; j <= sides; ++j){
-            ctx[j == 0 ? 'moveTo' : 'lineTo'](Math.cos(j*coeff+angle)*radius*ratio, Math.sin(j*coeff+angle)*radius*ratio);
+      a = this.axes.y;
+      function circularHorizontalTicks (ticks) {
+        for(i = 0; i < ticks.length; ++i){
+          var ratio = ticks[i].v / a.max;
+          for(j = 0; j <= sides; ++j){
+            ctx[j === 0 ? 'moveTo' : 'lineTo'](
+              Math.cos(j*coeff+angle)*radius*ratio,
+              Math.sin(j*coeff+angle)*radius*ratio
+            );
           }
-          //ctx.moveTo(radius*ratio, 0);
-          //ctx.arc(0, 0, radius*ratio, 0, Math.PI*2, true);
         }
       }
-      if(o.grid.minorHorizontalLines){
-        a = this.axes.y;
-        _.each(_.pluck(a.minorTicks, 'v'), function(v){
-          var ratio = v / a.max;
-      
-          for(var j = 0; j <= sides; ++j){
-            ctx[j == 0 ? 'moveTo' : 'lineTo'](Math.cos(j*coeff+angle)*radius*ratio, Math.sin(j*coeff+angle)*radius*ratio);
-          }
-          //ctx.moveTo(radius*ratio, 0);
-          //ctx.arc(0, 0, radius*ratio, 0, Math.PI*2, true);
-        });
+
+      if(horizontalLines){
+        circularHorizontalTicks(a.ticks);
+      }
+      if(minorHorizontalLines){
+        circularHorizontalTicks(a.minorTicks);
       }
       
-      if(o.grid.verticalLines){
+      if(verticalLines){
         _.times(sides, function(i){
           ctx.moveTo(0, 0);
           ctx.lineTo(Math.cos(i*coeff+angle)*radius, Math.sin(i*coeff+angle)*radius);
@@ -5317,118 +5117,122 @@ Flotr.addPlugin('graphGrid', {
       ctx.stroke();
     }
     else {
+
+      function drawGridLines (ticks, callback) {
+        _.each(_.pluck(ticks, 'v'), function(v){
+          // Don't show lines on upper and lower bounds.
+          if ((v <= a.min || v >= a.max) || 
+              (v == a.min || v == a.max) && grid.outlineWidth)
+            return;
+          callback(Math.floor(a.d2p(v)) + ctx.lineWidth/2);
+        });
+      }
+      function drawVerticalLines (x) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, plotHeight);
+      }
+      function drawHorizontalLines (y) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(plotWidth, y);
+      }
+
       ctx.translate(this.plotOffset.left, this.plotOffset.top);
   
       // Draw grid background, if present in options.
-      if(o.grid.backgroundColor != null){
-        ctx.fillStyle = this.processColor(o.grid.backgroundColor, {x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight});
-        ctx.fillRect(0, 0, this.plotWidth, this.plotHeight);
+      if(grid.backgroundColor){
+        ctx.fillStyle = this.processColor(grid.backgroundColor, {x1: 0, y1: 0, x2: plotWidth, y2: plotHeight});
+        ctx.fillRect(0, 0, plotWidth, plotHeight);
       }
       
-      // Draw grid lines in vertical direction.
       ctx.beginPath();
-      
-      if(o.grid.verticalLines){
-        a = this.axes.x;
-        _.each(_.pluck(a.ticks, 'v'), function(v){
-          // Don't show lines on upper and lower bounds.
-          if ((v <= a.min || v >= a.max) || 
-              (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
-            return;
-    
-          ctx.moveTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, 0);
-          ctx.lineTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, this.plotHeight);
-        }, this);
-      }
-      if(o.grid.minorVerticalLines){
-        a = this.axes.x;
-         _.each(_.pluck(a.minorTicks, 'v'), function(v){
-          // Don't show lines on upper and lower bounds.
-          if ((v <= a.min || v >= a.max) || 
-              (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
-            return;
-      
-          ctx.moveTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, 0);
-          ctx.lineTo(Math.floor(a.d2p(v)) + ctx.lineWidth/2, this.plotHeight);
-        }, this);
-      }
-      
-      // Draw grid lines in horizontal direction.
-      if(o.grid.horizontalLines){
-        a = this.axes.y;
-        _.each(_.pluck(a.ticks, 'v'), function(v){
-          // Don't show lines on upper and lower bounds.
-          if ((v <= a.min || v >= a.max) || 
-              (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
-            return;
-    
-          ctx.moveTo(0, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-          ctx.lineTo(this.plotWidth, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-        }, this);
-      }
-      if(o.grid.minorHorizontalLines){
-        a = this.axes.y;
-        _.each(_.pluck(a.ticks, 'v'), function(v){
-          // Don't show lines on upper and lower bounds.
-          if ((v <= a.min || v >= a.max) || 
-              (v == a.min || v == a.max) && o.grid.outlineWidth != 0)
-            return;
-    
-          ctx.moveTo(0, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-          ctx.lineTo(this.plotWidth, Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-        }, this);
-      }
+
+      a = this.axes.x;
+      if (verticalLines)        drawGridLines(a.ticks, drawVerticalLines);
+      if (minorVerticalLines)   drawGridLines(a.minorTicks, drawVerticalLines);
+
+      a = this.axes.y;
+      if (horizontalLines)      drawGridLines(a.ticks, drawHorizontalLines);
+      if (minorHorizontalLines) drawGridLines(a.minorTicks, drawHorizontalLines);
+
       ctx.stroke();
     }
     
     ctx.restore();
-    if(o.grid.verticalLines || o.grid.minorVerticalLines ||
-       o.grid.horizontalLines || o.grid.minorHorizontalLines){
-      E.fire(this.el, 'flotr:aftergrid', [this.axes.x, this.axes.y, o, this]);
+    if(verticalLines || minorVerticalLines ||
+       horizontalLines || minorHorizontalLines){
+      E.fire(this.el, 'flotr:aftergrid', [this.axes.x, this.axes.y, options, this]);
     }
   }, 
 
   drawOutline: function(){
-    var v, o = this.options,
-        ctx = this.ctx;
+    var
+      that = this,
+      options = that.options,
+      grid = options.grid,
+      ctx = that.ctx,
+      backgroundImage = grid.backgroundImage,
+      plotOffset = that.plotOffset,
+      leftOffset = plotOffset.left,
+      topOffset = plotOffset.top,
+      plotWidth = that.plotWidth,
+      plotHeight = that.plotHeight,
+      v, img, src, left, top, globalAlpha;
     
-    if (o.grid.outlineWidth == 0) return;
+    if (!grid.outlineWidth) return;
     
     ctx.save();
     
-    if (o.grid.circular) {
-      ctx.translate(this.plotOffset.left+this.plotWidth/2, this.plotOffset.top+this.plotHeight/2);
-      var radius = Math.min(this.plotHeight, this.plotWidth)*o.radar.radiusRatio/2,
+    if (grid.circular) {
+      ctx.translate(leftOffset + plotWidth / 2, topOffset + plotHeight / 2);
+      var radius = Math.min(plotHeight, plotWidth) * options.radar.radiusRatio / 2,
           sides = this.axes.x.ticks.length,
           coeff = 2*(Math.PI/sides),
           angle = -Math.PI/2;
       
       // Draw axis/grid border.
       ctx.beginPath();
-      ctx.lineWidth = o.grid.outlineWidth;
-      ctx.strokeStyle = o.grid.color;
+      ctx.lineWidth = grid.outlineWidth;
+      ctx.strokeStyle = grid.color;
       ctx.lineJoin = 'round';
       
-      for(var i = 0; i <= sides; ++i){
-        ctx[i == 0 ? 'moveTo' : 'lineTo'](Math.cos(i*coeff+angle)*radius, Math.sin(i*coeff+angle)*radius);
+      for(i = 0; i <= sides; ++i){
+        ctx[i === 0 ? 'moveTo' : 'lineTo'](Math.cos(i*coeff+angle)*radius, Math.sin(i*coeff+angle)*radius);
       }
       //ctx.arc(0, 0, radius, 0, Math.PI*2, true);
 
       ctx.stroke();
     }
     else {
-      ctx.translate(this.plotOffset.left, this.plotOffset.top);
+      ctx.translate(leftOffset, topOffset);
       
       // Draw axis/grid border.
-      var lw = o.grid.outlineWidth,
+      var lw = grid.outlineWidth,
           orig = 0.5-lw+((lw+1)%2/2);
       ctx.lineWidth = lw;
-      ctx.strokeStyle = o.grid.color;
+      ctx.strokeStyle = grid.color;
       ctx.lineJoin = 'miter';
-      ctx.strokeRect(orig, orig, this.plotWidth, this.plotHeight);
+      ctx.strokeRect(orig, orig, plotWidth, plotHeight);
     }
     
     ctx.restore();
+
+    if (backgroundImage) {
+
+      src = backgroundImage.src || backgroundImage;
+      left = (parseInt(backgroundImage.left, 10) || 0) + plotOffset.left;
+      top = (parseInt(backgroundImage.top, 10) || 0) + plotOffset.top;
+      img = new Image();
+
+      img.onload = function() {
+        ctx.save();
+        if (backgroundImage.alpha) ctx.globalAlpha = backgroundImage.alpha;
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.drawImage(img, 0, 0, plotWidth, plotHeight, left, top, plotWidth, plotHeight);
+        ctx.restore();
+      };
+
+      img.src = src;
+    }
   }
 });
 
@@ -5438,7 +5242,8 @@ Flotr.addPlugin('graphGrid', {
 
 var
   D = Flotr.DOM,
-  _ = Flotr._;
+  _ = Flotr._,
+  flotr = Flotr;
 
 Flotr.addPlugin('hit', {
   callbacks: {
@@ -6009,298 +5814,204 @@ Flotr.addPlugin('labels', {
   },
 
   draw: function(){
-    // Construct fixed width label boxes, which can be styled easily. 
-    var noLabels = 0, axis,
-        xBoxWidth, i, html, tick, left, top,
-        options = this.options,
-        ctx = this.ctx,
-        a = this.axes,
-        style;
-    
-    for(i = 0; i < a.x.ticks.length; ++i){
-      if (a.x.ticks[i].label) {
-        ++noLabels;
-      }
+    // Construct fixed width label boxes, which can be styled easily.
+    var
+      axis, tick, left, top, xBoxWidth,
+      radius, sides, coeff, angle,
+      div, i, html = '',
+      noLabels = 0,
+      options  = this.options,
+      ctx      = this.ctx,
+      a        = this.axes,
+      style    = { size: options.fontSize };
+
+    for (i = 0; i < a.x.ticks.length; ++i){
+      if (a.x.ticks[i].label) { ++noLabels; }
     }
     xBoxWidth = this.plotWidth / noLabels;
-    
+
     if (options.grid.circular) {
       ctx.save();
-      ctx.translate(this.plotOffset.left+this.plotWidth/2, this.plotOffset.top+this.plotHeight/2);
-      var radius = this.plotHeight*options.radar.radiusRatio/2 + options.fontSize,
-          sides = this.axes.x.ticks.length,
-          coeff = 2*(Math.PI/sides),
-          angle = -Math.PI/2,
-          x, y;
-      
-      style = {
-        size: options.fontSize
-      };
+      ctx.translate(this.plotOffset.left + this.plotWidth / 2,
+          this.plotOffset.top + this.plotHeight / 2);
 
-      // Add x labels.
-      axis = a.x;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels; ++i){
-        tick = axis.ticks[i];
-        tick.label += '';
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        x = Math.cos(i*coeff+angle) * radius; 
-        y = Math.sin(i*coeff+angle) * radius;
-            
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textBaseline = 'middle';
-        style.textAlign = (Math.abs(x) < 0.1 ? 'center' : (x < 0 ? 'right' : 'left'));
+      radius = this.plotHeight * options.radar.radiusRatio / 2 + options.fontSize;
+      sides  = this.axes.x.ticks.length;
+      coeff  = 2 * (Math.PI / sides);
+      angle  = -Math.PI / 2;
 
-        Flotr.drawText(ctx, tick.label, x, y, style);
-      }
-      for(i = 0; i < axis.minorTicks.length && axis.options.showMinorLabels; ++i){
-        tick = axis.minorTicks[i];
-        tick.label += '';
-        if(!tick.label || tick.label.length == 0) continue;
-      
-        x = Math.cos(i*coeff+angle) * radius;
-        y = Math.sin(i*coeff+angle) * radius;
-            
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textBaseline = 'middle';
-        style.textAlign = (Math.abs(x) < 0.1 ? 'center' : (x < 0 ? 'right' : 'left'));
-
-        Flotr.drawText(ctx, tick.label, x, y, style);
-      }
-      
-      // Add y labels.
-      axis = a.y;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels; ++i){
-        tick = axis.ticks[i];
-        tick.label += '';
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textBaseline = 'middle';
-        style.textAlign = 'left';
-        
-        Flotr.drawText(ctx, tick.label, 3, -(axis.ticks[i].v / axis.max) * (radius - options.fontSize), style);
-      }
-      for(i = 0; i < axis.minorTicks.length && axis.options.showMinorLabels; ++i){
-        tick = axis.minorTicks[i];
-        tick.label += '';
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textBaseline = 'middle';
-        style.textAlign = 'left';
-        
-        Flotr.drawText(ctx, tick.label, 3, -(axis.ticks[i].v / axis.max) * (radius - options.fontSize), style);
-      }
+      drawLabelCircular(this, a.x, false);
+      drawLabelCircular(this, a.x, true);
+      drawLabelCircular(this, a.y, false);
+      drawLabelCircular(this, a.y, true);
       ctx.restore();
-      return;
     }
-    
+
     if (!options.HtmlText && this.textEnabled) {
-      style = {
-        size: options.fontSize
-      };
-  
-      // Add x labels.
-      axis = a.x;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels && axis.used; ++i){
-        tick = axis.ticks[i];
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        left = axis.d2p(tick.v);
-        if (left < 0 || left > this.plotWidth) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textAlign = 'center';
-        style.textBaseline = 'top';
-        style = Flotr.getBestTextAlign(style.angle, style);
-        
-        Flotr.drawText(
-          ctx, tick.label,
-          this.plotOffset.left + left, 
-          this.plotOffset.top + this.plotHeight + options.grid.labelMargin,
-          style
-        );
-      }
-        
-      // Add x2 labels.
-      axis = a.x2;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels && axis.used; ++i){
-        tick = axis.ticks[i];
-        if(!tick.label || tick.label.length == 0) continue;
-        
-        left = axis.d2p(tick.v);
-        if(left < 0 || left > this.plotWidth) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textAlign = 'center';
-        style.textBaseline = 'bottom';
-        style = Flotr.getBestTextAlign(style.angle, style);
-        
-        Flotr.drawText(
-          ctx, tick.label,
-          this.plotOffset.left + left, 
-          this.plotOffset.top + options.grid.labelMargin,
-          style
-        );
-      }
-        
-      // Add y labels.
-      axis = a.y;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels && axis.used; ++i){
-        tick = axis.ticks[i];
-        if (!tick.label || tick.label.length == 0) continue;
-        
-        top = axis.d2p(tick.v);
-        if(top < 0 || top > this.plotHeight) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textAlign = 'right';
-        style.textBaseline = 'middle';
-        style = Flotr.getBestTextAlign(style.angle, style);
-        
-        Flotr.drawText(
-          ctx, tick.label,
-          this.plotOffset.left - options.grid.labelMargin, 
-          this.plotOffset.top + top,
-          style
-        );
-      }
-        
-      // Add y2 labels.
-      axis = a.y2;
-      style.color = axis.options.color || options.grid.color;
-      for(i = 0; i < axis.ticks.length && axis.options.showLabels && axis.used; ++i){
-        tick = axis.ticks[i];
-        if (!tick.label || tick.label.length == 0) continue;
-        
-        top = axis.d2p(tick.v);
-        if(top < 0 || top > this.plotHeight) continue;
-        
-        style.angle = Flotr.toRad(axis.options.labelsAngle);
-        style.textAlign = 'left';
-        style.textBaseline = 'middle';
-        style = Flotr.getBestTextAlign(style.angle, style);
-        
-        Flotr.drawText(
-          ctx, tick.label,
-          this.plotOffset.left + this.plotWidth + options.grid.labelMargin, 
-          this.plotOffset.top + top,
-          style
-        );
-        
-        ctx.save();
-        ctx.strokeStyle = style.color;
-        ctx.beginPath();
-        ctx.moveTo(this.plotOffset.left + this.plotWidth - 8, this.plotOffset.top + axis.d2p(tick.v));
-        ctx.lineTo(this.plotOffset.left + this.plotWidth,     this.plotOffset.top + axis.d2p(tick.v));
-        ctx.stroke();
-        ctx.restore();
-      }
-    } 
-    else if (a.x.options.showLabels || a.x2.options.showLabels || a.y.options.showLabels || a.y2.options.showLabels) {
-      html = [];
-      
-      // Add x labels.
-      axis = a.x;
-      if (axis.options.showLabels){
-        for(i = 0; i < axis.ticks.length; ++i){
-          tick = axis.ticks[i];
-          if(!tick.label || tick.label.length == 0 || 
-              (this.plotOffset.left + axis.d2p(tick.v) < 0) || 
-              (this.plotOffset.left + axis.d2p(tick.v) > this.canvasWidth)) continue;
-          
-          html.push(
-            '<div style="position:absolute;top:', 
-            (this.plotOffset.top + this.plotHeight + options.grid.labelMargin), 'px;left:', 
-            (this.plotOffset.left +axis.d2p(tick.v) - xBoxWidth/2), 'px;width:', 
-            xBoxWidth, 'px;text-align:center;', (axis.options.color?('color:'+axis.options.color+';'):''), 
-            '" class="flotr-grid-label">', tick.label, '</div>'
-          );
-        }
-      }
-      
-      // Add x2 labels.
-      axis = a.x2;
-      if (axis.options.showLabels && axis.used){
-        for(i = 0; i < axis.ticks.length; ++i){
-          tick = axis.ticks[i];
-          if(!tick.label || tick.label.length == 0 || 
-              (this.plotOffset.left + axis.d2p(tick.v) < 0) || 
-              (this.plotOffset.left + axis.d2p(tick.v) > this.canvasWidth)) continue;
-          
-          html.push(
-            '<div style="position:absolute;top:', 
-            (this.plotOffset.top - options.grid.labelMargin - axis.maxLabel.height), 'px;left:', 
-            (this.plotOffset.left + axis.d2p(tick.v) - xBoxWidth/2), 'px;width:', 
-            xBoxWidth, 'px;text-align:center;', (axis.options.color?('color:'+axis.options.color+';'):''), 
-            '" class="flotr-grid-label">', tick.label, '</div>'
-          );
-        }
-      }
-      
-      // Add y labels.
-      axis = a.y;
-      if (axis.options.showLabels){
-        for(i = 0; i < axis.ticks.length; ++i){
-          tick = axis.ticks[i];
-          if (!tick.label || tick.label.length == 0 ||
-               (this.plotOffset.top + axis.d2p(tick.v) < 0) || 
-               (this.plotOffset.top + axis.d2p(tick.v) > this.canvasHeight)) continue;
-          
-          html.push(
-            '<div style="position:absolute;top:', 
-            (this.plotOffset.top + axis.d2p(tick.v) - axis.maxLabel.height/2), 'px;left:0;width:', 
-            (this.plotOffset.left - options.grid.labelMargin), 'px;text-align:right;', 
-            (axis.options.color?('color:'+axis.options.color+';'):''), 
-            '" class="flotr-grid-label flotr-grid-label-y">', tick.label, '</div>'
-          );
-        }
-      }
-      
-      // Add y2 labels.
-      axis = a.y2;
-      if (axis.options.showLabels && axis.used){
-        ctx.save();
-        ctx.strokeStyle = axis.options.color || options.grid.color;
-        ctx.beginPath();
-        
-        for(i = 0; i < axis.ticks.length; ++i){
-          tick = axis.ticks[i];
-          if (!tick.label || tick.label.length == 0 ||
-               (this.plotOffset.top + axis.d2p(tick.v) < 0) || 
-               (this.plotOffset.top + axis.d2p(tick.v) > this.canvasHeight)) continue;
-          
-          html.push(
-            '<div style="position:absolute;top:', 
-            (this.plotOffset.top + axis.d2p(tick.v) - axis.maxLabel.height/2), 'px;right:0;width:', 
-            (this.plotOffset.right - options.grid.labelMargin), 'px;text-align:left;', 
-            (axis.options.color?('color:'+axis.options.color+';'):''), 
-            '" class="flotr-grid-label flotr-grid-label-y">', tick.label, '</div>'
-          );
+      drawLabelNoHtmlText(this, a.x, 'center', 'top');
+      drawLabelNoHtmlText(this, a.x2, 'center', 'bottom');
+      drawLabelNoHtmlText(this, a.y, 'right', 'middle');
+      drawLabelNoHtmlText(this, a.y2, 'left', 'middle');
+    
+    } else if ((a.x.options.showLabels
+        || a.x2.options.showLabels
+        || a.y.options.showLabels
+        || a.y2.options.showLabels)
+        && !options.grid.circular) {
 
-          ctx.moveTo(this.plotOffset.left + this.plotWidth - 8, this.plotOffset.top + axis.d2p(tick.v));
-          ctx.lineTo(this.plotOffset.left + this.plotWidth,     this.plotOffset.top + axis.d2p(tick.v));
-        }
-        ctx.stroke();
-        ctx.restore();
-      }
-      
-      html = html.join('');
+      html = '';
 
-      var div = D.create('div');
+      drawLabelHtml(this, a.x);
+      drawLabelHtml(this, a.x2);
+      drawLabelHtml(this, a.y);
+      drawLabelHtml(this, a.y2);
+
+      ctx.stroke();
+      ctx.restore();
+      div = D.create('div');
       D.setStyles(div, {
         fontSize: 'smaller',
-        color: options.grid.color 
+        color: options.grid.color
       });
       div.className = 'flotr-labels';
       D.insert(this.el, div);
       D.insert(div, html);
+    }
+
+    function drawLabelCircular (graph, axis, minorTicks) {
+      var
+        ticks   = minorTicks ? axis.minorTicks : axis.ticks,
+        isX     = axis.orientation === 1,
+        isFirst = axis.n === 1,
+        style, offset;
+
+      style = {
+        color        : axis.options.color || options.grid.color,
+        angle        : Flotr.toRad(axis.options.labelsAngle),
+        textBaseline : 'middle'
+      };
+
+      for (i = 0; i < ticks.length &&
+          (minorTicks ? axis.options.showMinorLabels : axis.options.showLabels); ++i){
+        tick = ticks[i];
+        tick.label += '';
+        if (!tick.label || !tick.label.length) { continue; }
+
+        x = Math.cos(i * coeff + angle) * radius;
+        y = Math.sin(i * coeff + angle) * radius;
+
+        style.textAlign = isX ? (Math.abs(x) < 0.1 ? 'center' : (x < 0 ? 'right' : 'left')) : 'left';
+
+        Flotr.drawText(
+          ctx, tick.label,
+          isX ? x : 3,
+          isX ? y : -(axis.ticks[i].v / axis.max) * (radius - options.fontSize),
+          style
+        );
+      }
+    }
+
+    function drawLabelNoHtmlText (graph, axis, textAlign, textBaseline)  {
+      var
+        isX     = axis.orientation === 1,
+        isFirst = axis.n === 1,
+        style, offset;
+
+      style = {
+        color        : axis.options.color || options.grid.color,
+        textAlign    : textAlign,
+        textBaseline : textBaseline,
+        angle : Flotr.toRad(axis.options.labelsAngle)
+      };
+      style = Flotr.getBestTextAlign(style.angle, style);
+
+      for (i = 0; i < axis.ticks.length && continueShowingLabels(axis); ++i) {
+
+        tick = axis.ticks[i];
+        if (!tick.label || !tick.label.length) { continue; }
+
+        offset = axis.d2p(tick.v);
+        if (offset < 0 ||
+            offset > (isX ? graph.plotWidth : graph.plotHeight)) { continue; }
+
+        Flotr.drawText(
+          ctx, tick.label,
+          leftOffset(graph, isX, isFirst, offset),
+          topOffset(graph, isX, isFirst, offset),
+          style
+        );
+
+        // Only draw on axis y2
+        if (!isX && !isFirst) {
+          ctx.save();
+          ctx.strokeStyle = style.color;
+          ctx.beginPath();
+          ctx.moveTo(graph.plotOffset.left + graph.plotWidth - 8, graph.plotOffset.top + axis.d2p(tick.v));
+          ctx.lineTo(graph.plotOffset.left + graph.plotWidth, graph.plotOffset.top + axis.d2p(tick.v));
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      function continueShowingLabels (axis) {
+        return axis.options.showLabels && axis.used;
+      }
+      function leftOffset (graph, isX, isFirst, offset) {
+        return graph.plotOffset.left +
+          (isX ? offset :
+            (isFirst ?
+              -options.grid.labelMargin :
+              options.grid.labelMargin + graph.plotWidth));
+      }
+      function topOffset (graph, isX, isFirst, offset) {
+        return graph.plotOffset.top +
+          (isX ? options.grid.labelMargin : offset) +
+          ((isX && isFirst) ? graph.plotHeight : 0);
+      }
+    }
+
+    function drawLabelHtml (graph, axis) {
+      var
+        isX     = axis.orientation === 1,
+        isFirst = axis.n === 1,
+        left, style, top,
+        offset = graph.plotOffset;
+
+      if (!isX && !isFirst) {
+        ctx.save();
+        ctx.strokeStyle = axis.options.color || options.grid.color;
+        ctx.beginPath();
+      }
+
+      if (axis.options.showLabels && (isFirst ? true : axis.used)) {
+        for (i = 0; i < axis.ticks.length; ++i) {
+          tick = axis.ticks[i];
+          if (!tick.label || !tick.label.length ||
+              ((isX ? offset.left : offset.top) + axis.d2p(tick.v) < 0) ||
+              ((isX ? offset.left : offset.top) + axis.d2p(tick.v) > (isX ? graph.canvasWidth : graph.canvasHeight))) {
+            continue;
+          }
+          top = offset.top +
+            (isX ?
+              ((isFirst ? 1 : -1 ) * (graph.plotHeight + options.grid.labelMargin)) :
+              axis.d2p(tick.v) - axis.maxLabel.height / 2);
+          left = isX ? (offset.left + axis.d2p(tick.v) - xBoxWidth / 2) : 0;
+          
+          html += [
+            '<div style="position:absolute; text-align:' + (isX ? 'center' : 'right') + '; ',
+            'top:' + top + 'px; ',
+            ((!isX && !isFirst) ? 'right:' : 'left:') + left + 'px; ',
+            'width:' + (isX ? xBoxWidth : ((isFirst ? offset.left : offset.right) - options.grid.labelMargin)) + 'px; ',
+            axis.options.color ? ('color:' + axis.options.color + '; ') : ' ',
+            ' class="flotr-grid-label">' + tick.label + '</div>'
+          ].join(' ');
+          
+          if (!isX && !isFirst) {
+            ctx.moveTo(offset.left + graph.plotWidth - 8, offset.top + axis.d2p(tick.v));
+            ctx.lineTo(offset.left + graph.plotWidth, offset.top + axis.d2p(tick.v));
+          }
+        }
+      }
     }
   }
 
