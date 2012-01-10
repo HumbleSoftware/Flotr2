@@ -45,7 +45,7 @@ describe('Flotr', function () {
     function executeExampleTest (example, flotr, node) {
       Math.seedrandom(example.key);
       Flotr = flotr;
-      example.callback(node);
+      example.callback.apply(this, [node].concat(example.args || []));
       return node.graph.ctx;
     }
 

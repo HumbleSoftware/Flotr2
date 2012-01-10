@@ -66,3 +66,21 @@ Date
   formatting
   constants
 
+
+Spacing Calculation
+===================
+
+Flotr
+  calculate data
+  calculate margins
+
+Chart
+  calculate Data Ranges - Explicit or auto data minimum, maximums
+  calculate Data Range Extensions - By chart type, extend data range with needs of chart type (ie. stacked bars, stacked lines)
+  add Chart Padding - By chart type
+
+Text
+  use explicit margins
+  calculate label margins
+  calculate title margins
+
