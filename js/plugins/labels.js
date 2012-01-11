@@ -172,7 +172,7 @@ Flotr.addPlugin('labels', {
         isX     = axis.orientation === 1,
         isFirst = axis.n === 1,
         left, style, top,
-        offset = graph.plotOffset;
+        offset = graph.plotOffset, name;
 
       if (!isX && !isFirst) {
         ctx.save();
@@ -193,14 +193,22 @@ Flotr.addPlugin('labels', {
               ((isFirst ? 1 : -1 ) * (graph.plotHeight + options.grid.labelMargin)) :
               axis.d2p(tick.v) - axis.maxLabel.height / 2);
           left = isX ? (offset.left + axis.d2p(tick.v) - xBoxWidth / 2) : 0;
-          
+
+          if (i === 0) {
+            name = ' first';
+          } else if (i === axis.ticks.length - 1) {
+            name = ' last';
+          } else {
+            name = '';
+          }
+
           html += [
             '<div style="position:absolute; text-align:' + (isX ? 'center' : 'right') + '; ',
             'top:' + top + 'px; ',
             ((!isX && !isFirst) ? 'right:' : 'left:') + left + 'px; ',
             'width:' + (isX ? xBoxWidth : ((isFirst ? offset.left : offset.right) - options.grid.labelMargin)) + 'px; ',
             axis.options.color ? ('color:' + axis.options.color + '; ') : ' ',
-            '" class="flotr-grid-label">' + tick.label + '</div>'
+            '" class="flotr-grid-label' + name + '">' + tick.label + '</div>'
           ].join(' ');
           
           if (!isX && !isFirst) {
