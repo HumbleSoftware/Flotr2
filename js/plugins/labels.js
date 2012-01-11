@@ -200,7 +200,7 @@ Flotr.addPlugin('labels', {
             ((!isX && !isFirst) ? 'right:' : 'left:') + left + 'px; ',
             'width:' + (isX ? xBoxWidth : ((isFirst ? offset.left : offset.right) - options.grid.labelMargin)) + 'px; ',
             axis.options.color ? ('color:' + axis.options.color + '; ') : ' ',
-            ' class="flotr-grid-label">' + tick.label + '</div>'
+            '" class="flotr-grid-label">' + tick.label + '</div>'
           ].join(' ');
           
           if (!isX && !isFirst) {
