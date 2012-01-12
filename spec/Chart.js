@@ -43,13 +43,28 @@ describe('Charts', function () {
 
   describe('Lines', function () {
 
+    beforeEach(function () {
+      options = _.clone(defaults);
+    });
+
+    /*
+    describe('Data', function () {
+      it('gets a range', function () {
+        options.stacked = true;
+        options.data = [[0, 0], [240, 160], [480, 320]];
+        range = TestFlotr.graphTypes.lines.range(options);
+        expect(range.min).toEqual(0);
+        expect(range.max).toEqual(320);
+      });
+    });
+    */
+
     describe('Draw', function () {
 
       beforeEach(function () {
         this.addMatchers(imagediff.jasmine);
         a = imagediff.createCanvas(width, height);
         b = imagediff.createCanvas(width, height);
-        options = _.clone(defaults);
         options.context = a.getContext('2d');
       });
 
