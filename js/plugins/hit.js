@@ -116,11 +116,11 @@ Flotr.addPlugin('hit', {
    * @param {Object} mouse - Object that holds the relative x and y coordinates of the cursor.
    */
   hit: function(mouse){
+
     var
       options = this.options,
       prevHit = this.prevHit,
-      closest = this.hit.closest(mouse),
-      sensibility, dataIndex, seriesIndex, series, value, xaxis, yaxis;
+      closest, sensibility, dataIndex, seriesIndex, series, value, xaxis, yaxis;
 
     // Nearest data element.
     // dist, x, y, relX, relY, absX, absY, sAngle, eAngle, fraction, mouse,
@@ -132,29 +132,42 @@ Flotr.addPlugin('hit', {
       absY : mouse.absY
     };
 
-    if (closest) {
+    if (this.hit.executeOnType(this.series, 'hit', [mouse, n])) {
+      if (!_.isUndefined(n.seriesIndex)) {
+        series    = this.series[n.seriesIndex];
+        n.series  = series;
+        n.mouse   = series.mouse;
+        n.xaxis   = series.xaxis;
+        n.yaxis   = series.yaxis;
+      }
+    } else {
 
-      closest     = options.mouse.trackY ? closest.point : closest.x;
-      seriesIndex = closest.seriesIndex;
-      series      = this.series[seriesIndex];
-      xaxis       = series.xaxis;
-      yaxis       = series.yaxis;
-      sensibility = 2 * series.mouse.sensibility;
+      closest = this.hit.closest(mouse);
 
-      if
-        (options.mouse.trackAll ||
-        (closest.distanceX < sensibility / xaxis.scale &&
-        (!options.mouse.trackY || closest.distanceY < sensibility / yaxis.scale)))
-      {
-        n.series      = series;
-        n.xaxis       = series.xaxis;
-        n.yaxis       = series.yaxis;
-        n.mouse       = series.mouse;
-        n.x           = closest.x;
-        n.y           = closest.y;
-        n.dist        = closest.distance;
-        n.index       = closest.dataIndex;
-        n.seriesIndex = seriesIndex;
+      if (closest) {
+
+        closest     = options.mouse.trackY ? closest.point : closest.x;
+        seriesIndex = closest.seriesIndex;
+        series      = this.series[seriesIndex];
+        xaxis       = series.xaxis;
+        yaxis       = series.yaxis;
+        sensibility = 2 * series.mouse.sensibility;
+
+        if
+          (options.mouse.trackAll ||
+          (closest.distanceX < sensibility / xaxis.scale &&
+          (!options.mouse.trackY || closest.distanceY < sensibility / yaxis.scale)))
+        {
+          n.series      = series;
+          n.xaxis       = series.xaxis;
+          n.yaxis       = series.yaxis;
+          n.mouse       = series.mouse;
+          n.x           = closest.x;
+          n.y           = closest.y;
+          n.dist        = closest.distance;
+          n.index       = closest.dataIndex;
+          n.seriesIndex = seriesIndex;
+        }
       }
     }
 
