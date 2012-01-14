@@ -114,143 +114,48 @@ Flotr.addPlugin('hit', {
    */
   hit: function(mouse){
     var
-      series = this.series,
       options = this.options,
       prevHit = this.prevHit,
-      data, sens, xsens, ysens, x, y, xa, ya, mx, my, i, n;
+      closest = this.hit.closest(mouse),
+      sensibility, dataIndex, seriesIndex, series, value, xaxis, yaxis;
 
     // Nearest data element.
+    // dist, x, y, relX, relY, absX, absY, sAngle, eAngle, fraction, mouse,
+    // xaxis, yaxis, series, index, seriesIndex
     n = {
-      dist:Number.MAX_VALUE,
-      x:null,
-      y:null,
       relX:mouse.relX,
       relY:mouse.relY,
       absX:mouse.absX,
-      absY:mouse.absY,
-      sAngle:null,
-      eAngle:null,
-      fraction: null,
-      mouse:null,
-      xaxis:null,
-      yaxis:null,
-      series:null,
-      index:null,
-      seriesIndex:null
+      absY:mouse.absY
     };
 
-    // TODO what is trackAll?
-    // TODO bars trackY
-    if (options.mouse.trackAll) {
-      for (i = 0; i < series.length; i++) {
-        s = series[i];
-        data = s.data;
-        xa = s.xaxis;
-        ya = s.yaxis;
-        xsens = (2*options.points.lineWidth)/xa.scale * s.mouse.sensibility;
-        mx = xa.p2d(mouse.relX);
-        my = ya.p2d(mouse.relY);
-    
-        for(var j = 0; j < data.length; j++){
-          x = data[j][0];
-          y = data[j][1];
-    
-          if (y === null ||
-              xa.min > x || xa.max < x ||
-              ya.min > y || ya.max < y ||
-              mx < xa.min || mx > xa.max ||
-              my < ya.min || my > ya.max) continue;
-    
-          var xdiff = Math.abs(x - mx);
-    
-          // Bars and Pie are not supported yet. Not sure how it should look with bars or Pie
-          if((!s.bars.show && xdiff < xsens) 
-              || (s.bars.show && xdiff < s.bars.barWidth/2) 
-              || (y < 0 && my < 0 && my > y)) {
-            
-            var distance = xdiff;
-            
-            if (distance < n.dist) {
-              n.dist = distance;
-              n.x = x;
-              n.y = y;
-              n.xaxis = xa;
-              n.yaxis = ya;
-              n.mouse = s.mouse;
-              n.series = s; 
-              n.allSeries = series; // include all series
-              n.index = j;
-            }
-          }
-        }
+    if (closest) {
+
+      closest     = options.mouse.trackY ? closest.point : closest.x;
+      dataIndex   = closest.dataIndex;
+      seriesIndex = closest.seriesIndex;
+      series      = this.series[seriesIndex];
+      xaxis       = series.xaxis;
+      yaxis       = series.yaxis;
+      sensibility = 2 * series.mouse.sensibility;
+
+      if
+        (options.mouse.trackAll ||
+        (closest.distanceX < sensibility / xaxis.scale &&
+        (!options.mouse.trackY || closest.distanceY < sensibility / yaxis.scale)))
+      {
+        n.series      = series;
+        n.xaxis       = series.xaxis;
+        n.yaxis       = series.yaxis;
+        n.mouse       = series.mouse;
+        n.x           = closest.x;
+        n.y           = closest.y;
+        n.dist        = closest.distance;
+        n.index       = dataIndex;
+        n.seriesIndex = seriesIndex;
       }
     }
-    else if (this.hit.executeOnType(series, 'hit', [mouse, n])) {
-      if (n.seriesIndex !== null) {
-        n.series = series[n.seriesIndex];
-        n.mouse = n.series.mouse;
-        n.xaxis = n.series.xaxis;
-        n.yaxis = n.series.yaxis;
-      }
-    } else {
-      for (i = 0; i < series.length; i++) {
-        s = series[i];
-        if(!s.mouse.track) continue;
-        
-        data = s.data;
-        xa = s.xaxis;
-        ya = s.yaxis;
-        sens = 2 * (options.points ? options.points.lineWidth : 1) * s.mouse.sensibility;
-        xsens = sens/xa.scale;
-        ysens = sens/ya.scale;
-        mx = xa.p2d(mouse.relX);
-        my = ya.p2d(mouse.relY);
 
-        for(var j = 0, xpow, ypow; j < data.length; j++){
-          x = data[j][0];
-          y = data[j][1];
-          
-          var
-            xdiff = Math.abs(x + s.bars.barWidth/2 - mx),
-            ydiff = Math.abs(y - my);
-
-          if (y === null || 
-              xa.min > x || xa.max < x || 
-              ya.min > y || ya.max < y) continue;
-
-          // we use a different set of criteria to determin if there has been a hit
-          // depending on what type of graph we have
-          if(xdiff < xsens && (!s.mouse.trackY || ydiff < ysens)) {
-            console.log('hitme');
-
-              /*
-              // Bars check
-              // For horizontal bars there is need to use y-axis tracking, so s.mouse.trackY is ignored
-              (s.bars.show && (!s.bars.horizontal && xdiff < s.bars.barWidth/2 + 1/xa.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
-              && (!s.mouse.trackY || (y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y))) 
-              || (s.bars.horizontal && ydiff < s.bars.barWidth/2 + 1/ya.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
-              && ((x > 0 && mx > 0 && mx < x) || (x < 0 && mx < 0 && mx > x))))
-              ) { 
-              */
-            
-            var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
-            if(distance < n.dist){
-              n.dist = distance;
-              n.x = x;
-              n.y = y;
-              n.xaxis = xa;
-              n.yaxis = ya;
-              n.mouse = s.mouse;
-              n.series = s;
-              n.allSeries = series;
-              n.index = j;
-              n.seriesIndex = i;
-            }
-          }
-        }
-      }
-    }
-    
     if(n.series && (n.mouse && n.mouse.track && !prevHit || (prevHit /*&& (n.x != prevHit.x || n.y != prevHit.y)*/))){
       if(n.x !== null && n.y !== null){
         this.hit.clearHit();
@@ -265,6 +170,67 @@ Flotr.addPlugin('hit', {
     else if(prevHit) {
       this.hit.clearHit();
     }
+  },
+
+  closest : function (mouse) {
+
+    var
+      series    = this.series,
+      options   = this.options,
+      mouseX    = mouse.x,
+      mouseY    = mouse.y,
+      compare   = Number.MAX_VALUE,
+      compareX  = Number.MAX_VALUE,
+      closest   = {},
+      closestX  = {},
+      distance,
+      serie,
+      data,
+      x, y,
+      distanceX, distanceY,
+      i, j;
+
+    function setClosest (o) {
+      o.distance = distance;
+      o.distanceX = distanceX;
+      o.distanceY = distanceY;
+      o.seriesIndex = i;
+      o.dataIndex = j;
+      o.x = x;
+      o.y = y;
+    }
+
+    for (i = 0; i < series.length; i++) {
+
+      serie = series[i];
+      data = serie.data;
+
+      for (j = data.length; j--;) {
+
+        x = data[j][0];
+        y = data[j][1];
+        distanceX = Math.abs(x - mouseX);
+        distanceY = Math.abs(y - mouseY);
+
+        // Skip square root for speed
+        distance = distanceX * distanceX + distanceY * distanceY;
+
+        if (distance < compare) {
+          compare = distance;
+          setClosest(closest);
+        }
+
+        if (distanceX < compareX) {
+          compareX = distanceX;
+          setClosest(closestX);
+        }
+      }
+    }
+
+    return {
+      point : closest,
+      x : closestX
+    };
   },
 
   drawMouseTrack : function (n) {
@@ -339,5 +305,6 @@ Flotr.addPlugin('hit', {
 
     D.show(mouseTrack);
   }
+
 });
 })();
