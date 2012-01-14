@@ -113,10 +113,10 @@ Flotr.addPlugin('hit', {
    * @param {Object} mouse - Object that holds the relative x and y coordinates of the cursor.
    */
   hit: function(mouse){
-    var series = this.series,
+    var
+      series = this.series,
       options = this.options,
       prevHit = this.prevHit,
-      octx = this.octx, 
       data, sens, xsens, ysens, x, y, xa, ya, mx, my, i, n;
 
     // Nearest data element.
@@ -262,7 +262,7 @@ Flotr.addPlugin('hit', {
         this.hit.clearHit();
       }
     }
-    else if(this.prevHit) {
+    else if(prevHit) {
       this.hit.clearHit();
     }
   },
