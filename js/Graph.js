@@ -367,6 +367,7 @@ Graph.prototype = {
     this.mouseUpHandler = _.bind(this.mouseUpHandler, this);
     E.observe(document, 'mouseup', this.mouseUpHandler);
     E.fire(this.el, 'flotr:mousedown', [event, this]);
+    this.ignoreClick = false;
   },
   /**
    * Observes the mouseup event for the document.
@@ -438,7 +439,7 @@ Graph.prototype = {
     this._handles = [];
     this.lastMousePos = {pageX: null, pageY: null };
     this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
-    this.ignoreClick = false;
+    this.ignoreClick = true;
     this.prevHit = null;
   },
 

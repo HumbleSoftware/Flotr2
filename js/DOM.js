@@ -80,8 +80,8 @@ Flotr.DOM = {
    */
   size: function(element){
     return {
-      height : element.scrollHeight,
-      width: element.scrollWidth };
+      height : element.offsetHeight,
+      width : element.offsetWidth };
   }
 };
 
