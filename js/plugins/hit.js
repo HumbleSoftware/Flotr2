@@ -117,29 +117,30 @@ Flotr.addPlugin('hit', {
       prevHit = this.prevHit,
       plotOffset = this.plotOffset,
       octx = this.octx, 
-      data, sens, xsens, ysens, x, y, xa, ya, mx, my, i,
-      /**
-       * Nearest data element.
-       */
-      n = {
-        dist:Number.MAX_VALUE,
-        x:null,
-        y:null,
-        relX:mouse.relX,
-        relY:mouse.relY,
-        absX:mouse.absX,
-        absY:mouse.absY,
-        sAngle:null,
-        eAngle:null,
-        fraction: null,
-        mouse:null,
-        xaxis:null,
-        yaxis:null,
-        series:null,
-        index:null,
-        seriesIndex:null
-      };
+      data, sens, xsens, ysens, x, y, xa, ya, mx, my, i, n;
 
+    // Nearest data element.
+    n = {
+      dist:Number.MAX_VALUE,
+      x:null,
+      y:null,
+      relX:mouse.relX,
+      relY:mouse.relY,
+      absX:mouse.absX,
+      absY:mouse.absY,
+      sAngle:null,
+      eAngle:null,
+      fraction: null,
+      mouse:null,
+      xaxis:null,
+      yaxis:null,
+      series:null,
+      index:null,
+      seriesIndex:null
+    };
+
+    // TODO what is trackAll?
+    // TODO bars trackY
     if (options.mouse.trackAll) {
       for (i = 0; i < series.length; i++) {
         s = series[i];
@@ -209,18 +210,28 @@ Flotr.addPlugin('hit', {
           x = data[j][0];
           y = data[j][1];
           
+          var
+            xdiff = Math.abs(x + s.bars.barWidth/2 - mx),
+            ydiff = Math.abs(y - my);
+
           if (y === null || 
               xa.min > x || xa.max < x || 
               ya.min > y || ya.max < y) continue;
 
           // we use a different set of criteria to determin if there has been a hit
           // depending on what type of graph we have
-          if(((!s.bars.show) && xdiff < xsens && (!s.mouse.trackY || ydiff < ysens)) ||
+          if(xdiff < xsens && (!s.mouse.trackY || ydiff < ysens)) {
+            console.log('hitme');
+
+              /*
               // Bars check
+              // For horizontal bars there is need to use y-axis tracking, so s.mouse.trackY is ignored
               (s.bars.show && (!s.bars.horizontal && xdiff < s.bars.barWidth/2 + 1/xa.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
               && (!s.mouse.trackY || (y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y))) 
               || (s.bars.horizontal && ydiff < s.bars.barWidth/2 + 1/ya.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
-              && ((x > 0 && mx > 0 && mx < x) || (x < 0 && mx < 0 && mx > x))))){ // for horizontal bars there is need to use y-axis tracking, so s.mouse.trackY is ignored
+              && ((x > 0 && mx > 0 && mx < x) || (x < 0 && mx < 0 && mx > x))))
+              ) { 
+              */
             
             var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
             if(distance < n.dist){
