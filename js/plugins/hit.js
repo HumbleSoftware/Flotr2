@@ -90,19 +90,22 @@ Flotr.addPlugin('hit', {
         plotOffset = this.plotOffset;
     octx.save();
     octx.translate(plotOffset.left, plotOffset.top);
-    if(prev && !this.hit.executeOnType(prev.series, 'clearHit', this.prevHit)){
-      // TODO fix this (points) should move to general testable graph mixin
-      var
-        s = prev.series,
-        lw = (s.bars ? s.bars.lineWidth : 1),
-        offset = (s.points.radius || s.mouse.radius) + lw;
-      octx.clearRect(
-        prev.xaxis.d2p(prev.x) - offset,
-        prev.yaxis.d2p(prev.y) - offset,
-        offset*2,
-        offset*2
-      );
+    if (prev) {
+      if (!this.hit.executeOnType(prev.series, 'clearHit', this.prevHit)) {
+        // TODO fix this (points) should move to general testable graph mixin
+        var
+          s = prev.series,
+          lw = (s.bars ? s.bars.lineWidth : 1),
+          offset = (s.points.radius || s.mouse.radius) + lw;
+        octx.clearRect(
+          prev.xaxis.d2p(prev.x) - offset,
+          prev.yaxis.d2p(prev.y) - offset,
+          offset*2,
+          offset*2
+        );
+      }
       D.hide(this.mouseTrack);
+      this.prevHit = null;
     }
     octx.restore();
   },
@@ -123,16 +126,15 @@ Flotr.addPlugin('hit', {
     // dist, x, y, relX, relY, absX, absY, sAngle, eAngle, fraction, mouse,
     // xaxis, yaxis, series, index, seriesIndex
     n = {
-      relX:mouse.relX,
-      relY:mouse.relY,
-      absX:mouse.absX,
-      absY:mouse.absY
+      relX : mouse.relX,
+      relY : mouse.relY,
+      absX : mouse.absX,
+      absY : mouse.absY
     };
 
     if (closest) {
 
       closest     = options.mouse.trackY ? closest.point : closest.x;
-      dataIndex   = closest.dataIndex;
       seriesIndex = closest.seriesIndex;
       series      = this.series[seriesIndex];
       xaxis       = series.xaxis;
@@ -151,24 +153,18 @@ Flotr.addPlugin('hit', {
         n.x           = closest.x;
         n.y           = closest.y;
         n.dist        = closest.distance;
-        n.index       = dataIndex;
+        n.index       = closest.dataIndex;
         n.seriesIndex = seriesIndex;
       }
     }
 
-    if(n.series && (n.mouse && n.mouse.track && !prevHit || (prevHit /*&& (n.x != prevHit.x || n.y != prevHit.y)*/))){
-      if(n.x !== null && n.y !== null){
-        this.hit.clearHit();
+    if (!prevHit || (prevHit.index !== n.index || prevHit.seriesIndex !== n.seriesIndex)) {
+      this.hit.clearHit();
+      if (n.series && n.mouse && n.mouse.track) {
         this.hit.drawMouseTrack(n);
         this.hit.drawHit(n);
         Flotr.EventAdapter.fire(this.el, 'flotr:hit', [n, this]);
       }
-      else if(prevHit){
-        this.hit.clearHit();
-      }
-    }
-    else if(prevHit) {
-      this.hit.clearHit();
     }
   },
 
@@ -183,12 +179,9 @@ Flotr.addPlugin('hit', {
       compareX  = Number.MAX_VALUE,
       closest   = {},
       closestX  = {},
-      distance,
-      serie,
-      data,
-      x, y,
-      distanceX, distanceY,
-      i, j;
+      serie, data,
+      distance, distanceX, distanceY,
+      x, y, i, j;
 
     function setClosest (o) {
       o.distance = distance;
@@ -209,6 +202,9 @@ Flotr.addPlugin('hit', {
 
         x = data[j][0];
         y = data[j][1];
+
+        if (x === null || y === null) return;
+
         distanceX = Math.abs(x - mouseX);
         distanceY = Math.abs(y - mouseY);
 
