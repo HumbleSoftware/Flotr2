@@ -4,7 +4,7 @@ Flotr.ExampleList.add({
   key : 'advanced-markers',
   name : 'Advanced Markers',
   callback : advanced_markers,
-  timeout : 100
+  timeout : 150
 });
 
 function advanced_markers (container) {
@@ -67,7 +67,6 @@ function advanced_markers (container) {
   }
 
   xmark.onload = runner;
-  checkmark.onload = runner;
   xmark.src = 'images/xmark.png';
   checkmark.src = 'images/checkmark.png';
 };
