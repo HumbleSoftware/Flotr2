@@ -194,6 +194,7 @@ Flotr.addPlugin('hit', {
       compareX  = Number.MAX_VALUE,
       closest   = {},
       closestX  = {},
+      check     = false,
       serie, data,
       distance, distanceX, distanceY,
       x, y, i, j;
@@ -212,6 +213,8 @@ Flotr.addPlugin('hit', {
 
       serie = series[i];
       data = serie.data;
+
+      if (data.length) check = true;
 
       for (j = data.length; j--;) {
 
@@ -238,10 +241,10 @@ Flotr.addPlugin('hit', {
       }
     }
 
-    return {
+    return check ? {
       point : closest,
       x : closestX
-    };
+    } : false;
   },
 
   drawMouseTrack : function (n) {
