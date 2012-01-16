@@ -43,5 +43,5 @@ spec_files:
   - "Color.js"
   - "Graph.js"
   - "Chart.js"
-src_dir: "."
-spec_dir: "spec/"
+src_dir: ".."
+spec_dir: "../spec/"

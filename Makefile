@@ -1,7 +1,7 @@
 all: test flotr2
 
 test:
-	jasmine-headless-webkit -j spec/jasmine.yml -c
+	cd spec; jasmine-headless-webkit -j jasmine.yml -c
 
 libraries:
 	smoosh make/lib.json
