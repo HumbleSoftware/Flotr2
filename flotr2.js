@@ -5086,6 +5086,8 @@ Flotr.addPlugin('hit', {
       prevHit = this.prevHit,
       closest, sensibility, dataIndex, seriesIndex, series, value, xaxis, yaxis;
 
+    if (this.series.length === 0) return;
+
     // Nearest data element.
     // dist, x, y, relX, relY, absX, absY, sAngle, eAngle, fraction, mouse,
     // xaxis, yaxis, series, index, seriesIndex
@@ -5156,6 +5158,7 @@ Flotr.addPlugin('hit', {
       compareX  = Number.MAX_VALUE,
       closest   = {},
       closestX  = {},
+      check     = false,
       serie, data,
       distance, distanceX, distanceY,
       x, y, i, j;
@@ -5175,12 +5178,14 @@ Flotr.addPlugin('hit', {
       serie = series[i];
       data = serie.data;
 
+      if (data.length) check = true;
+
       for (j = data.length; j--;) {
 
         x = data[j][0];
         y = data[j][1];
 
-        if (x === null || y === null) return;
+        if (x === null || y === null) continue;
 
         distanceX = Math.abs(x - mouseX);
         distanceY = Math.abs(y - mouseY);
@@ -5200,10 +5205,10 @@ Flotr.addPlugin('hit', {
       }
     }
 
-    return {
+    return check ? {
       point : closest,
       x : closestX
-    };
+    } : false;
   },
 
   drawMouseTrack : function (n) {
