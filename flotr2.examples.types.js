@@ -1284,7 +1284,7 @@ Flotr.ExampleList.add({
   key : 'advanced-markers',
   name : 'Advanced Markers',
   callback : advanced_markers,
-  timeout : 100
+  timeout : 150
 });
 
 function advanced_markers (container) {
@@ -1322,7 +1322,12 @@ function advanced_markers (container) {
     markers.data.push(point);
   }
 
-  var runner = Flotr._.after(2, function () {
+  var runner = function () {
+    if (!xmark.complete || !checkmark.complete) {
+        setTimeout(runner, 50);
+        return;
+    }
+
     graph = flotr.draw(
       container,
       [bars, markers], {
@@ -1339,10 +1344,9 @@ function advanced_markers (container) {
         }
       }
     );
-  });
+  }
 
   xmark.onload = runner;
-  checkmark.onload = runner;
   xmark.src = 'images/xmark.png';
   checkmark.src = 'images/checkmark.png';
 };
