@@ -122,6 +122,8 @@ Flotr.addPlugin('hit', {
       prevHit = this.prevHit,
       closest, sensibility, dataIndex, seriesIndex, series, value, xaxis, yaxis;
 
+    if (this.series.length === 0) return;
+
     // Nearest data element.
     // dist, x, y, relX, relY, absX, absY, sAngle, eAngle, fraction, mouse,
     // xaxis, yaxis, series, index, seriesIndex
