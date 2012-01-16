@@ -221,7 +221,7 @@ Flotr.addPlugin('hit', {
         x = data[j][0];
         y = data[j][1];
 
-        if (x === null || y === null) return;
+        if (x === null || y === null) continue;
 
         distanceX = Math.abs(x - mouseX);
         distanceY = Math.abs(y - mouseY);
