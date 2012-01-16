@@ -11,28 +11,35 @@ The API consists of a primary draw method whicha accepts a configuration object,
 ### Example
 
 ```javascript
-(function basic(container) {
-
   var
-    d1 = [[0, 3], [4, 8], [8, 5], [9, 13]], // First data series
-    d2 = [],                                // Second data series
+    // Container div:
+    container = document.getElementById("flotr-example-graph"),
+    // First data series:
+    d1 = [[0, 3], [4, 8], [8, 5], [9, 13]],
+    // Second data series:
+    d2 = [],
+    // A couple flotr configuration options:
+    options = {
+      xaxis: {
+        minorTickFreq: 4
+      }, 
+      grid: {
+        minorVerticalLines: true
+      }
+    },
     i, graph;
 
-  // Generate first data set
+  // Generated second data set:
   for (i = 0; i < 14; i += 0.5) {
     d2.push([i, Math.sin(i)]);
   }
 
-  // Draw Graph
-  graph = Flotr.draw(container, [ d1, d2 ], {
-    xaxis: {
-      minorTickFreq: 4
-    }, 
-    grid: {
-      minorVerticalLines: true
-    }
-  });
-})(document.getElementById("flotr-example-graph"));
+  // Draw the graph:
+  graph = Flotr.draw(
+    container,  // Container element
+    [ d1, d2 ], // Array of data series
+    options     // Configuration options
+  );
 ```
 
 ### Microlibs
