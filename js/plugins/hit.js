@@ -134,7 +134,11 @@ Flotr.addPlugin('hit', {
       absY : mouse.absY
     };
 
-    if (this.hit.executeOnType(this.series, 'hit', [mouse, n])) {
+    if (options.mouse.trackY
+        && !options.mouse.trackAll
+        && this.hit.executeOnType(this.series, 'hit', [mouse, n]))
+      {
+
       if (!_.isUndefined(n.seriesIndex)) {
         series    = this.series[n.seriesIndex];
         n.series  = series;
