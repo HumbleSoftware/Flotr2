@@ -184,7 +184,7 @@ Flotr.addType('bars', {
       context     = options.context,
       args        = options.args,
       geometry    = this.getBarGeometry(args.x, args.y, options),
-      lineWidth   = 2 * Math.min(options.lineWidth, geometry.width);
+      lineWidth   = 2 * options.lineWidth;
 
     context.save();
     this.translate(context, options.horizontal);
