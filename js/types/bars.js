@@ -184,15 +184,19 @@ Flotr.addType('bars', {
       context     = options.context,
       args        = options.args,
       geometry    = this.getBarGeometry(args.x, args.y, options),
+      left        = geometry.left,
+      width       = geometry.width,
+      top         = geometry.top,
+      height      = geometry.height,
       lineWidth   = 2 * options.lineWidth;
 
     context.save();
     this.translate(context, options.horizontal);
     context.clearRect(
-      geometry.left - lineWidth,
-      geometry.top - lineWidth,
-      geometry.width + 2 * lineWidth,
-      geometry.height + 2 * lineWidth
+      Math.min(left, left + width) - lineWidth,
+      Math.min(top, top + height) - lineWidth,
+      Math.abs(width) + 2 * lineWidth,
+      Math.abs(height) + 2 * lineWidth
     );
     context.restore();
   },
