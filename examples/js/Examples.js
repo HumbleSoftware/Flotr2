@@ -249,7 +249,7 @@ Examples.prototype = {
     } else {
       this.examples();
     }
-  },
+  }
 }
 
 var scroller = (function () {
