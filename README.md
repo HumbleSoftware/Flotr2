@@ -6,7 +6,7 @@ The Canvas graphing library.
 API
 ---
 
-The API consists of a primary draw method whicha accepts a configuration object, helper methods, and several microlibs.
+The API consists of a primary draw method which accepts a configuration object, helper methods, and several microlibs.
 
 ### Example
 
