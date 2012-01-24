@@ -10,7 +10,8 @@ Flotr.ExampleList.add({
   key : 'basic-stacked-horizontal',
   name : 'Stacked Horizontal Bars',
   args : [true],
-  callback : bars_stacked
+  callback : bars_stacked,
+  tolerance : 5
 });
 
 function bars_stacked (container, horizontal) {

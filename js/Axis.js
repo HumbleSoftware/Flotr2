@@ -12,7 +12,6 @@ function Axis (o) {
 
   this.orientation = 1;
   this.offset = 0;
-  this.stacks = {};
   this.datamin = Number.MAX_VALUE;
   this.datamax = -Number.MAX_VALUE;
 
@@ -32,11 +31,6 @@ Axis.prototype = {
     } else {
       this.scale = length / (this.max - this.min);
     }
-  },
-
-  getStack : function (type) {
-    var stacks = this.stacks;
-    return (_.isUndefined(stacks[type]) ? stacks[type] = {} : stacks[type]);
   },
 
   calculateTicks : function () {

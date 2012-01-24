@@ -3,7 +3,8 @@
 var
   D = Flotr.DOM,
   _ = Flotr._,
-  flotr = Flotr;
+  flotr = Flotr,
+  S_MOUSETRACK = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
 
 Flotr.addPlugin('hit', {
   callbacks: {
@@ -24,19 +25,26 @@ Flotr.addPlugin('hit', {
    * @return executed successfully or failed.
    */
   executeOnType: function(s, method, args){
-    var success = false;
+    var
+      success = false,
+      options;
+
     if (!_.isArray(s)) s = [s];
 
-    function e(s) {
+    function e(s, index) {
       _.each(_.keys(flotr.graphTypes), function (type) {
-        if (s[type] && s[type].show) {
-          try {
-            if (!_.isUndefined(args))
-                this[type][method].apply(this[type], args);
-            else
-                this[type][method].apply(this[type]);
-            success = true;
-          } catch (e) {}
+        if (s[type] && s[type].show && this[type][method]) {
+          options = this.getOptions(s, type);
+
+          options.fill = !!s.mouse.fillColor;
+          options.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
+          options.color = s.mouse.lineColor;
+          options.context = this.octx;
+          options.index = index;
+
+          if (args) options.args = args;
+          this[type][method].call(this[type], options);
+          success = true;
         }
       }, this);
     }
@@ -56,14 +64,15 @@ Flotr.addPlugin('hit', {
       octx.lineWidth = (s.points ? s.points.lineWidth : 1);
       octx.strokeStyle = s.mouse.lineColor;
       octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
+      octx.translate(this.plotOffset.left, this.plotOffset.top);
 
-      if (!this.hit.executeOnType(s, 'drawHit', [n])) {
+      if (!this.hit.executeOnType(s, 'drawHit', n)) {
         var xa = n.xaxis,
           ya = n.yaxis;
 
-        octx.translate(this.plotOffset.left, this.plotOffset.top);
         octx.beginPath();
-          octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.mouse.radius, 0, 2 * Math.PI, true);
+          // TODO fix this (points) should move to general testable graph mixin
+          octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.points.radius || s.mouse.radius, 0, 2 * Math.PI, true);
           octx.fill();
           octx.stroke();
         octx.closePath();
@@ -76,20 +85,29 @@ Flotr.addPlugin('hit', {
    * Removes the mouse tracking point from the overlay.
    */
   clearHit: function(){
-    var prev = this.prevHit;
-    if(prev && !this.hit.executeOnType(prev.series, 'clearHit')){
-      var plotOffset = this.plotOffset,
-        s = prev.series,
-        lw = (s.bars ? s.bars.lineWidth : 1),
-        offset = s.mouse.radius + lw;
-      this.octx.clearRect(
-        plotOffset.left + prev.xaxis.d2p(prev.x) - offset,
-        plotOffset.top  + prev.yaxis.d2p(prev.y) - offset,
-        offset*2,
-        offset*2
-      );
+    var prev = this.prevHit,
+        octx = this.octx,
+        plotOffset = this.plotOffset;
+    octx.save();
+    octx.translate(plotOffset.left, plotOffset.top);
+    if (prev) {
+      if (!this.hit.executeOnType(prev.series, 'clearHit', this.prevHit)) {
+        // TODO fix this (points) should move to general testable graph mixin
+        var
+          s = prev.series,
+          lw = (s.bars ? s.bars.lineWidth : 1),
+          offset = (s.points.radius || s.mouse.radius) + lw;
+        octx.clearRect(
+          prev.xaxis.d2p(prev.x) - offset,
+          prev.yaxis.d2p(prev.y) - offset,
+          offset*2,
+          offset*2
+        );
+      }
       D.hide(this.mouseTrack);
+      this.prevHit = null;
     }
+    octx.restore();
   },
   /**
    * Retrieves the nearest data point from the mouse cursor. If it's within
@@ -98,220 +116,213 @@ Flotr.addPlugin('hit', {
    * @param {Object} mouse - Object that holds the relative x and y coordinates of the cursor.
    */
   hit: function(mouse){
-    var series = this.series,
+
+    var
       options = this.options,
       prevHit = this.prevHit,
-      plotOffset = this.plotOffset,
-      octx = this.octx, 
-      data, sens, xsens, ysens, x, y, xa, ya, mx, my, i,
-      /**
-       * Nearest data element.
-       */
-      n = {
-        dist:Number.MAX_VALUE,
-        x:null,
-        y:null,
-        relX:mouse.relX,
-        relY:mouse.relY,
-        absX:mouse.absX,
-        absY:mouse.absY,
-        sAngle:null,
-        eAngle:null,
-        fraction: null,
-        mouse:null,
-        xaxis:null,
-        yaxis:null,
-        series:null,
-        index:null,
-        seriesIndex:null
-      };
+      closest, sensibility, dataIndex, seriesIndex, series, value, xaxis, yaxis;
 
-    if (options.mouse.trackAll) {
-      for(i = 0; i < series.length; i++){
-        s = series[0];
-        data = s.data;
-        xa = s.xaxis;
-        ya = s.yaxis;
-        xsens = (2*options.points.lineWidth)/xa.scale * s.mouse.sensibility;
-        mx = xa.p2d(mouse.relX);
-        my = ya.p2d(mouse.relY);
-    
-        for(var j = 0; j < data.length; j++){
-          x = data[j][0];
-          y = data[j][1];
-    
-          if (y === null ||
-              xa.min > x || xa.max < x ||
-              ya.min > y || ya.max < y ||
-              mx < xa.min || mx > xa.max ||
-              my < ya.min || my > ya.max) continue;
-    
-          var xdiff = Math.abs(x - mx);
-    
-          // Bars and Pie are not supported yet. Not sure how it should look with bars or Pie
-          if((!s.bars.show && xdiff < xsens) 
-              || (s.bars.show && xdiff < s.bars.barWidth/2) 
-              || (y < 0 && my < 0 && my > y)) {
-            
-            var distance = xdiff;
-            
-            if (distance < n.dist) {
-              n.dist = distance;
-              n.x = x;
-              n.y = y;
-              n.xaxis = xa;
-              n.yaxis = ya;
-              n.mouse = s.mouse;
-              n.series = s; 
-              n.allSeries = series; // include all series
-              n.index = j;
-            }
-          }
+    if (this.series.length === 0) return;
+
+    // Nearest data element.
+    // dist, x, y, relX, relY, absX, absY, sAngle, eAngle, fraction, mouse,
+    // xaxis, yaxis, series, index, seriesIndex
+    n = {
+      relX : mouse.relX,
+      relY : mouse.relY,
+      absX : mouse.absX,
+      absY : mouse.absY
+    };
+
+    if (options.mouse.trackY
+        && !options.mouse.trackAll
+        && this.hit.executeOnType(this.series, 'hit', [mouse, n]))
+      {
+
+      if (!_.isUndefined(n.seriesIndex)) {
+        series    = this.series[n.seriesIndex];
+        n.series  = series;
+        n.mouse   = series.mouse;
+        n.xaxis   = series.xaxis;
+        n.yaxis   = series.yaxis;
+      }
+    } else {
+
+      closest = this.hit.closest(mouse);
+
+      if (closest) {
+
+        closest     = options.mouse.trackY ? closest.point : closest.x;
+        seriesIndex = closest.seriesIndex;
+        series      = this.series[seriesIndex];
+        xaxis       = series.xaxis;
+        yaxis       = series.yaxis;
+        sensibility = 2 * series.mouse.sensibility;
+
+        if
+          (options.mouse.trackAll ||
+          (closest.distanceX < sensibility / xaxis.scale &&
+          (!options.mouse.trackY || closest.distanceY < sensibility / yaxis.scale)))
+        {
+          n.series      = series;
+          n.xaxis       = series.xaxis;
+          n.yaxis       = series.yaxis;
+          n.mouse       = series.mouse;
+          n.x           = closest.x;
+          n.y           = closest.y;
+          n.dist        = closest.distance;
+          n.index       = closest.dataIndex;
+          n.seriesIndex = seriesIndex;
         }
       }
     }
-    else if(!this.hit.executeOnType(series, 'hit', [mouse, n])) {
-      for(i = 0; i < series.length; i++){
-        s = series[i];
-        if(!s.mouse.track) continue;
-        
-        data = s.data;
-        xa = s.xaxis;
-        ya = s.yaxis;
-        sens = 2 * (options.points ? options.points.lineWidth : 1) * s.mouse.sensibility;
-        xsens = sens/xa.scale;
-        ysens = sens/ya.scale;
-        mx = xa.p2d(mouse.relX);
-        my = ya.p2d(mouse.relY);
-        
-        //if (s.points) {
-        //  var h = this.points.getHit(s, mouse);
-        //  if (h.index !== undefined) console.log(h);
-        //}
-                
-        for(var j = 0, xpow, ypow; j < data.length; j++){
-          x = data[j][0];
-          y = data[j][1];
-          
-          if (y === null || 
-              xa.min > x || xa.max < x || 
-              ya.min > y || ya.max < y) continue;
-          
-          if(s.bars.show && s.bars.centered){
-            var xdiff = Math.abs(x - mx),
-              ydiff = Math.abs(y - my);
-          } else {
-            if (s.bars.horizontal){
-              var xdiff = Math.abs(x - mx),
-                ydiff = Math.abs(y + s.bars.barWidth/2 - my);
-            } else {
-              var xdiff = Math.abs(x + s.bars.barWidth/2 - mx),
-                ydiff = Math.abs(y - my);
-            }
-          }
-          
-          // we use a different set of criteria to determin if there has been a hit
-          // depending on what type of graph we have
-          if(((!s.bars.show) && xdiff < xsens && (!s.mouse.trackY || ydiff < ysens)) ||
-              // Bars check
-              (s.bars.show && (!s.bars.horizontal && xdiff < s.bars.barWidth/2 + 1/xa.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
-              && (!s.mouse.trackY || (y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y))) 
-              || (s.bars.horizontal && ydiff < s.bars.barWidth/2 + 1/ya.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
-              && ((x > 0 && mx > 0 && mx < x) || (x < 0 && mx < 0 && mx > x))))){ // for horizontal bars there is need to use y-axis tracking, so s.mouse.trackY is ignored
-            
-            var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
-            if(distance < n.dist){
-              n.dist = distance;
-              n.x = x;
-              n.y = y;
-              n.xaxis = xa;
-              n.yaxis = ya;
-              n.mouse = s.mouse;
-              n.series = s;
-              n.allSeries = series;
-              n.index = j;
-              n.seriesIndex = i;
-            }
-          }
-        }
-      }
-    }
-    
-    if(n.series && (n.mouse && n.mouse.track && !prevHit || (prevHit /*&& (n.x != prevHit.x || n.y != prevHit.y)*/))){
-      var mt = this.hit.getMouseTrack(),
-          pos = '', 
-          s = n.series,
-          p = n.mouse.position, 
-          m = n.mouse.margin,
-          elStyle = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
-      
-      if (!n.mouse.relative) { // absolute to the canvas
-             if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;bottom:auto;';
-        else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;top:auto;';
-             if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;left:auto;';
-        else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;right:auto;';
-      }
-      else { // relative to the mouse or in the case of bar like graphs to the bar
-        if(!s.bars.show && !s.pie.show){
-               if(p.charAt(0) == 'n') pos += 'bottom:' + (m - plotOffset.top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
-          else if(p.charAt(0) == 's') pos += 'top:' + (m + plotOffset.top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
-               if(p.charAt(1) == 'e') pos += 'left:' + (m + plotOffset.left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
-          else if(p.charAt(1) == 'w') pos += 'right:' + (m - plotOffset.left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
-        }
 
-        else if (s.bars.show) {
-          pos += 'bottom:' + (m - plotOffset.top - n.yaxis.d2p(n.y/2) + this.canvasHeight) + 'px;top:auto;';
-          pos += 'left:' + (m + plotOffset.left + n.xaxis.d2p(n.x - options.bars.barWidth/2)) + 'px;right:auto;';
-        }
-        else {
-          var center = {
-            x: (this.plotWidth)/2,
-            y: (this.plotHeight)/2
-          },
-          radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
-          bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2: (n.sAngle + n.eAngle + 2* Math.PI) / 2;
-          
-          pos += 'bottom:' + (m - plotOffset.top - center.y - Math.sin(bisection) * radius/2 + this.canvasHeight) + 'px;top:auto;';
-          pos += 'left:' + (m + plotOffset.left + center.x + Math.cos(bisection) * radius/2) + 'px;right:auto;';
-        }
-      }
-      elStyle += pos;
-
-      mt.style.cssText = elStyle;
-
-      if(n.x !== null && n.y !== null){
-        
-        this.hit.clearHit();
+    if (!prevHit || (prevHit.index !== n.index || prevHit.seriesIndex !== n.seriesIndex)) {
+      this.hit.clearHit();
+      if (n.series && n.mouse && n.mouse.track) {
+        this.hit.drawMouseTrack(n);
         this.hit.drawHit(n);
-        D.show(mt);
-        
-        var decimals = n.mouse.trackDecimals;
-        if(decimals == null || decimals < 0) decimals = 0;
-        
-        mt.innerHTML = n.mouse.trackFormatter({
-          x: n.x.toFixed(decimals), 
-          y: n.y.toFixed(decimals), 
-          series: n.series, 
-          index: n.index,
-          nearest: n,
-          fraction: n.fraction
-        });
         Flotr.EventAdapter.fire(this.el, 'flotr:hit', [n, this]);
       }
-      else if(prevHit){
-        this.hit.clearHit();
-      }
-    }
-    else if(this.prevHit) {
-      this.hit.clearHit();
     }
   },
-  getMouseTrack: function() {
-    if (!this.mouseTrack) {
-      this.mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
-      D.insert(this.el, this.mouseTrack);
+
+  closest : function (mouse) {
+
+    var
+      series    = this.series,
+      options   = this.options,
+      mouseX    = mouse.x,
+      mouseY    = mouse.y,
+      compare   = Number.MAX_VALUE,
+      compareX  = Number.MAX_VALUE,
+      closest   = {},
+      closestX  = {},
+      check     = false,
+      serie, data,
+      distance, distanceX, distanceY,
+      x, y, i, j;
+
+    function setClosest (o) {
+      o.distance = distance;
+      o.distanceX = distanceX;
+      o.distanceY = distanceY;
+      o.seriesIndex = i;
+      o.dataIndex = j;
+      o.x = x;
+      o.y = y;
     }
-    return this.mouseTrack;
+
+    for (i = 0; i < series.length; i++) {
+
+      serie = series[i];
+      data = serie.data;
+
+      if (data.length) check = true;
+
+      for (j = data.length; j--;) {
+
+        x = data[j][0];
+        y = data[j][1];
+
+        if (x === null || y === null) continue;
+
+        distanceX = Math.abs(x - mouseX);
+        distanceY = Math.abs(y - mouseY);
+
+        // Skip square root for speed
+        distance = distanceX * distanceX + distanceY * distanceY;
+
+        if (distance < compare) {
+          compare = distance;
+          setClosest(closest);
+        }
+
+        if (distanceX < compareX) {
+          compareX = distanceX;
+          setClosest(closestX);
+        }
+      }
+    }
+
+    return check ? {
+      point : closest,
+      x : closestX
+    } : false;
+  },
+
+  drawMouseTrack : function (n) {
+
+    var
+      pos         = '', 
+      s           = n.series,
+      p           = n.mouse.position, 
+      m           = n.mouse.margin,
+      elStyle     = S_MOUSETRACK,
+      mouseTrack  = this.mouseTrack,
+      plotOffset  = this.plotOffset,
+      left        = plotOffset.left,
+      right       = plotOffset.right,
+      bottom      = plotOffset.bottom,
+      top         = plotOffset.top,
+      decimals    = n.mouse.trackDecimals,
+      options     = this.options;
+
+    // Create
+    if (!mouseTrack) {
+      mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
+      this.mouseTrack = mouseTrack;
+      D.insert(this.el, mouseTrack);
+    }
+
+    if (!n.mouse.relative) { // absolute to the canvas
+
+      if      (p.charAt(0) == 'n') pos += 'top:' + (m + top) + 'px;bottom:auto;';
+      else if (p.charAt(0) == 's') pos += 'bottom:' + (m + bottom) + 'px;top:auto;';
+      if      (p.charAt(1) == 'e') pos += 'right:' + (m + right) + 'px;left:auto;';
+      else if (p.charAt(1) == 'w') pos += 'left:' + (m + left) + 'px;right:auto;';
+
+    // Bars
+    } else if (s.bars.show) {
+        pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y/2) + this.canvasHeight) + 'px;top:auto;';
+        pos += 'left:' + (m + left + n.xaxis.d2p(n.x - options.bars.barWidth/2)) + 'px;right:auto;';
+
+    // Pie
+    } else if (s.pie.show) {
+      var center = {
+          x: (this.plotWidth)/2,
+          y: (this.plotHeight)/2
+        },
+        radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
+        bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2: (n.sAngle + n.eAngle + 2* Math.PI) / 2;
+      
+      pos += 'bottom:' + (m - top - center.y - Math.sin(bisection) * radius/2 + this.canvasHeight) + 'px;top:auto;';
+      pos += 'left:' + (m + left + center.x + Math.cos(bisection) * radius/2) + 'px;right:auto;';
+
+    // Default
+    } else {
+      if      (p.charAt(0) == 'n') pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
+      else if (p.charAt(0) == 's') pos += 'top:' + (m + top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
+      if      (p.charAt(1) == 'e') pos += 'left:' + (m + left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
+      else if (p.charAt(1) == 'w') pos += 'right:' + (m - left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
+    }
+
+    elStyle += pos;
+    mouseTrack.style.cssText = elStyle;
+
+    if (!decimals || decimals < 0) decimals = 0;
+    
+    mouseTrack.innerHTML = n.mouse.trackFormatter({
+      x: n.x.toFixed(decimals), 
+      y: n.y.toFixed(decimals), 
+      series: n.series, 
+      index: n.index,
+      nearest: n,
+      fraction: n.fraction
+    });
+
+    D.show(mouseTrack);
   }
+
 });
 })();

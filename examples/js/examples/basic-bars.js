@@ -10,7 +10,8 @@ Flotr.ExampleList.add({
   key : 'basic-bars-horizontal',
   name : 'Horizontal Bars',
   args : [true],
-  callback : basic_bars
+  callback : basic_bars,
+  tolerance : 5
 });
 
 function basic_bars (container, horizontal) {

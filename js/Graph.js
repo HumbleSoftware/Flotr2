@@ -67,16 +67,6 @@ Graph.prototype = {
     this._handles.push(arguments);
     return this;
   },
-
-  /**
-   * Get graph type for a series
-   * @param {Object} series - the series
-   * @return {Object} the graph type
-   */
-  getType: function(series){
-    var t = (series && series.type) ? series.type : this.options.defaultType;
-    return this[t];
-  },
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
@@ -113,17 +103,28 @@ Graph.prototype = {
       axis.calculateRange();
     });
 
-    var types = _.keys(flotr.graphTypes);
+    var
+      types = _.keys(flotr.graphTypes),
+      drawn = false;
 
     _.each(this.series, function (series) {
+      if (series.hide) return;
       _.each(types, function (type) {
         if (series[type] && series[type].show) {
-          if (this[type].extendRange) this[type].extendRange(series);
-          if (this[type].extendYRange) this[type].extendYRange(series.yaxis);
-          if (this[type].extendXRange) this[type].extendXRange(series.xaxis);
+          this.extendRange(type, series);
+          drawn = true;
         }
       }, this);
+      if (!drawn) {
+        this.extendRange(this.options.defaultType, series);
+      }
     }, this);
+  },
+
+  extendRange : function (type, series) {
+    if (this[type].extendRange) this[type].extendRange(series, series.data, series[type], this[type]);
+    if (this[type].extendYRange) this[type].extendYRange(series.yaxis, series.data, series[type], this[type]);
+    if (this[type].extendXRange) this[type].extendXRange(series.xaxis, series.data, series[type], this[type]);
   },
 
   /**
@@ -214,14 +215,22 @@ Graph.prototype = {
    */
   draw: function(after) {
 
+    var
+      context = this.ctx,
+      i;
+
     E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
 
-    if(this.series.length){
-      for(var i = 0; i < this.series.length; i++){
-        if (!this.series[i].hide)
-          this.drawSeries(this.series[i]);
+    if (this.series.length) {
+
+      context.save();
+      context.translate(this.plotOffset.left, this.plotOffset.top);
+
+      for (i = 0; i < this.series.length; i++) {
+        if (!this.series[i].hide) this.drawSeries(this.series[i]);
       }
 
+      context.restore();
       this.clip();
     }
 
@@ -233,19 +242,54 @@ Graph.prototype = {
    * @param {Object} series - series to draw
    */
   drawSeries: function(series){
-    series = series || this.series;
+
+    function drawChart (series, typeKey) {
+      var options = this.getOptions(series, typeKey);
+      this[typeKey].draw(options);
+    }
 
     var drawn = false;
-    _.each(flotr.graphTypes, function(handler, name) {
-      if(series[name] && series[name].show){
+    series = series || this.series;
+
+    _.each(flotr.graphTypes, function (type, typeKey) {
+      if (series[typeKey] && series[typeKey].show && this[typeKey]) {
         drawn = true;
-        handler.draw.call(this, series);
+        drawChart.call(this, series, typeKey);
       }
     }, this);
 
-    if(!drawn){
-      this[this.options.defaultType].draw(series);
-    }
+    if (!drawn) drawChart.call(this, series, this.options.defaultType);
+  },
+
+  getOptions : function (series, typeKey) {
+    var
+      type = series[typeKey],
+      graphType = this[typeKey],
+      options = {
+        context     : this.ctx,
+        width       : this.plotWidth,
+        height      : this.plotHeight,
+        fontSize    : this.options.fontSize,
+        fontColor   : this.options.fontColor,
+        textEnabled : this.textEnabled,
+        htmlText    : this.options.HtmlText,
+        text        : this._text, // TODO Is this necessary?
+        data        : series.data,
+        color       : series.color,
+        shadowSize  : series.shadowSize,
+        xScale      : _.bind(series.xaxis.d2p, series.xaxis),
+        yScale      : _.bind(series.yaxis.d2p, series.yaxis)
+      };
+
+    options = flotr.merge(type, options);
+
+    // Fill
+    options.fillStyle = this.processColor(
+      type.fillColor || series.color,
+      {opacity: type.fillOpacity}
+    );
+
+    return options;
   },
   /**
    * Calculates the coordinates from a mouse event object.
@@ -401,13 +445,8 @@ Graph.prototype = {
 
   _initGraphTypes: function() {
     _.each(flotr.graphTypes, function(handler, graphType){
-      this[graphType] = _.clone(handler);
-      _.each(handler, function(fn, name){
-        if (_.isFunction(fn))
-          this[graphType][name] = _.bind(fn, this);
-      }, this);
+      this[graphType] = flotr.clone(handler);
     }, this);
-
   },
 
   _initEvents: function () {

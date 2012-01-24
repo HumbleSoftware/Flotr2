@@ -58,7 +58,7 @@ function basic_timeline (container) {
       showLabels : false
     },
     grid: {
-      horizontalLines : false,
+      horizontalLines : false
     }
   });
 }

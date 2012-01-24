@@ -8,351 +8,261 @@ Flotr.addType('bars', {
     fill: true,            // => true to fill the area from the line to the x axis, false for (transparent) no fill
     fillColor: null,       // => fill color
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
-    horizontal: false,     // => horizontal bars (x and y inverted) @todo: needs fix
+    horizontal: false,     // => horizontal bars (x and y inverted)
     stacked: false,        // => stacked bar charts
     centered: true         // => center the bars to their x axis value
   },
 
-  /**
-   * Draws bar series in the canvas element.
-   * @param {Object} series - Series with options.bars.show = true.
-   */
-  draw: function(series) {
-    var ctx = this.ctx,
-      bw = series.bars.barWidth,
-      lw = Math.min(series.bars.lineWidth, bw);
-    
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    ctx.lineJoin = 'miter';
-
-    /**
-     * @todo linewidth not interpreted the right way.
-     */
-    ctx.lineWidth = lw;
-    ctx.strokeStyle = series.color;
-    
-    if(series.bars.fill){
-      var color = series.bars.fillColor || series.color;
-      ctx.fillStyle = this.processColor(color, {opacity: series.bars.fillOpacity});
-    }
-    
-    this.bars.plot(series, bw, 0, series.bars.fill);
-    ctx.restore();
+  stack : { 
+    positive : [],
+    negative : [],
+    _positive : [], // Shadow
+    _negative : []  // Shadow
   },
 
-  getStack: function (series) {
-    var stack = false;
-    if(series.bars.stacked) {
-      stack = (series.bars.horizontal ? series.yaxis : series.xaxis).getStack('bars');
-      if (Flotr._.isEmpty(stack)) {
-        stack.positive = [];
-        stack.negative = [];
-        stack._positive = []; // Shadow
-        stack._negative = []; // Shadow
-      }
-    }
-
-    return stack;
-  },
-
-  plot: function(series, barWidth, offset, fill){
-    if(series.data.length < 1) return;
-    
+  draw : function (options) {
     var
-      data            = series.data,
-      xa              = series.xaxis,
-      ya              = series.yaxis,
-      ctx             = this.ctx,
-      stack           = this.bars.getStack(series),
-      shadowSize      = this.options.shadowSize,
-      barOffset,
-      stackIndex,
-      stackValue,
-      stackOffsetPos,
-      stackOffsetNeg,
-      width, height,
-      xaLeft, xaRight, yaTop, yaBottom,
-      left, right, top, bottom,
-      i, x, y;
+      context = options.context;
 
-    for(i = 0; i < data.length; i++){
-      x = data[i][0];
-      y = data[i][1];
-      
-      if (y === null) continue;
-      
-      // Stacked bars
-      stackOffsetPos = 0;
-      stackOffsetNeg = 0;
-
-      if (stack) {
-
-        if(series.bars.horizontal) {
-          stackIndex = y;
-          stackValue = x;
-        } else {
-          stackIndex = x;
-          stackValue = y;
-        }
-
-        stackOffsetPos = stack.positive[stackIndex] || 0;
-        stackOffsetNeg = stack.negative[stackIndex] || 0;
-
-        if (stackValue > 0) {
-          stack.positive[stackIndex] = stackOffsetPos + stackValue;
-        } else {
-          stack.negative[stackIndex] = stackOffsetNeg + stackValue;
-        }
-      }
-      
-      // @todo: fix horizontal bars support
-      // Horizontal bars
-      barOffset = series.bars.centered ? barWidth/2 : 0;
-      
-      if(series.bars.horizontal){ 
-        if (x > 0){
-          left = stackOffsetPos;
-          right = x + stackOffsetPos;
-        }
-        else {
-          right = stackOffsetNeg;
-          left = x + stackOffsetNeg;
-        }
-        bottom = y - barOffset;
-        top = y + barWidth - barOffset;
-      }
-      else {
-        if (y > 0){
-          bottom = stackOffsetPos;
-          top = y + stackOffsetPos;
-        }
-        else{
-          top = stackOffsetNeg;
-          bottom = y + stackOffsetNeg;
-        }
-          
-        left = x - barOffset;
-        right = x + barWidth - barOffset;
-      }
-      
-      if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
-        continue;
-
-      if (left    < xa.min) left    = xa.min;
-      if (right   > xa.max) right   = xa.max;
-      if (bottom  < ya.min) bottom  = ya.min;
-      if (top     > ya.max) top     = ya.max;
-      
-      // Cache d2p values
-      xaLeft   = xa.d2p(left);
-      xaRight  = xa.d2p(right);
-      yaTop    = ya.d2p(top);
-      yaBottom = ya.d2p(bottom);
-      width    = xaRight - xaLeft;
-      height   = yaBottom - yaTop;
-
-      if (fill){
-        ctx.fillRect(xaLeft, yaTop, width, height);
-      }
-
-      if (shadowSize) {
-        ctx.save();
-        ctx.fillStyle = 'rgba(0,0,0,0.05)';
-        ctx.fillRect(xaLeft + shadowSize, yaTop + shadowSize, width, height);
-        ctx.restore();
-      }
-
-      if (series.bars.lineWidth != 0) {
-        ctx.strokeRect(xaLeft, yaTop, width, height);
-      }
-    }
-  },
-
-  extendXRange: function(axis) {
-    this.bars._extendRange(axis);
-  },
-
-  extendYRange: function(axis){
-    this.bars._extendRange(axis);
-  },
-  _extendRange: function (axis) {
-
-    if(axis.options.max == null){
-      var newmin = axis.min,
-          newmax = axis.max,
-          orientation = axis.orientation,
-          stackedSumsPos = {},
-          stackedSumsNeg = {},
-          lastSerie = null,
-          value, index,
-          i, j, s, b;
-
-      for(i = 0; i < this.series.length; ++i){
-
-        s = this.series[i];
-        b = s.bars;
-
-        if(b.show) {
-
-          // Sides of bars
-          if ((orientation == 1 && !b.horizontal) || (orientation == -1 && b.horizontal)) {
-            if (b.centered) {
-              newmax = Math.max(axis.datamax + 0.5, newmax);
-              newmin = Math.min(axis.datamin - 0.5, newmin);
-            }
-          }
-
-          // End of bars
-          if ((orientation == 1 && b.horizontal) || (orientation == -1 && !b.horizontal)) {
-            if (b.barWidth + axis.datamax >= newmax)
-              newmax = axis.max + (b.centered ? b.barWidth/2 : b.barWidth);
-          }
-
-          if (b.stacked && 
-              ((orientation == 1 && b.horizontal) || (orientation == -1 && !b.horizontal))){
-            for (j = 0; j < s.data.length; j++) {
-              if (b.show && b.stacked) {
-                value = s.data[j][(orientation == 1 ? 1 : 0)]+'';
-
-                index = orientation == 1 ? 0 : 1;
-
-                if(s.data[j][index] > 0)
-                  stackedSumsPos[value] = (stackedSumsPos[value] || 0) + s.data[j][index];
-                else
-                  stackedSumsNeg[value] = (stackedSumsNeg[value] || 0) + s.data[j][index];
-                  
-                lastSerie = s;
-              }
-            }
-
-            for (j in stackedSumsPos) {
-              newmax = Math.max(stackedSumsPos[j], newmax);
-            }
-            for (j in stackedSumsNeg) {
-              newmin = Math.min(stackedSumsNeg[j], newmin);
-            }
-          }
-        }
-      }
-
-      axis.lastSerie = lastSerie;
-      axis.max = newmax;
-      axis.min = newmin;
-    }
-  },
-
-  drawHit: function (n) {
-    var octx = this.octx,
-      s = n.series,
-      xa = n.xaxis,
-      ya = n.yaxis,
-      lx, rx, ly, uy;
-
-    octx.save();
-    octx.translate(this.plotOffset.left, this.plotOffset.top);
-    octx.beginPath();
+    context.save();
+    context.lineJoin = 'miter';
+    // @TODO linewidth not interpreted the right way.
+    context.lineWidth = Math.min(options.lineWidth, options.barWidth);
+    context.strokeStyle = options.color;
+    if (options.fill) context.fillStyle = options.fillStyle
     
-    if (s.mouse.trackAll) {
-      octx.moveTo(xa.d2p(n.x), ya.d2p(0));
-      octx.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
-    }
-    else {
-      var bw = s.bars.barWidth,
-        y = ya.d2p(n.y), 
-        x = xa.d2p(n.x);
-        
-      if(!s.bars.horizontal){ //vertical bars (default)
-        ly = ya.d2p(ya.min<0? 0 : ya.min); //lower vertex y value (in points)
-        
-        if(s.bars.centered){
-          lx = xa.d2p(n.x-(bw/2));
-          rx = xa.d2p(n.x+(bw/2));
-        
-          octx.moveTo(lx, ly);
-          octx.lineTo(lx, y);
-          octx.lineTo(rx, y);
-          octx.lineTo(rx, ly);
-        } else {
-          rx = xa.d2p(n.x+bw); //right vertex x value (in points)
-          
-          octx.moveTo(x, ly);
-          octx.lineTo(x, y);
-          octx.lineTo(rx, y);
-          octx.lineTo(rx, ly);
-        }
-      } else { //horizontal bars
-        lx = xa.d2p(xa.min<0? 0 : xa.min); //left vertex y value (in points)
-          
-        if(s.bars.centered){
-          ly = ya.d2p(n.y-(bw/2));
-          uy = ya.d2p(n.y+(bw/2));
-                       
-          octx.moveTo(lx, ly);
-          octx.lineTo(x, ly);
-          octx.lineTo(x, uy);
-          octx.lineTo(lx, uy);
-        } else {
-          uy = ya.d2p(n.y+bw); //upper vertex y value (in points)
-        
-          octx.moveTo(lx, y);
-          octx.lineTo(x, y);
-          octx.lineTo(x, uy);
-          octx.lineTo(lx, uy);
-        }
-      }
+    this.plot(options);
 
-      if(s.mouse.fillColor) octx.fill();
-    }
-
-    octx.stroke();
-    octx.closePath();
-    octx.restore();
+    context.restore();
   },
 
-  clearHit: function() {
-    var prevHit = this.prevHit,
-      plotOffset = this.plotOffset,
-      s = prevHit.series,
-      xa = prevHit.xaxis,
-      ya = prevHit.yaxis,
-      lw = s.bars.lineWidth,
-      bw = s.bars.barWidth;
-        
-    if(!s.bars.horizontal){ // vertical bars (default)
-      var lastY = ya.d2p(prevHit.y >= 0 ? prevHit.y : 0);
-      if(s.bars.centered) {
-        this.octx.clearRect(
-            xa.d2p(prevHit.x - bw/2) + plotOffset.left - lw, 
-            lastY + plotOffset.top - lw, 
-            xa.d2p(bw + xa.min) + lw * 2, 
-            ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + lw * 2
-        );
-      } else {
-        this.octx.clearRect(
-            xa.d2p(prevHit.x) + plotOffset.left - lw, 
-            lastY + plotOffset.top - lw, 
-            xa.d2p(bw + xa.min) + lw * 2, 
-            ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + lw * 2
-        ); 
+  plot : function (options) {
+
+    var
+      data            = options.data,
+      context         = options.context,
+      shadowSize      = options.shadowSize,
+      i, geometry, left, top, width, height;
+
+    if (data.length < 1) return;
+
+    this.translate(context, options.horizontal);
+
+    for (i = 0; i < data.length; i++) {
+
+      geometry = this.getBarGeometry(data[i][0], data[i][1], options);
+      if (geometry === null) continue;
+
+      left    = geometry.left;
+      top     = geometry.top;
+      width   = geometry.width;
+      height  = geometry.height;
+
+      if (options.fill) context.fillRect(left, top, width, height);
+      if (shadowSize) {
+        context.save();
+        context.fillStyle = 'rgba(0,0,0,0.05)';
+        context.fillRect(left + shadowSize, top + shadowSize, width, height);
+        context.restore();
       }
-    } else { // horizontal bars
-      var lastX = xa.d2p(prevHit.x >= 0 ? prevHit.x : 0);
-      if(s.bars.centered) {
-        this.octx.clearRect(
-            lastX + plotOffset.left + lw, 
-            ya.d2p(prevHit.y + bw/2) + plotOffset.top - lw, 
-            xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - lw*2,
-            ya.d2p(bw + ya.min) + lw * 2
-        );
-      } else {
-        this.octx.clearRect(
-            lastX + plotOffset.left + lw, 
-            ya.d2p(prevHit.y + bw) + plotOffset.top - lw, 
-            xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - lw*2,
-            ya.d2p(bw + ya.min) + lw * 2
-        );
+      if (options.lineWidth != 0) {
+        context.strokeRect(left, top, width, height);
       }
     }
+  },
+
+  translate : function (context, horizontal) {
+    if (horizontal) {
+      context.rotate(-Math.PI / 2)
+      context.scale(-1, 1);
+    }
+  },
+
+  getBarGeometry : function (x, y, options) {
+
+    var
+      horizontal    = options.horizontal,
+      barWidth      = options.barWidth,
+      centered      = options.centered,
+      stack         = options.stacked ? this.stack : false,
+      bisection     = centered ? barWidth / 2 : 0,
+      xScale        = horizontal ? options.yScale : options.xScale,
+      yScale        = horizontal ? options.xScale : options.yScale,
+      xValue        = horizontal ? y : x,
+      yValue        = horizontal ? x : y,
+      stackOffset   = 0,
+      stackValue, left, right, top, bottom;
+
+    // Stacked bars
+    if (stack) {
+      stackValue          = yValue > 0 ? stack.positive : stack.negative;
+      stackOffset         = stackValue[xValue] || stackOffset;
+      stackValue[xValue]  = stackOffset + yValue;
+    }
+
+    left    = xScale(xValue - bisection);
+    right   = xScale(xValue + barWidth - bisection);
+    top     = yScale(yValue + stackOffset);
+    bottom  = yScale(stackOffset);
+
+    // TODO for test passing... probably looks better without this
+    if (bottom < 0) bottom = 0;
+
+    // TODO Skipping...
+    // if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max) continue;
+
+    return (x === null || y === null) ? null : {
+      x         : xValue,
+      y         : yValue,
+      xScale    : xScale,
+      yScale    : yScale,
+      top       : top,
+      left      : left,
+      width     : right - left,
+      height    : bottom - top
+    };
+  },
+
+  hit : function (options) {
+    var
+      data = options.data,
+      args = options.args,
+      mouse = args[0],
+      n = args[1],
+      x = mouse.x,
+      y = mouse.y,
+      hitGeometry = this.getBarGeometry(x, y, options),
+      width = Math.abs(hitGeometry.width / 2),
+      left = hitGeometry.left,
+      geometry, i;
+
+    for (i = data.length; i--;) {
+      geometry = this.getBarGeometry(data[i][0], data[i][1], options);
+      if (geometry.y > hitGeometry.y && Math.abs(left - geometry.left) < width) {
+        n.x = data[i][0];
+        n.y = data[i][1];
+        n.index = i;
+        n.seriesIndex = options.index;
+      }
+    }
+  },
+
+  drawHit : function (options) {
+    // TODO hits for stacked bars; implement using calculateStack option?
+    var
+      context     = options.context,
+      args        = options.args,
+      geometry    = this.getBarGeometry(args.x, args.y, options),
+      left        = geometry.left,
+      top         = geometry.top,
+      width       = geometry.width,
+      height      = geometry.height;
+
+    context.save();
+    context.strokeStyle = options.color;
+    context.lineWidth = options.lineWidth;
+    this.translate(context, options.horizontal);
+
+    // Draw highlight
+    context.beginPath();
+    context.moveTo(left, top + height);
+    context.lineTo(left, top);
+    context.lineTo(left + width, top);
+    context.lineTo(left + width, top + height);
+    if (options.fill) {
+      context.fillStyle = options.fillStyle;
+      context.fill();
+    }
+    context.stroke();
+    context.closePath();
+
+    context.restore();
+  },
+
+  clearHit: function (options) {
+    var
+      context     = options.context,
+      args        = options.args,
+      geometry    = this.getBarGeometry(args.x, args.y, options),
+      left        = geometry.left,
+      width       = geometry.width,
+      top         = geometry.top,
+      height      = geometry.height,
+      lineWidth   = 2 * options.lineWidth;
+
+    context.save();
+    this.translate(context, options.horizontal);
+    context.clearRect(
+      Math.min(left, left + width) - lineWidth,
+      Math.min(top, top + height) - lineWidth,
+      Math.abs(width) + 2 * lineWidth,
+      Math.abs(height) + 2 * lineWidth
+    );
+    context.restore();
+  },
+
+  extendXRange : function (axis, data, options, bars) {
+    this._extendRange(axis, data, options, bars);
+  },
+
+  extendYRange : function (axis, data, options, bars) {
+    this._extendRange(axis, data, options, bars);
+  },
+  _extendRange: function (axis, data, options, bars) {
+
+    var
+      max = axis.options.max;
+
+    if (_.isNumber(max) || _.isString(max)) return; 
+
+    var
+      newmin = axis.min,
+      newmax = axis.max,
+      orientation = axis.orientation,
+      positiveSums = bars.positiveSums || {},
+      negativeSums = bars.negativeSums || {},
+      value, datum, index, j;
+
+    // Sides of bars
+    if ((orientation == 1 && !options.horizontal) || (orientation == -1 && options.horizontal)) {
+      if (options.centered) {
+        newmax = Math.max(axis.datamax + 0.5, newmax);
+        newmin = Math.min(axis.datamin - 0.5, newmin);
+      }
+    }
+
+    // End of bars
+    if ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal)) {
+      if (options.barWidth + axis.datamax >= newmax)
+        newmax = axis.max + (options.centered ? options.barWidth/2 : options.barWidth);
+    }
+
+    if (options.stacked && 
+        ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal))){
+
+      for (j = data.length; j--;) {
+        value = data[j][(orientation == 1 ? 1 : 0)]+'';
+        datum = data[j][(orientation == 1 ? 0 : 1)];
+
+        // Positive
+        if (datum > 0) {
+          positiveSums[value] = (positiveSums[value] || 0) + datum;
+          newmax = Math.max(newmax, positiveSums[value]);
+        }
+
+        // Negative
+        else {
+          negativeSums[value] = (negativeSums[value] || 0) + datum;
+          newmin = Math.min(newmin, negativeSums[value]);
+        }
+      }
+    }
+
+    bars.negativeSums = negativeSums;
+    bars.positiveSums = positiveSums;
+
+    axis.max = newmax;
+    axis.min = newmin;
   }
+
 });

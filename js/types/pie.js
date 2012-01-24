@@ -9,8 +9,8 @@
 var
   _ = Flotr._;
 
-Flotr.defaultPieLabelFormatter = function(slice) {
-  return (slice.fraction*100).toFixed(2)+'%';
+Flotr.defaultPieLabelFormatter = function (total, value) {
+  return (100 * value / total).toFixed(2)+'%';
 };
 
 Flotr.addType('pie', {
@@ -28,274 +28,189 @@ Flotr.addType('pie', {
     pie3DviewAngle: (Math.PI/2 * 0.8),
     pie3DspliceThickness: 20
   },
-  /**
-   * Draws a pie in the canvas element.
-   * @param {Object} series - Series with options.pie.show = true.
-   */
-  draw: function(series) {
-    if (this.options.pie.drawn) return;
-    var ctx = this.ctx,
-        options = this.options,
-        lw = series.pie.lineWidth,
-        sw = series.shadowSize,
-        data = series.data,
-        plotOffset = this.plotOffset,
-        radius = (Math.min(this.canvasWidth, this.canvasHeight) * series.pie.sizeRatio) / 2,
-        html = [],
-      vScale = 1,//Math.cos(series.pie.viewAngle);
-      plotTickness = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale,
-    
-    style = {
-      size: options.fontSize*1.2,
-      color: options.grid.color,
-      weight: 1.5
-    },
-    
-    center = {
-      x: plotOffset.left + (this.plotWidth)/2,
-      y: plotOffset.top + (this.plotHeight)/2
-    },
-    
-    portions = this.pie._getPortions(),
-    slices = this.pie._getSlices(portions, series);
 
-    ctx.save();
+  draw : function (options) {
+
+    // TODO 3D charts what?
+
+    var
+      data          = options.data,
+      context       = options.context,
+      canvas        = context.canvas,
+      lineWidth     = options.lineWidth,
+      shadowSize    = options.shadowSize,
+      sizeRatio     = options.sizeRatio,
+      height        = options.height,
+      explode       = options.explode,
+      color         = options.color,
+      fill          = options.fill,
+      fillStyle     = options.fillStyle,
+      radius        = Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      value         = data[0][1],
+      html          = [],
+      vScale        = 1,//Math.cos(series.pie.viewAngle);
+      measure       = Math.PI * 2 * value / this.total,
+      startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
+      endAngle      = startAngle + measure,
+      bisection     = startAngle + measure / 2,
+      label         = options.labelFormatter(this.total, value),
+      //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
+      alignRight    = (Math.cos(bisection) < 0),
+      alignTop      = (Math.sin(bisection) > 0),
+      explodeCoeff  = explode + radius + 4,
+      style,
+      x, y,
+      distX, distY;
     
-    if(sw > 0){
-      _.each(slices, function (slice) {
-        if (slice.startAngle == slice.endAngle) return;
-        
-        var bisection = (slice.startAngle + slice.endAngle) / 2,
-            xOffset = center.x + Math.cos(bisection) * slice.options.explode + sw,
-            yOffset = center.y + Math.sin(bisection) * slice.options.explode + sw;
-        
-        this.pie.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
-        
-        if (series.pie.fill) {
-          ctx.fillStyle = 'rgba(0,0,0,0.1)';
-          ctx.fill();
-        }
-      }, this);
+    context.save();
+    context.translate(options.width / 2, options.height / 2);
+    context.scale(1, vScale);
+
+    // TODO wtf is this for?
+    if (startAngle == endAngle) return;
+
+    x = Math.cos(bisection) * explode;
+    y = Math.sin(bisection) * explode;
+
+    // Shadows
+    if (shadowSize > 0) {
+      this.plotSlice(x + shadowSize, y + shadowSize, radius, startAngle, endAngle, context);
+      if (fill) {
+        context.fillStyle = 'rgba(0,0,0,0.1)';
+        context.fill();
+      }
+    }
+
+    this.plotSlice(x, y, radius, startAngle, endAngle, context);
+    if (fill) {
+      context.fillStyle = fillStyle;
+      context.fill();
+    }
+    context.lineWidth = lineWidth;
+    context.strokeStyle = color;
+    context.stroke();
+
+    distX = Math.cos(bisection) * explodeCoeff;
+    distY = Math.sin(bisection) * explodeCoeff;
+    style = {
+      size : options.fontSize * 1.2,
+      color : options.fontColor,
+      weight : 1.5
+    };
+
+    if (label) {
+      if (options.htmlText || !options.textEnabled) {
+        // TODO HTML text is broken here.
+        var yAlignDist = textAlignTop ? (distY - 5) : (height - distY + 5),
+            divStyle = 'position:absolute;' + (textAlignTop ? 'top' : 'bottom') + ':' + yAlignDist + 'px;'; //@todo: change
+        if (textAlignRight)
+          divStyle += 'right:'+(this.canvasWidth - distX)+'px;text-align:right;';
+        else 
+          divStyle += 'left:'+distX+'px;text-align:left;';
+        html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
+      }
+      else {
+        style.textAlign = alignRight ? 'right' : 'left';
+        style.textBaseline = alignTop ? 'top' : 'bottom';
+        Flotr.drawText(context, label, distX, distY, style);
+      }
     }
     
-    if (options.HtmlText || !this.textEnabled)
-      html = [];
-    
-    _.each(slices, function (slice, index) {
-      if (slice.startAngle == slice.endAngle) return;
-      
-      var bisection = (slice.startAngle + slice.endAngle) / 2,
-          color = slice.series.color,
-          fillColor = slice.options.fillColor || color,
-          xOffset = center.x + Math.cos(bisection) * slice.options.explode,
-          yOffset = center.y + Math.sin(bisection) * slice.options.explode;
-      
-      this.pie.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
-      
-      if(series.pie.fill){
-        ctx.fillStyle = this.processColor(fillColor, {opacity: series.pie.fillOpacity});
-        ctx.fill();
-      }
-      ctx.lineWidth = lw;
-      ctx.strokeStyle = color;
-      ctx.stroke();
-      
-      var label = options.pie.labelFormatter(slice),
-          textAlignRight = (Math.cos(bisection) < 0),
-          textAlignTop = (Math.sin(bisection) > 0),
-          explodeCoeff = (slice.options.explode || series.pie.explode) + radius + 4,
-          distX = center.x + Math.cos(bisection) * explodeCoeff,
-          distY = center.y + Math.sin(bisection) * explodeCoeff;
-      
-      if (slice.fraction && label) {
-        if (options.HtmlText || !this.textEnabled) {
-          var yAlignDist = textAlignTop ? (distY - 5) : (this.plotHeight - distY + 5),
-              divStyle = 'position:absolute;' + (textAlignTop ? 'top' : 'bottom') + ':' + yAlignDist + 'px;'; //@todo: change
-          if (textAlignRight)
-            divStyle += 'right:'+(this.canvasWidth - distX)+'px;text-align:right;';
-          else 
-            divStyle += 'left:'+distX+'px;text-align:left;';
-          html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
-        }
-        else {
-          style.textAlign = textAlignRight ? 'right' : 'left';
-          style.textBaseline = textAlignTop ? 'top' : 'bottom';
-          Flotr.drawText(ctx, label, distX, distY, style);
-        }
-      }
-    }, this);
-    
-    if (options.HtmlText || !this.textEnabled) {
-      var div = Flotr.DOM.node('<div style="color:' + this.options.grid.color + '" class="flotr-labels"></div>');
+    if (options.htmlText || !options.textEnabled) {
+      var div = Flotr.DOM.node('<div style="color:' + options.fontColor + '" class="flotr-labels"></div>');
       Flotr.DOM.insert(div, html.join(''));
       Flotr.DOM.insert(this.el, div);
     }
     
-    ctx.restore();
-    options.pie.drawn = true;
+    context.restore();
+
+    // New start angle
+    this.startAngle = endAngle;
+    this.slices = this.slices || [];
+    this.slices.push({
+      radius : Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      x : x,
+      y : y,
+      explode : explode,
+      start : startAngle,
+      end : endAngle
+    });
   },
-  plotSlice: function(x, y, radius, startAngle, endAngle, fill, vScale) {
-    var ctx = this.ctx;
-    vScale = vScale || 1;
-
-    ctx.scale(1, vScale);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.arc   (x, y, radius, startAngle, endAngle, fill);
-    ctx.lineTo(x, y);
-    ctx.closePath();
+  plotSlice : function (x, y, radius, startAngle, endAngle, context) {
+    context.beginPath();
+    context.moveTo(x, y);
+    context.arc(x, y, radius, startAngle, endAngle, false);
+    context.lineTo(x, y);
+    context.closePath();
   },
-  hit: function(mouse, n){
+  hit : function (options) {
 
-    var series = this.series,
-      options = this.options,
-      radius = (Math.min(this.canvasWidth, this.canvasHeight) * options.pie.sizeRatio) / 2,
-      vScale = 1,//Math.cos(series.pie.viewAngle),
-      angle = options.pie.startAngle,
-      center, // Center of the pie
-      s, x, y;
+    var
+      data      = options.data[0],
+      args      = options.args,
+      index     = options.index,
+      mouse     = args[0],
+      n         = args[1],
+      slice     = this.slices[index],
+      x         = mouse.relX - options.width / 2,
+      y         = mouse.relY - options.height / 2,
+      r         = Math.sqrt(x * x + y * y);
+      theta     = Math.atan(y / x),
+      circle    = Math.PI * 2,
+      explode   = slice.explode || options.explode,
+      start     = slice.start % circle,
+      end       = slice.end % circle;
 
-    center = {
-      x: (this.plotWidth)/2,
-      y: (this.plotHeight)/2
-    };
-
-    portions = this.pie._getPortions();
-    slices = this.pie._getSlices(portions, series, angle);
-
-    // Add a circle
-    function circle (angle) {
-      return angle > 0 ? angle: angle + (2 * Math.PI);
+    if (x < 0) {
+      theta += Math.PI;
+    } else if (x > 0 && y < 0) {
+      theta += circle;
     }
 
-    //
-    for (i = 0; i < series.length; i++){
+    if (r < slice.radius + explode && r > explode) {
+      if ((start > end && (theta < end || theta > start))
+        || (theta > start && theta < end)) {
 
-      s = series[i];
-      x = s.data[0][0];
-      y = s.data[0][1];
-
-      if (y === null) continue;
-      
-      var a = (mouse.relX-center.x),
-        b = (mouse.relY-center.y),
-        c = Math.sqrt(Math.pow(a, 2)+Math.pow(b, 2)),
-        sAngle = circle((slices[i].startAngle)%(2 * Math.PI)),
-        eAngle = circle((slices[i].endAngle)%(2 * Math.PI)),
-        xSin = b/c,
-        kat = circle(Math.asin(xSin)%(2 * Math.PI)),
-        kat2 = Math.asin(-xSin)+(Math.PI);
-
-      //if (c<radius && (a>0 && sAngle < kat && eAngle > kat)) //I i IV quarter
-      //if (c<radius && (a<0 && sAngle < kat2 && eAngle > kat2)) //II i III quarter
-      //if(sAngle>aAngle && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2)))) //if a slice is crossing 0 angle
-      
-      if (c<radius+10 && ((((a>0 && sAngle < kat && eAngle > kat)) || (a<0 && sAngle < kat2 && eAngle > kat2)) || 
-          ( (sAngle>eAngle || slices[i].fraction==1) && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2))))))
-      { 
-        n.x = x;
-        n.y = y;
-        n.sAngle = sAngle;
-        n.eAngle = eAngle;
-        n.mouse = s.mouse;
-        n.series = s;
-        n.allSeries = series;
-        n.seriesIndex = i;
-        n.fraction = slices[i].fraction;
+        // TODO Decouple this from hit plugin (chart shouldn't know what n means)
+         n.x = data[0];
+         n.y = data[1];
+         n.sAngle = start;
+         n.eAngle = end;
+         n.index = 0;
+         n.seriesIndex = index;
+         n.fraction = data[1] / this.total;
       }
     }
   },
-  drawHit: function(n){
-    var octx = this.octx,
-      s = n.series,
-      xa = n.xaxis,
-      ya = n.yaxis;
+  drawHit: function (options) {
+    var
+      context = options.context,
+      slice = this.slices[options.args.seriesIndex];
 
-    octx.save();
-    octx.translate(this.plotOffset.left, this.plotOffset.top);
-    octx.beginPath();
-
-    if (s.mouse.trackAll) {
-      octx.moveTo(xa.d2p(n.x), ya.d2p(0));
-      octx.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
-    }
-    else {
-      var center = {
-        x: (this.plotWidth)/2,
-        y: (this.plotHeight)/2
-      },
-      radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
-
-      bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2 : (n.sAngle + n.eAngle + 2* Math.PI) / 2,
-      xOffset = center.x + Math.cos(bisection) * n.series.pie.explode,
-      yOffset = center.y + Math.sin(bisection) * n.series.pie.explode;
-      
-      octx.beginPath();
-      octx.moveTo(xOffset, yOffset);
-      if (n.fraction != 1)
-        octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle, false);
-      else
-        octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle-0.00001, false);
-      octx.lineTo(xOffset, yOffset);
-      octx.closePath();
-    }
-
-    octx.stroke();
-    octx.closePath();
-    octx.restore();
+    context.save();
+    context.translate(options.width / 2, options.height / 2);
+    this.plotSlice(slice.x, slice.y, slice.radius, slice.start, slice.end, context);
+    context.stroke();
+    context.restore();
   },
-  clearHit: function(){
-    var center = {
-      x: this.plotOffset.left + (this.plotWidth)/2,
-      y: this.plotOffset.top + (this.plotHeight)/2
-    },
-    pie = this.prevHit.series.pie,
-    radius = (Math.min(this.canvasWidth, this.canvasHeight) * pie.sizeRatio) / 2,
-    margin = (pie.explode + pie.lineWidth) * 4;
-      
-    this.octx.clearRect(
-      center.x - radius - margin, 
-      center.y - radius - margin, 
-      2*(radius + margin), 
-      2*(radius + margin)
+  clearHit : function (options) {
+    var
+      context = options.context,
+      slice = this.slices[options.args.seriesIndex],
+      radius = slice.radius + options.lineWidth;
+
+    context.save();
+    context.translate(options.width / 2, options.height / 2);
+    context.clearRect(
+      slice.x - radius,
+      slice.y - radius,
+      2 * radius,
+      2 * radius
     );
+    context.restore();
   },
-  _getPortions: function(){
-    return _.map(this.series, function(hash, index){
-      if (hash.pie.show && hash.data[0][1] !== null)
-        return {
-          name: (hash.label || hash.data[0][1]),
-          value: [index, hash.data[0][1]],
-          options: hash.pie,
-          series: hash
-        };
-    });
-  },
-  _getSum: function(portions){
-    // Sum of the portions' angles
-    return _.inject(_.pluck(_.pluck(portions, 'value'), 1), function(acc, n) { return acc + n; }, 0);
-  },
-  _getSlices: function(portions, series, startAngle){
-    var sum = this.pie._getSum(portions),
-      fraction = 0.0,
-      angle = (!_.isUndefined(startAngle) ? startAngle : series.pie.startAngle),
-      value = 0.0;
-    return _.map(portions, function(slice){
-      angle += fraction;
-      value = parseFloat(slice.value[1]); // @warning : won't support null values !!
-      fraction = value/sum;
-      return {
-        name:     slice.name,
-        fraction: fraction,
-        x:        slice.value[0],
-        y:        value,
-        value:    value,
-        options:  slice.options,
-        series:   slice.series,
-        startAngle: 2 * angle * Math.PI,
-        endAngle:   2 * (angle + fraction) * Math.PI
-      };
-    });
+  extendYRange : function (axis, data) {
+    this.total = (this.total || 0) + data[0][1];
   }
 });
 })();

@@ -64,7 +64,40 @@ function basic (container) {
 (function () {
 
 Flotr.ExampleList.add({
-  key : 'basic-axi',
+  key : 'basic-stacked',
+  name : 'Basic Stacked',
+  callback : basic_stacked,
+  type : 'test'
+});
+
+function basic_stacked (container) {
+
+  var
+    d1 = [[0, 3], [4, 8], [8, 2], [9, 3]], // First data series
+    d2 = [[0, 2], [4, 3], [8, 8], [9, 4]], // Second data series
+    i, graph;
+
+  // Draw Graph
+  graph = Flotr.draw(container, [ d1, d2 ], {
+    lines: {
+      show : true,
+      stacked: true
+    },
+    xaxis: {
+      minorTickFreq: 4
+    }, 
+    grid: {
+      minorVerticalLines: true
+    }
+  });
+}
+
+})();
+
+(function () {
+
+Flotr.ExampleList.add({
+  key : 'basic-axis',
   name : 'Basic Axis',
   callback : basic_axis
 });
@@ -142,7 +175,8 @@ Flotr.ExampleList.add({
   key : 'basic-bars-horizontal',
   name : 'Horizontal Bars',
   args : [true],
-  callback : basic_bars
+  callback : basic_bars,
+  tolerance : 5
 });
 
 function basic_bars (container, horizontal) {
@@ -209,7 +243,8 @@ Flotr.ExampleList.add({
   key : 'basic-stacked-horizontal',
   name : 'Stacked Horizontal Bars',
   args : [true],
-  callback : bars_stacked
+  callback : bars_stacked,
+  tolerance : 5
 });
 
 function bars_stacked (container, horizontal) {
@@ -1236,7 +1271,7 @@ function basic_timeline (container) {
       showLabels : false
     },
     grid: {
-      horizontalLines : false,
+      horizontalLines : false
     }
   });
 }
@@ -1248,7 +1283,8 @@ function basic_timeline (container) {
 Flotr.ExampleList.add({
   key : 'advanced-markers',
   name : 'Advanced Markers',
-  callback : advanced_markers 
+  callback : advanced_markers,
+  timeout : 150
 });
 
 function advanced_markers (container) {
@@ -1274,6 +1310,7 @@ function advanced_markers (container) {
         }
       }
     },
+    flotr = Flotr,
     point,
     graph,
     i;
@@ -1285,26 +1322,33 @@ function advanced_markers (container) {
     markers.data.push(point);
   }
 
+  var runner = function () {
+    if (!xmark.complete || !checkmark.complete) {
+        setTimeout(runner, 50);
+        return;
+    }
+
+    graph = flotr.draw(
+      container,
+      [bars, markers], {
+        yaxis: {
+          min: 0,
+          max: 11
+        },
+        xaxis: {
+          min: -0.5,
+          max: 7.5
+        },
+        grid: {
+          verticalLines: false
+        }
+      }
+    );
+  }
+
+  xmark.onload = runner;
   xmark.src = 'images/xmark.png';
   checkmark.src = 'images/checkmark.png';
-  
-  graph = Flotr.draw(
-    container,
-    [bars, markers], {
-      yaxis: {
-        min: 0,
-        max: 11
-      },
-      xaxis: {
-        min: -0.5,
-        max: 7.5
-      },
-      grid: {
-        verticalLines: false
-      }
-    }
-  );
-
 };
 
 })();

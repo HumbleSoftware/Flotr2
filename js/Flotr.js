@@ -76,10 +76,22 @@ Flotr = {
    */
   merge: function(src, dest){
     var i, v, result = dest || {};
-    for(i in src){
+
+    for (i in src) {
       v = src[i];
-      result[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !this._.isElement(v)) ? Flotr.merge(v, (dest ? dest[i] : undefined)) : result[i] = v;
+      if (v && typeof(v) === 'object') {
+        if (v.constructor === Array) {
+          result[i] = this._.clone(v);
+        } else if (v.constructor !== RegExp && !this._.isElement(v)) {
+          result[i] = Flotr.merge(v, (dest ? dest[i] : undefined))
+        } else {
+          result[i] = v;
+        }
+      } else {
+        result[i] = v;
+      }
     }
+
     return result;
   },
   

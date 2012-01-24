@@ -7,367 +7,501 @@
   * dperini: https://github.com/dperini/nwevents
   * the entire mootools team: github.com/mootools/mootools-core
   */
-!function (name, definition) {
-  if (typeof module != 'undefined') module.exports = definition();
-  else if (typeof define == 'function' && typeof define.amd  == 'object') define(definition);
-  else this[name] = definition();
-}('bean', function () {
-  var win = window,
-      __uid = 1,
-      registry = {},
-      collected = {},
-      overOut = /over|out/,
-      namespace = /[^\.]*(?=\..*)\.|.*/,
-      stripName = /\..*/,
-      addEvent = 'addEventListener',
-      attachEvent = 'attachEvent',
-      removeEvent = 'removeEventListener',
-      detachEvent = 'detachEvent',
-      doc = document || {},
-      root = doc.documentElement || {},
-      W3C_MODEL = root[addEvent],
-      eventSupport = W3C_MODEL ? addEvent : attachEvent,
+/*global module:true, define:true*/
+!function (name, context, definition) {
+  if (typeof module !== 'undefined') module.exports = definition(name, context);
+  else if (typeof define === 'function' && typeof define.amd  === 'object') define(definition);
+  else context[name] = definition(name, context);
+}('bean', this, function (name, context) {
+  var win = window
+    , old = context[name]
+    , overOut = /over|out/
+    , namespaceRegex = /[^\.]*(?=\..*)\.|.*/
+    , nameRegex = /\..*/
+    , addEvent = 'addEventListener'
+    , attachEvent = 'attachEvent'
+    , removeEvent = 'removeEventListener'
+    , detachEvent = 'detachEvent'
+    , doc = document || {}
+    , root = doc.documentElement || {}
+    , W3C_MODEL = root[addEvent]
+    , eventSupport = W3C_MODEL ? addEvent : attachEvent
+    , slice = Array.prototype.slice
+    , mouseTypeRegex = /click|mouse|menu|drag|drop/i
+    , touchTypeRegex = /^touch|^gesture/i
+    , ONE = { one: 1 } // singleton for quick matching making add() do one()
 
-  isDescendant = function (parent, child) {
-    var node = child.parentNode;
-    while (node !== null) {
-      if (node == parent) {
-        return true;
+    , nativeEvents = (function (hash, events, i) {
+        for (i = 0; i < events.length; i++)
+          hash[events[i]] = 1
+        return hash
+      })({}, (
+          'click dblclick mouseup mousedown contextmenu ' +                  // mouse buttons
+          'mousewheel DOMMouseScroll ' +                                     // mouse wheel
+          'mouseover mouseout mousemove selectstart selectend ' +            // mouse movement
+          'keydown keypress keyup ' +                                        // keyboard
+          'orientationchange ' +                                             // mobile
+          'focus blur change reset select submit ' +                         // form elements
+          'load unload beforeunload resize move DOMContentLoaded readystatechange ' + // window
+          'error abort scroll ' +                                            // misc
+          (W3C_MODEL ? // element.fireEvent('onXYZ'... is not forgiving if we try to fire an event
+                       // that doesn't actually exist, so make sure we only do these on newer browsers
+            'show ' +                                                          // mouse buttons
+            'input invalid ' +                                                 // form elements
+            'touchstart touchmove touchend touchcancel ' +                     // touch
+            'gesturestart gesturechange gestureend ' +                         // gesture
+            'message readystatechange pageshow pagehide popstate ' +           // window
+            'hashchange offline online ' +                                     // window
+            'afterprint beforeprint ' +                                        // printing
+            'dragstart dragenter dragover dragleave drag drop dragend ' +      // dnd
+            'loadstart progress suspend emptied stalled loadmetadata ' +       // media
+            'loadeddata canplay canplaythrough playing waiting seeking ' +     // media
+            'seeked ended durationchange timeupdate play pause ratechange ' +  // media
+            'volumechange cuechange ' +                                        // media
+            'checking noupdate downloading cached updateready obsolete ' +     // appcache
+            '' : '')
+        ).split(' ')
+      )
+
+    , customEvents = (function () {
+        function isDescendant(parent, node) {
+          while ((node = node.parentNode) !== null) {
+            if (node === parent) return true
+          }
+          return false
+        }
+
+        function check(event) {
+          var related = event.relatedTarget
+          if (!related) return related === null
+          return (related !== this && related.prefix !== 'xul' && !/document/.test(this.toString()) && !isDescendant(this, related))
+        }
+
+        return {
+            mouseenter: { base: 'mouseover', condition: check }
+          , mouseleave: { base: 'mouseout', condition: check }
+          , mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
+        }
+      })()
+
+    , fixEvent = (function () {
+        var commonProps = 'altKey attrChange attrName bubbles cancelable ctrlKey currentTarget detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey srcElement target timeStamp type view which'.split(' ')
+          , mouseProps = commonProps.concat('button buttons clientX clientY dataTransfer fromElement offsetX offsetY pageX pageY screenX screenY toElement'.split(' '))
+          , keyProps = commonProps.concat('char charCode key keyCode'.split(' '))
+          , touchProps = commonProps.concat('touches targetTouches changedTouches scale rotation'.split(' '))
+          , preventDefault = 'preventDefault'
+          , createPreventDefault = function (event) {
+              return function () {
+                if (event[preventDefault])
+                  event[preventDefault]()
+                else
+                  event.returnValue = false
+              }
+            }
+          , stopPropagation = 'stopPropagation'
+          , createStopPropagation = function (event) {
+              return function () {
+                if (event[stopPropagation])
+                  event[stopPropagation]()
+                else
+                  event.cancelBubble = true
+              }
+            }
+          , createStop = function (synEvent) {
+              return function () {
+                synEvent[preventDefault]()
+                synEvent[stopPropagation]()
+                synEvent.stopped = true
+              }
+            }
+          , copyProps = function (event, result, props) {
+              var i, p
+              for (i = props.length; i--;) {
+                p = props[i]
+                if (!(p in result) && p in event) result[p] = event[p]
+              }
+            }
+
+        return function (event, isNative) {
+          var result = { originalEvent: event, isNative: isNative }
+          if (!event)
+            return result
+
+          var props
+            , type = event.type
+            , target = event.target || event.srcElement
+
+          result[preventDefault] = createPreventDefault(event)
+          result[stopPropagation] = createStopPropagation(event)
+          result.stop = createStop(result)
+          result.target = target && target.nodeType === 3 ? target.parentNode : target
+
+          if (isNative) { // we only need basic augmentation on custom events, the rest is too expensive
+            if (type.indexOf('key') !== -1) {
+              props = keyProps
+              result.keyCode = event.which || event.keyCode
+            } else if (mouseTypeRegex.test(type)) {
+              props = mouseProps
+              result.rightClick = event.which === 3 || event.button === 2
+              result.pos = { x: 0, y: 0 }
+              if (event.pageX || event.pageY) {
+                result.clientX = event.pageX
+                result.clientY = event.pageY
+              } else if (event.clientX || event.clientY) {
+                result.clientX = event.clientX + doc.body.scrollLeft + root.scrollLeft
+                result.clientY = event.clientY + doc.body.scrollTop + root.scrollTop
+              }
+              if (overOut.test(type))
+                result.relatedTarget = event.relatedTarget || event[(type === 'mouseover' ? 'from' : 'to') + 'Element']
+            } else if (touchTypeRegex.test(type)) {
+              props = touchProps
+            }
+            copyProps(event, result, props || commonProps)
+          }
+          return result
+        }
+      })()
+
+      // if we're in old IE we can't do onpropertychange on doc or win so we use doc.documentElement for both
+    , targetElement = function (element, isNative) {
+        return !W3C_MODEL && !isNative && (element === doc || element === win) ? root : element
       }
-      node = node.parentNode;
-    }
-  },
 
-  retrieveUid = function (obj, uid) {
-    return (obj.__uid = uid && (uid + '::' + __uid++) || obj.__uid || __uid++);
-  },
+      // we use one of these per listener, of any type
+    , RegEntry = (function () {
+        function entry(element, type, handler, original, namespaces) {
+          this.element = element
+          this.type = type
+          this.handler = handler
+          this.original = original
+          this.namespaces = namespaces
+          this.custom = customEvents[type]
+          this.isNative = nativeEvents[type] && element[eventSupport]
+          this.eventType = W3C_MODEL || this.isNative ? type : 'propertychange'
+          this.customType = !W3C_MODEL && !this.isNative && type
+          this.target = targetElement(element, this.isNative)
+          this.eventSupport = this.target[eventSupport]
+        }
 
-  retrieveEvents = function (element) {
-    var uid = retrieveUid(element);
-    return (registry[uid] = registry[uid] || {});
-  },
+        entry.prototype = {
+            // given a list of namespaces, is our entry in any of them?
+            inNamespaces: function (checkNamespaces) {
+              var i, j
+              if (!checkNamespaces)
+                return true
+              if (!this.namespaces)
+                return false
+              for (i = checkNamespaces.length; i--;) {
+                for (j = this.namespaces.length; j--;) {
+                  if (checkNamespaces[i] === this.namespaces[j])
+                    return true
+                }
+              }
+              return false
+            }
 
-  listener = W3C_MODEL ? function (element, type, fn, add) {
-    element[add ? addEvent : removeEvent](type, fn, false);
-  } : function (element, type, fn, add, custom) {
-    if (custom && add && element['_on' + custom] === null) {
-      element['_on' + custom] = 0;
-    }
-    element[add ? attachEvent : detachEvent]('on' + type, fn);
-  },
+            // match by element, original fn (opt), handler fn (opt)
+          , matches: function (checkElement, checkOriginal, checkHandler) {
+              return this.element === checkElement &&
+                (!checkOriginal || this.original === checkOriginal) &&
+                (!checkHandler || this.handler === checkHandler)
+            }
+        }
 
-  nativeHandler = function (element, fn, args) {
-    return function (event) {
-      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event);
-      return fn.apply(element, [event].concat(args));
-    };
-  },
+        return entry
+      })()
 
-  customHandler = function (element, fn, type, condition, args) {
-    return function (event) {
-      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event) {
-        event = event ? fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event) : null;
-        fn.apply(element, Array.prototype.slice.call(arguments, event ? 0 : 1).concat(args));
+    , registry = (function () {
+        // our map stores arrays by event type, just because it's better than storing
+        // everything in a single array. uses '$' as a prefix for the keys for safety
+        var map = {}
+
+          // generic functional search of our registry for matching listeners,
+          // `fn` returns false to break out of the loop
+          , forAll = function (element, type, original, handler, fn) {
+              if (!type || type === '*') {
+                // search the whole registry
+                for (var t in map) {
+                  if (t.charAt(0) === '$')
+                    forAll(element, t.substr(1), original, handler, fn)
+                }
+              } else {
+                var i = 0, l, list = map['$' + type], all = element === '*'
+                if (!list)
+                  return
+                for (l = list.length; i < l; i++) {
+                  if (all || list[i].matches(element, original, handler))
+                    if (!fn(list[i], list, i, type))
+                      return
+                }
+              }
+            }
+
+          , has = function (element, type, original) {
+              // we're not using forAll here simply because it's a bit slower and this
+              // needs to be fast
+              var i, list = map['$' + type]
+              if (list) {
+                for (i = list.length; i--;) {
+                  if (list[i].matches(element, original, null))
+                    return true
+                }
+              }
+              return false
+            }
+
+          , get = function (element, type, original) {
+              var entries = []
+              forAll(element, type, original, null, function (entry) { return entries.push(entry) })
+              return entries
+            }
+
+          , put = function (entry) {
+              (map['$' + entry.type] || (map['$' + entry.type] = [])).push(entry)
+              return entry
+            }
+
+          , del = function (entry) {
+              forAll(entry.element, entry.type, null, entry.handler, function (entry, list, i) {
+                list.splice(i, 1)
+                if (list.length === 0)
+                  delete map['$' + entry.type]
+                return false
+              })
+            }
+
+            // dump all entries, used for onunload
+          , entries = function () {
+              var t, entries = []
+              for (t in map) {
+                if (t.charAt(0) === '$')
+                  entries = entries.concat(map[t])
+              }
+              return entries
+            }
+
+        return { has: has, get: get, put: put, del: del, entries: entries }
+      })()
+
+      // add and remove listeners to DOM elements
+    , listener = W3C_MODEL ? function (element, type, fn, add) {
+        element[add ? addEvent : removeEvent](type, fn, false)
+      } : function (element, type, fn, add, custom) {
+        if (custom && add && element['_on' + custom] === null)
+          element['_on' + custom] = 0
+        element[add ? attachEvent : detachEvent]('on' + type, fn)
       }
-    };
-  },
 
-  addListener = function (element, orgType, fn, args) {
-    var type = orgType.replace(stripName, ''),
-        events = retrieveEvents(element),
-        handlers = events[type] || (events[type] = {}),
-        originalFn = fn,
-        uid = retrieveUid(fn, orgType.replace(namespace, ''));
-    if (handlers[uid]) {
-      return element;
-    }
-    var custom = customEvents[type];
-    if (custom) {
-      fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
-      type = custom.base || type;
-    }
-    var isNative = nativeEvents[type];
-    fn = isNative ? nativeHandler(element, fn, args) : customHandler(element, fn, type, false, args);
-    isNative = W3C_MODEL || isNative;
-    if (type == 'unload') {
-      var org = fn;
-      fn = function () {
-        removeListener(element, type, fn) && org();
-      };
-    }
-    element[eventSupport] && listener(element, isNative ? type : 'propertychange', fn, true, !isNative && type);
-    handlers[uid] = fn;
-    fn.__uid = uid;
-    fn.__originalFn = originalFn;
-    return type == 'unload' ? element : (collected[retrieveUid(element)] = element);
-  },
-
-  removeListener = function (element, orgType, handler) {
-    var uid = element.__uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
-
-    if (!events || !events[type]) {
-      return element;
-    }
-
-    names = orgType.replace(namespace, '');
-    uids = names ? names.split('.') : [handler.__uid];
-
-    function destroyHandler(uid) {
-      handler = events[type][uid];
-      if (!handler) {
-        return;
+    , nativeHandler = function (element, fn, args) {
+        return function (event) {
+          event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, true)
+          return fn.apply(element, [event].concat(args))
+        }
       }
-      delete events[type][uid];
-      if (element[eventSupport]) {
-        type = customEvents[type] ? customEvents[type].base : type;
-        var isNative = W3C_MODEL || nativeEvents[type];
-        listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
-      }
-    }
 
-    destroyHandler(names); //get combos
-    for (i = uids.length; i--; destroyHandler(uids[i])) {} //get singles
-
-    if (isEmpty(events[type])) {
-      delete events[type];
-    }
-
-    if (isEmpty(registry[uid])) {
-      delete registry[uid];
-      delete collected[uid];
-    }
-
-    return element;
-  },
-
-  del = function (selector, fn, $) {
-    return function (e) {
-      var array = typeof selector == 'string' ? $(selector, this) : selector;
-      for (var target = e.target; target && target != this; target = target.parentNode) {
-        for (var i = array.length; i--;) {
-          if (array[i] == target) {
-            return fn.apply(target, arguments);
+    , customHandler = function (element, fn, type, condition, args, isNative) {
+        return function (event) {
+          if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event) {
+            if (event)
+              event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, isNative)
+            fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args))
           }
         }
       }
-    };
-  },
 
-  add = function (element, events, fn, delfn, $) {
-    if (typeof events == 'object' && !fn) {
-      for (var type in events) {
-        events.hasOwnProperty(type) && add(element, type, events[type]);
+    , once = function (rm, element, type, fn, originalFn) {
+        // wrap the handler in a handler that does a remove as well
+        return function () {
+          rm(element, type, originalFn)
+          fn.apply(this, arguments)
+        }
       }
-    } else {
-      var isDel = typeof fn == 'string', types = (isDel ? fn : events).split(' ');
-      fn = isDel ? del(events, delfn, $) : fn;
-      for (var i = types.length; i--;) {
-        addListener(element, types[i], fn, Array.prototype.slice.call(arguments, isDel ? 4 : 3));
-      }
-    }
-    return element;
-  },
 
-  remove = function (element, orgEvents, fn) {
-    var k, m, type, events, i,
-        isString = typeof(orgEvents) == 'string',
-        names = isString && orgEvents.replace(namespace, ''),
-        rm = removeListener,
-        attached = retrieveEvents(element);
-    names = names && names.split('.');
-    if (isString && /\s/.test(orgEvents)) {
-      orgEvents = orgEvents.split(' ');
-      i = orgEvents.length - 1;
-      while (remove(element, orgEvents[i]) && i--) {}
-      return element;
-    }
-    events = isString ? orgEvents.replace(stripName, '') : orgEvents;
-    if (!attached || names || (isString && !attached[events])) {
-      for (k in attached) {
-        if (attached.hasOwnProperty(k)) {
-          for (i in attached[k]) {
-            for (m = names.length; m--;) {
-              attached[k].hasOwnProperty(i)
-                && new RegExp('^' + names[m] + '::\\d*(\\..*)?$').test(i)
-                && rm(element, [k, i].join('.'));
+    , removeListener = function (element, orgType, handler, namespaces) {
+        var i, l, entry
+          , type = (orgType && orgType.replace(nameRegex, ''))
+          , handlers = registry.get(element, type, handler)
+
+        for (i = 0, l = handlers.length; i < l; i++) {
+          if (handlers[i].inNamespaces(namespaces)) {
+            if ((entry = handlers[i]).eventSupport)
+              listener(entry.target, entry.eventType, entry.handler, false, entry.type)
+            // TODO: this is problematic, we have a registry.get() and registry.del() that
+            // both do registry searches so we waste cycles doing this. Needs to be rolled into
+            // a single registry.forAll(fn) that removes while finding, but the catch is that
+            // we'll be splicing the arrays that we're iterating over. Needs extra tests to
+            // make sure we don't screw it up. @rvagg
+            registry.del(entry)
+          }
+        }
+      }
+
+    , addListener = function (element, orgType, fn, originalFn, args) {
+        var entry
+          , type = orgType.replace(nameRegex, '')
+          , namespaces = orgType.replace(namespaceRegex, '').split('.')
+
+        if (registry.has(element, type, fn))
+          return element // no dupe
+        if (type === 'unload')
+          fn = once(removeListener, element, type, fn, originalFn) // self clean-up
+        if (customEvents[type]) {
+          if (customEvents[type].condition)
+            fn = customHandler(element, fn, type, customEvents[type].condition, true)
+          type = customEvents[type].base || type
+        }
+        entry = registry.put(new RegEntry(element, type, fn, originalFn, namespaces[0] && namespaces))
+        entry.handler = entry.isNative ?
+          nativeHandler(element, entry.handler, args) :
+          customHandler(element, entry.handler, type, false, args, false)
+        if (entry.eventSupport)
+          listener(entry.target, entry.eventType, entry.handler, true, entry.customType)
+      }
+
+    , del = function (selector, fn, $) {
+        return function (e) {
+          var target, i, array = typeof selector === 'string' ? $(selector, this) : selector
+          for (target = e.target; target && target !== this; target = target.parentNode) {
+            for (i = array.length; i--;) {
+              if (array[i] === target) {
+                return fn.apply(target, arguments)
+              }
             }
           }
         }
       }
-      return element;
-    }
-    if (typeof fn == 'function') {
-      rm(element, events, fn);
-    } else if (names) {
-      rm(element, orgEvents);
-    } else {
-      rm = events ? rm : remove;
-      type = isString && events;
-      events = events ? (fn || attached[events] || events) : attached;
-      for (k in events) {
-        if (events.hasOwnProperty(k)) {
-          rm(element, type || k, events[k]);
-          delete events[k]; // remove unused leaf keys
-        }
-      }
-    }
-    return element;
-  },
 
-  fire = function (element, type, args) {
-    var evt, k, i, m, types = type.split(' ');
-    for (i = types.length; i--;) {
-      type = types[i].replace(stripName, '');
-      var isNative = nativeEvents[type],
-          isNamespace = types[i].replace(namespace, ''),
-          handlers = retrieveEvents(element)[type];
-      if (isNamespace) {
-        isNamespace = isNamespace.split('.');
-        for (k = isNamespace.length; k--;) {
-          for (m in handlers) {
-            handlers.hasOwnProperty(m) && new RegExp('^' + isNamespace[k] + '::\\d*(\\..*)?$').test(m) && handlers[m].apply(element, [false].concat(args));
+    , remove = function (element, typeSpec, fn) {
+        var k, m, type, namespaces, i
+          , rm = removeListener
+          , isString = typeSpec && typeof typeSpec === 'string'
+
+        if (isString && typeSpec.indexOf(' ') > 0) {
+          // remove(el, 't1 t2 t3', fn) or remove(el, 't1 t2 t3')
+          typeSpec = typeSpec.split(' ')
+          for (i = typeSpec.length; i--;)
+            remove(element, typeSpec[i], fn)
+          return element
+        }
+        type = isString && typeSpec.replace(nameRegex, '')
+        if (type && customEvents[type])
+          type = customEvents[type].type
+        if (!typeSpec || isString) {
+          // remove(el) or remove(el, t1.ns) or remove(el, .ns) or remove(el, .ns1.ns2.ns3)
+          if (namespaces = isString && typeSpec.replace(namespaceRegex, ''))
+            namespaces = namespaces.split('.')
+          rm(element, type, fn, namespaces)
+        } else if (typeof typeSpec === 'function') {
+          // remove(el, fn)
+          rm(element, null, typeSpec)
+        } else {
+          // remove(el, { t1: fn1, t2, fn2 })
+          for (k in typeSpec) {
+            if (typeSpec.hasOwnProperty(k))
+              remove(element, k, typeSpec[k])
           }
         }
-      } else if (!args && element[eventSupport]) {
-        fireListener(isNative, type, element);
-      } else {
-        for (k in handlers) {
-          handlers.hasOwnProperty(k) && handlers[k].apply(element, [false].concat(args));
+        return element
+      }
+
+    , add = function (element, events, fn, delfn, $) {
+        var type, types, i, args
+          , originalFn = fn
+          , isDel = fn && typeof fn === 'string'
+
+        if (events && !fn && typeof events === 'object') {
+          for (type in events) {
+            if (events.hasOwnProperty(type))
+              add.apply(this, [ element, type, events[type] ])
+          }
+        } else {
+          args = arguments.length > 3 ? slice.call(arguments, 3) : []
+          types = (isDel ? fn : events).split(' ')
+          isDel && (fn = del(events, (originalFn = delfn), $)) && (args = slice.call(args, 1))
+          // special case for one()
+          this === ONE && (fn = once(remove, element, events, fn, originalFn))
+          for (i = types.length; i--;) addListener(element, types[i], fn, originalFn, args)
         }
+        return element
       }
-    }
-    return element;
-  },
 
-  fireListener = W3C_MODEL ? function (isNative, type, element) {
-    evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
-    evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1);
-    element.dispatchEvent(evt);
-  } : function (isNative, type, element) {
-    isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
-  },
-
-  clone = function (element, from, type) {
-    var events = retrieveEvents(from), obj, k;
-    var uid = retrieveUid(element);
-    obj = type ? events[type] : events;
-    for (k in obj) {
-      obj.hasOwnProperty(k) && (type ? add : clone)(element, type || from, type ? obj[k].__originalFn : k);
-    }
-    return element;
-  },
-
-  fixEvent = function (e) {
-    var result = {};
-    if (!e) {
-      return result;
-    }
-    var type = e.type, target = e.target || e.srcElement;
-    result.preventDefault = fixEvent.preventDefault(e);
-    result.stopPropagation = fixEvent.stopPropagation(e);
-    result.target = target && target.nodeType == 3 ? target.parentNode : target;
-    if (~type.indexOf('key')) {
-      result.keyCode = e.which || e.keyCode;
-    } else if ((/click|mouse|menu/i).test(type)) {
-      result.rightClick = e.which == 3 || e.button == 2;
-      result.pos = { x: 0, y: 0 };
-      if (e.pageX || e.pageY) {
-        result.clientX = e.pageX;
-        result.clientY = e.pageY;
-      } else if (e.clientX || e.clientY) {
-        result.clientX = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-        result.clientY = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+    , one = function () {
+        return add.apply(ONE, arguments)
       }
-      overOut.test(type) && (result.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element']);
-    }
-    for (var k in e) {
-      if (!(k in result)) {
-        result[k] = e[k];
+
+    , fireListener = W3C_MODEL ? function (isNative, type, element) {
+        var evt = doc.createEvent(isNative ? 'HTMLEvents' : 'UIEvents')
+        evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1)
+        element.dispatchEvent(evt)
+      } : function (isNative, type, element) {
+        element = targetElement(element, isNative)
+        // if not-native then we're using onpropertychange so we just increment a custom property
+        isNative ? element.fireEvent('on' + type, doc.createEventObject()) : element['_on' + type]++
       }
-    }
-    return result;
-  },
 
-  isEmpty = function (obj) {
-    for (var prop in obj) {
-      if (obj.hasOwnProperty(prop)) return false;
-    }
-    return true;
-  }
+    , fire = function (element, type, args) {
+        var i, j, l, names, handlers
+          , types = type.split(' ')
 
-  fixEvent.preventDefault = function (e) {
-    return function () {
-      if (e.preventDefault) {
-        e.preventDefault();
+        for (i = types.length; i--;) {
+          type = types[i].replace(nameRegex, '')
+          if (names = types[i].replace(namespaceRegex, ''))
+            names = names.split('.')
+          if (!names && !args && element[eventSupport]) {
+            fireListener(nativeEvents[type], type, element)
+          } else {
+            // non-native event, either because of a namespace, arguments or a non DOM element
+            // iterate over all listeners and manually 'fire'
+            handlers = registry.get(element, type)
+            args = [false].concat(args)
+            for (j = 0, l = handlers.length; j < l; j++) {
+              if (handlers[j].inNamespaces(names))
+                handlers[j].handler.apply(element, args)
+            }
+          }
+        }
+        return element
       }
-      else {
-        e.returnValue = false;
+
+    , clone = function (element, from, type) {
+        var i = 0
+          , handlers = registry.get(from, type)
+          , l = handlers.length
+
+        for (;i < l; i++)
+          handlers[i].original && add(element, handlers[i].type, handlers[i].original)
+        return element
       }
-    };
-  };
 
-  fixEvent.stopPropagation = function (e) {
-    return function () {
-      if (e.stopPropagation) {
-        e.stopPropagation();
-      } else {
-        e.cancelBubble = true;
+    , bean = {
+          add: add
+        , one: one
+        , remove: remove
+        , clone: clone
+        , fire: fire
+        , noConflict: function () {
+            context[name] = old
+            return this
+          }
       }
-    };
-  };
-
-  var nativeEvents = { click: 1, dblclick: 1, mouseup: 1, mousedown: 1, contextmenu: 1, //mouse buttons
-    mousewheel: 1, DOMMouseScroll: 1, //mouse wheel
-    mouseover: 1, mouseout: 1, mousemove: 1, selectstart: 1, selectend: 1, //mouse movement
-    keydown: 1, keypress: 1, keyup: 1, //keyboard
-    orientationchange: 1, // mobile
-    touchstart: 1, touchmove: 1, touchend: 1, touchcancel: 1, // touch
-    gesturestart: 1, gesturechange: 1, gestureend: 1, // gesture
-    focus: 1, blur: 1, change: 1, reset: 1, select: 1, submit: 1, //form elements
-    load: 1, unload: 1, beforeunload: 1, resize: 1, move: 1, DOMContentLoaded: 1, readystatechange: 1, //window
-    error: 1, abort: 1, scroll: 1 }; //misc
-
-  function check(event) {
-    var related = event.relatedTarget;
-    if (!related) {
-      return related === null;
-    }
-    return (related != this && related.prefix != 'xul' && !/document/.test(this.toString()) && !isDescendant(this, related));
-  }
-
-  var customEvents = {
-    mouseenter: { base: 'mouseover', condition: check },
-    mouseleave: { base: 'mouseout', condition: check },
-    mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
-  };
-
-  var bean = { add: add, remove: remove, clone: clone, fire: fire };
-
-  var clean = function (el) {
-    var uid = remove(el).__uid;
-    if (uid) {
-      delete collected[uid];
-      delete registry[uid];
-    }
-  };
 
   if (win[attachEvent]) {
-    add(win, 'unload', function () {
-      for (var k in collected) {
-        collected.hasOwnProperty(k) && clean(collected[k]);
+    // for IE, clean up on unload to avoid leaks
+    var cleanup = function () {
+      var i, entries = registry.entries()
+      for (i in entries) {
+        if (entries[i].type && entries[i].type !== 'unload')
+          remove(entries[i].element, entries[i].type)
       }
-      win.CollectGarbage && CollectGarbage();
-    });
+      win[detachEvent]('onunload', cleanup)
+      win.CollectGarbage && win.CollectGarbage()
+    }
+    win[attachEvent]('onunload', cleanup)
   }
 
-  bean.noConflict = function () {
-    context.bean = old;
-    return this;
-  };
-
-  return bean;
-
+  return bean
 });
+
 //     Underscore.js 1.1.7
 //     (c) 2011 Jeremy Ashkenas, DocumentCloud Inc.
 //     Underscore is freely distributable under the MIT license.
@@ -1285,10 +1419,22 @@ Flotr = {
    */
   merge: function(src, dest){
     var i, v, result = dest || {};
-    for(i in src){
+
+    for (i in src) {
       v = src[i];
-      result[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !this._.isElement(v)) ? Flotr.merge(v, (dest ? dest[i] : undefined)) : result[i] = v;
+      if (v && typeof(v) === 'object') {
+        if (v.constructor === Array) {
+          result[i] = this._.clone(v);
+        } else if (v.constructor !== RegExp && !this._.isElement(v)) {
+          result[i] = Flotr.merge(v, (dest ? dest[i] : undefined))
+        } else {
+          result[i] = v;
+        }
+      } else {
+        result[i] = v;
+      }
     }
+
     return result;
   },
   
@@ -1460,6 +1606,7 @@ Flotr.defaultOptions = {
   shadowSize: 4,           // => size of the 'fake' shadow
   defaultType: null,       // => default series type
   HtmlText: true,          // => wether to draw the text using HTML or on the canvas
+  fontColor: '#545454',    // => default font color
   fontSize: 7.5,           // => canvas' text font size
   resolution: 1,           // => resolution of the graph, to have printer-friendly graphs !
   parseFloat: true,        // => whether to preprocess data for floats (ie. if input is string)
@@ -2128,16 +2275,6 @@ Graph.prototype = {
     this._handles.push(arguments);
     return this;
   },
-
-  /**
-   * Get graph type for a series
-   * @param {Object} series - the series
-   * @return {Object} the graph type
-   */
-  getType: function(series){
-    var t = (series && series.type) ? series.type : this.options.defaultType;
-    return this[t];
-  },
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
@@ -2174,17 +2311,28 @@ Graph.prototype = {
       axis.calculateRange();
     });
 
-    var types = _.keys(flotr.graphTypes);
+    var
+      types = _.keys(flotr.graphTypes),
+      drawn = false;
 
     _.each(this.series, function (series) {
+      if (series.hide) return;
       _.each(types, function (type) {
         if (series[type] && series[type].show) {
-          if (this[type].extendRange) this[type].extendRange(series);
-          if (this[type].extendYRange) this[type].extendYRange(series.yaxis);
-          if (this[type].extendXRange) this[type].extendXRange(series.xaxis);
+          this.extendRange(type, series);
+          drawn = true;
         }
       }, this);
+      if (!drawn) {
+        this.extendRange(this.options.defaultType, series);
+      }
     }, this);
+  },
+
+  extendRange : function (type, series) {
+    if (this[type].extendRange) this[type].extendRange(series, series.data, series[type], this[type]);
+    if (this[type].extendYRange) this[type].extendYRange(series.yaxis, series.data, series[type], this[type]);
+    if (this[type].extendXRange) this[type].extendXRange(series.xaxis, series.data, series[type], this[type]);
   },
 
   /**
@@ -2275,14 +2423,22 @@ Graph.prototype = {
    */
   draw: function(after) {
 
+    var
+      context = this.ctx,
+      i;
+
     E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
 
-    if(this.series.length){
-      for(var i = 0; i < this.series.length; i++){
-        if (!this.series[i].hide)
-          this.drawSeries(this.series[i]);
+    if (this.series.length) {
+
+      context.save();
+      context.translate(this.plotOffset.left, this.plotOffset.top);
+
+      for (i = 0; i < this.series.length; i++) {
+        if (!this.series[i].hide) this.drawSeries(this.series[i]);
       }
 
+      context.restore();
       this.clip();
     }
 
@@ -2294,19 +2450,54 @@ Graph.prototype = {
    * @param {Object} series - series to draw
    */
   drawSeries: function(series){
-    series = series || this.series;
+
+    function drawChart (series, typeKey) {
+      var options = this.getOptions(series, typeKey);
+      this[typeKey].draw(options);
+    }
 
     var drawn = false;
-    _.each(flotr.graphTypes, function(handler, name) {
-      if(series[name] && series[name].show){
+    series = series || this.series;
+
+    _.each(flotr.graphTypes, function (type, typeKey) {
+      if (series[typeKey] && series[typeKey].show && this[typeKey]) {
         drawn = true;
-        handler.draw.call(this, series);
+        drawChart.call(this, series, typeKey);
       }
     }, this);
 
-    if(!drawn){
-      this[this.options.defaultType].draw(series);
-    }
+    if (!drawn) drawChart.call(this, series, this.options.defaultType);
+  },
+
+  getOptions : function (series, typeKey) {
+    var
+      type = series[typeKey],
+      graphType = this[typeKey],
+      options = {
+        context     : this.ctx,
+        width       : this.plotWidth,
+        height      : this.plotHeight,
+        fontSize    : this.options.fontSize,
+        fontColor   : this.options.fontColor,
+        textEnabled : this.textEnabled,
+        htmlText    : this.options.HtmlText,
+        text        : this._text, // TODO Is this necessary?
+        data        : series.data,
+        color       : series.color,
+        shadowSize  : series.shadowSize,
+        xScale      : _.bind(series.xaxis.d2p, series.xaxis),
+        yScale      : _.bind(series.yaxis.d2p, series.yaxis)
+      };
+
+    options = flotr.merge(type, options);
+
+    // Fill
+    options.fillStyle = this.processColor(
+      type.fillColor || series.color,
+      {opacity: type.fillOpacity}
+    );
+
+    return options;
   },
   /**
    * Calculates the coordinates from a mouse event object.
@@ -2462,13 +2653,8 @@ Graph.prototype = {
 
   _initGraphTypes: function() {
     _.each(flotr.graphTypes, function(handler, graphType){
-      this[graphType] = _.clone(handler);
-      _.each(handler, function(fn, name){
-        if (_.isFunction(fn))
-          this[graphType][name] = _.bind(fn, this);
-      }, this);
+      this[graphType] = flotr.clone(handler);
     }, this);
-
   },
 
   _initEvents: function () {
@@ -2715,7 +2901,6 @@ function Axis (o) {
 
   this.orientation = 1;
   this.offset = 0;
-  this.stacks = {};
   this.datamin = Number.MAX_VALUE;
   this.datamax = -Number.MAX_VALUE;
 
@@ -2735,11 +2920,6 @@ Axis.prototype = {
     } else {
       this.scale = length / (this.max - this.min);
     }
-  },
-
-  getStack : function (type) {
-    var stacks = this.stacks;
-    return (_.isUndefined(stacks[type]) ? stacks[type] = {} : stacks[type]);
   },
 
   calculateTicks : function () {
@@ -3117,93 +3297,87 @@ Flotr.addType('lines', {
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
     stacked: false         // => setting to true will show stacked lines, false will show normal lines
   },
+
+  stack : {
+    values : []
+  },
+
   /**
    * Draws lines series in the canvas element.
-   * @param {Object} series - Series with options.lines.show = true.
+   * @param {Object} options
    */
-  draw: function(series){
+  draw : function (options) {
 
-    var ctx = this.ctx,
-      lineWidth = series.lines.lineWidth,
-      shadowSize = series.shadowSize,
+    var
+      context     = options.context,
+      lineWidth   = options.lineWidth,
+      shadowSize  = options.shadowSize,
       offset;
 
-    series = series || this.series;
+    context.save();
+    context.lineJoin = 'round';
 
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    ctx.lineJoin = 'round';
+    if (shadowSize) {
 
-    if(shadowSize){
-
-      ctx.lineWidth = shadowSize / 2;
-      offset = lineWidth/2 + ctx.lineWidth/2;
+      context.lineWidth = shadowSize / 2;
+      offset = lineWidth / 2 + context.lineWidth / 2;
       
-      ctx.strokeStyle = "rgba(0,0,0,0.1)";
-      this.lines.plot(series, offset + shadowSize/2, false);
+      // @TODO do this instead with a linear gradient
+      context.strokeStyle = "rgba(0,0,0,0.1)";
+      this.plot(options, offset + shadowSize / 2, false);
 
-      ctx.strokeStyle = "rgba(0,0,0,0.2)";
-      this.lines.plot(series, offset, false);
+      context.strokeStyle = "rgba(0,0,0,0.2)";
+      this.plot(options, offset, false);
     }
 
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = series.color;
+    context.lineWidth = lineWidth;
+    context.strokeStyle = options.color;
 
-    this.lines.plot(series, 0, true);
+    this.plot(options, 0, true);
 
-    ctx.restore();
+    context.restore();
   },
 
-  getStack: function (series) {
-    var stack = false;
-    if(series.lines.stacked) {
-      stack = series.xaxis.getStack('bars');
-      if (Flotr._.isEmpty(stack)) {
-        stack.values = [];
-      }
-    }
+  plot: function (options, shadowOffset, incStack){
 
-    return stack;
-  },
-
-  plot: function(series, shadowOffset, incStack){
-
-    var ctx = this.ctx,
-      xa = series.xaxis,
-      ya = series.yaxis,
-      data = series.data, 
-      length = data.length - 1,
-      width = this.plotWidth, 
-      height = this.plotHeight,
-      prevx = null,
-      prevy = null,
-      stack = this.lines.getStack(series),
-      zero = ya.d2p(0),
+    var
+      context   = options.context,
+      width     = options.plotWidth, 
+      height    = options.plotHeight,
+      xScale    = options.xScale,
+      yScale    = options.yScale,
+      data      = options.data, 
+      stack     = options.stacked ? this.stack : false,
+      length    = data.length - 1,
+      prevx     = null,
+      prevy     = null,
+      zero      = yScale(0),
       x1, x2, y1, y2, stack1, stack2, i;
       
-    if(length < 1) return;
+    if (length < 1) return;
 
-    ctx.beginPath();
+    context.beginPath();
 
-    for(i = 0; i < length; ++i){
+    for (i = 0; i < length; ++i) {
 
       // To allow empty values
       if (data[i][1] === null || data[i+1][1] === null) continue;
 
       // Zero is infinity for log scales
-      if (xa.options.scaling === 'logarithmic' && (data[i][0] <= 0 || data[i+1][0] <= 0)) continue;
-      if (ya.options.scaling === 'logarithmic' && (data[i][1] <= 0 || data[i+1][1] <= 0)) continue;
+      // TODO handle zero for logarithmic
+      // if (xa.options.scaling === 'logarithmic' && (data[i][0] <= 0 || data[i+1][0] <= 0)) continue;
+      // if (ya.options.scaling === 'logarithmic' && (data[i][1] <= 0 || data[i+1][1] <= 0)) continue;
       
-      x1 = xa.d2p(data[i][0]);
-      x2 = xa.d2p(data[i+1][0]);
+      x1 = xScale(data[i][0]);
+      x2 = xScale(data[i+1][0]);
       
       if (stack) {
 
         stack1 = stack.values[data[i][0]] || 0;
         stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
 
-        y1 = ya.d2p(data[i][1] + stack1);
-        y2 = ya.d2p(data[i+1][1] + stack2);
+        y1 = yScale(data[i][1] + stack1);
+        y2 = yScale(data[i+1][1] + stack2);
         
         if(incStack){
           stack.values[data[i][0]] = data[i][1]+stack1;
@@ -3213,8 +3387,8 @@ Flotr.addType('lines', {
         }
       }
       else{
-        y1 = ya.d2p(data[i][1]);
-        y2 = ya.d2p(data[i+1][1]);
+        y1 = yScale(data[i][1]);
+        y2 = yScale(data[i+1][1]);
       }
 
       if ((y1 >= height && y2 >= width) || 
@@ -3223,66 +3397,86 @@ Flotr.addType('lines', {
         (x1 >= width && x2 >= width)) continue;
 
       if((prevx != x1) || (prevy != y1 + shadowOffset))
-        ctx.moveTo(x1, y1 + shadowOffset);
+        context.moveTo(x1, y1 + shadowOffset);
       
       prevx = x2;
       prevy = y2 + shadowOffset;
-      ctx.lineTo(prevx, prevy);
+      context.lineTo(prevx, prevy);
     }
     
-    ctx.stroke();
+    context.stroke();
 
     // TODO stacked lines
-    if(!shadowOffset && series.lines.fill){
-      ctx.fillStyle = this.processColor(series.lines.fillColor || series.color, {opacity: series.lines.fillOpacity});
-      ctx.lineTo(x2, zero);
-      ctx.lineTo(xa.d2p(data[0][0]), zero);
-      ctx.lineTo(xa.d2p(data[0][0]), ya.d2p(data[0][1]));
-      ctx.fill();
+    if(!shadowOffset && options.fill){
+      context.fillStyle = options.fillStyle;
+      context.lineTo(x2, zero);
+      context.lineTo(xScale(data[0][0]), zero);
+      context.lineTo(xScale(data[0][0]), yScale(data[0][1]));
+      context.fill();
     }
 
-    ctx.closePath();
+    context.closePath();
   },
 
-  extendYRange: function(axis){
+  // Perform any pre-render precalculations (this should be run on data first)
+  // - Pie chart total for calculating measures
+  // - Stacks for lines and bars
+  // precalculate : function () {
+  // }
+  //
+  //
+  // Get any bounds after pre calculation (axis can fetch this if does not have explicit min/max)
+  // getBounds : function () {
+  // }
+  // getMin : function () {
+  // }
+  // getMax : function () {
+  // }
+  //
+  //
+  // Padding around rendered elements
+  // getPadding : function () {
+  // }
+
+  extendYRange : function (axis, data, options, lines) {
+
     var o = axis.options;
-    if((!o.max && o.max !== 0) || (!o.min && o.min !== 0)){
-      var newmax = axis.max,
-          newmin = axis.min,
-          x, i, j, s, l,
-          stackedSumsPos = {},
-          stackedSumsNeg = {},
-          lastSerie = null;
-                  
-      for(i = 0; i < this.series.length; ++i){
-        s = this.series[i];
-        l = s.lines;
-        if (l.show && !s.hide && s.yaxis == axis) {
-          // For stacked lines
-          if(l.stacked){
-            for (j = 0; j < s.data.length; j++) {
-              x = s.data[j][0]+'';
-              if(s.data[j][1]>0)
-                stackedSumsPos[x] = (stackedSumsPos[x] || 0) + s.data[j][1];
-              else
-                stackedSumsNeg[x] = (stackedSumsNeg[x] || 0) + s.data[j][1];
-              lastSerie = s;
-            }
-            
-            for (j in stackedSumsPos) {
-              newmax = Math.max(stackedSumsPos[j], newmax);
-            }
-            for (j in stackedSumsNeg) {
-              newmin = Math.min(stackedSumsNeg[j], newmin);
-            }
-          }
+
+    // If stacked and auto-min
+    if (options.stacked && ((!o.max && o.max !== 0) || (!o.min && o.min !== 0))) {
+
+      var
+        newmax = axis.max,
+        newmin = axis.min,
+        positiveSums = lines.positiveSums || {},
+        negativeSums = lines.negativeSums || {},
+        x, j;
+
+      for (j = 0; j < data.length; j++) {
+
+        x = data[j][0] + '';
+
+        // Positive
+        if (data[j][1] > 0) {
+          positiveSums[x] = (positiveSums[x] || 0) + data[j][1];
+          newmax = Math.max(newmax, positiveSums[x]);
+        }
+
+        // Negative
+        else {
+          negativeSums[x] = (negativeSums[x] || 0) + data[j][1];
+          newmin = Math.min(newmin, negativeSums[x]);
         }
       }
-      axis.lastSerie = lastSerie;
+
+      lines.negativeSums = negativeSums;
+      lines.positiveSums = positiveSums;
+
       axis.max = newmax;
       axis.min = newmin;
     }
   }
+
 });
 
 /** Bars **/
@@ -3295,353 +3489,263 @@ Flotr.addType('bars', {
     fill: true,            // => true to fill the area from the line to the x axis, false for (transparent) no fill
     fillColor: null,       // => fill color
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
-    horizontal: false,     // => horizontal bars (x and y inverted) @todo: needs fix
+    horizontal: false,     // => horizontal bars (x and y inverted)
     stacked: false,        // => stacked bar charts
     centered: true         // => center the bars to their x axis value
   },
 
-  /**
-   * Draws bar series in the canvas element.
-   * @param {Object} series - Series with options.bars.show = true.
-   */
-  draw: function(series) {
-    var ctx = this.ctx,
-      bw = series.bars.barWidth,
-      lw = Math.min(series.bars.lineWidth, bw);
-    
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    ctx.lineJoin = 'miter';
-
-    /**
-     * @todo linewidth not interpreted the right way.
-     */
-    ctx.lineWidth = lw;
-    ctx.strokeStyle = series.color;
-    
-    if(series.bars.fill){
-      var color = series.bars.fillColor || series.color;
-      ctx.fillStyle = this.processColor(color, {opacity: series.bars.fillOpacity});
-    }
-    
-    this.bars.plot(series, bw, 0, series.bars.fill);
-    ctx.restore();
+  stack : { 
+    positive : [],
+    negative : [],
+    _positive : [], // Shadow
+    _negative : []  // Shadow
   },
 
-  getStack: function (series) {
-    var stack = false;
-    if(series.bars.stacked) {
-      stack = (series.bars.horizontal ? series.yaxis : series.xaxis).getStack('bars');
-      if (Flotr._.isEmpty(stack)) {
-        stack.positive = [];
-        stack.negative = [];
-        stack._positive = []; // Shadow
-        stack._negative = []; // Shadow
-      }
-    }
-
-    return stack;
-  },
-
-  plot: function(series, barWidth, offset, fill){
-    if(series.data.length < 1) return;
-    
+  draw : function (options) {
     var
-      data            = series.data,
-      xa              = series.xaxis,
-      ya              = series.yaxis,
-      ctx             = this.ctx,
-      stack           = this.bars.getStack(series),
-      shadowSize      = this.options.shadowSize,
-      barOffset,
-      stackIndex,
-      stackValue,
-      stackOffsetPos,
-      stackOffsetNeg,
-      width, height,
-      xaLeft, xaRight, yaTop, yaBottom,
-      left, right, top, bottom,
-      i, x, y;
+      context = options.context;
 
-    for(i = 0; i < data.length; i++){
-      x = data[i][0];
-      y = data[i][1];
-      
-      if (y === null) continue;
-      
-      // Stacked bars
-      stackOffsetPos = 0;
-      stackOffsetNeg = 0;
-
-      if (stack) {
-
-        if(series.bars.horizontal) {
-          stackIndex = y;
-          stackValue = x;
-        } else {
-          stackIndex = x;
-          stackValue = y;
-        }
-
-        stackOffsetPos = stack.positive[stackIndex] || 0;
-        stackOffsetNeg = stack.negative[stackIndex] || 0;
-
-        if (stackValue > 0) {
-          stack.positive[stackIndex] = stackOffsetPos + stackValue;
-        } else {
-          stack.negative[stackIndex] = stackOffsetNeg + stackValue;
-        }
-      }
-      
-      // @todo: fix horizontal bars support
-      // Horizontal bars
-      barOffset = series.bars.centered ? barWidth/2 : 0;
-      
-      if(series.bars.horizontal){ 
-        if (x > 0){
-          left = stackOffsetPos;
-          right = x + stackOffsetPos;
-        }
-        else {
-          right = stackOffsetNeg;
-          left = x + stackOffsetNeg;
-        }
-        bottom = y - barOffset;
-        top = y + barWidth - barOffset;
-      }
-      else {
-        if (y > 0){
-          bottom = stackOffsetPos;
-          top = y + stackOffsetPos;
-        }
-        else{
-          top = stackOffsetNeg;
-          bottom = y + stackOffsetNeg;
-        }
-          
-        left = x - barOffset;
-        right = x + barWidth - barOffset;
-      }
-      
-      if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
-        continue;
-
-      if (left    < xa.min) left    = xa.min;
-      if (right   > xa.max) right   = xa.max;
-      if (bottom  < ya.min) bottom  = ya.min;
-      if (top     > ya.max) top     = ya.max;
-      
-      // Cache d2p values
-      xaLeft   = xa.d2p(left);
-      xaRight  = xa.d2p(right);
-      yaTop    = ya.d2p(top);
-      yaBottom = ya.d2p(bottom);
-      width    = xaRight - xaLeft;
-      height   = yaBottom - yaTop;
-
-      if (fill){
-        ctx.fillRect(xaLeft, yaTop, width, height);
-      }
-
-      if (shadowSize) {
-        ctx.save();
-        ctx.fillStyle = 'rgba(0,0,0,0.05)';
-        ctx.fillRect(xaLeft + shadowSize, yaTop + shadowSize, width, height);
-        ctx.restore();
-      }
-
-      if (series.bars.lineWidth != 0) {
-        ctx.strokeRect(xaLeft, yaTop, width, height);
-      }
-    }
-  },
-
-  extendXRange: function(axis) {
-    this.bars._extendRange(axis);
-  },
-
-  extendYRange: function(axis){
-    this.bars._extendRange(axis);
-  },
-  _extendRange: function (axis) {
-
-    if(axis.options.max == null){
-      var newmin = axis.min,
-          newmax = axis.max,
-          orientation = axis.orientation,
-          stackedSumsPos = {},
-          stackedSumsNeg = {},
-          lastSerie = null,
-          value, index,
-          i, j, s, b;
-
-      for(i = 0; i < this.series.length; ++i){
-
-        s = this.series[i];
-        b = s.bars;
-
-        if(b.show) {
-
-          // Sides of bars
-          if ((orientation == 1 && !b.horizontal) || (orientation == -1 && b.horizontal)) {
-            if (b.centered) {
-              newmax = Math.max(axis.datamax + 0.5, newmax);
-              newmin = Math.min(axis.datamin - 0.5, newmin);
-            }
-          }
-
-          // End of bars
-          if ((orientation == 1 && b.horizontal) || (orientation == -1 && !b.horizontal)) {
-            if (b.barWidth + axis.datamax >= newmax)
-              newmax = axis.max + (b.centered ? b.barWidth/2 : b.barWidth);
-          }
-
-          if (b.stacked && 
-              ((orientation == 1 && b.horizontal) || (orientation == -1 && !b.horizontal))){
-            for (j = 0; j < s.data.length; j++) {
-              if (b.show && b.stacked) {
-                value = s.data[j][(orientation == 1 ? 1 : 0)]+'';
-
-                index = orientation == 1 ? 0 : 1;
-
-                if(s.data[j][index] > 0)
-                  stackedSumsPos[value] = (stackedSumsPos[value] || 0) + s.data[j][index];
-                else
-                  stackedSumsNeg[value] = (stackedSumsNeg[value] || 0) + s.data[j][index];
-                  
-                lastSerie = s;
-              }
-            }
-
-            for (j in stackedSumsPos) {
-              newmax = Math.max(stackedSumsPos[j], newmax);
-            }
-            for (j in stackedSumsNeg) {
-              newmin = Math.min(stackedSumsNeg[j], newmin);
-            }
-          }
-        }
-      }
-
-      axis.lastSerie = lastSerie;
-      axis.max = newmax;
-      axis.min = newmin;
-    }
-  },
-
-  drawHit: function (n) {
-    var octx = this.octx,
-      s = n.series,
-      xa = n.xaxis,
-      ya = n.yaxis,
-      lx, rx, ly, uy;
-
-    octx.save();
-    octx.translate(this.plotOffset.left, this.plotOffset.top);
-    octx.beginPath();
+    context.save();
+    context.lineJoin = 'miter';
+    // @TODO linewidth not interpreted the right way.
+    context.lineWidth = Math.min(options.lineWidth, options.barWidth);
+    context.strokeStyle = options.color;
+    if (options.fill) context.fillStyle = options.fillStyle
     
-    if (s.mouse.trackAll) {
-      octx.moveTo(xa.d2p(n.x), ya.d2p(0));
-      octx.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
-    }
-    else {
-      var bw = s.bars.barWidth,
-        y = ya.d2p(n.y), 
-        x = xa.d2p(n.x);
-        
-      if(!s.bars.horizontal){ //vertical bars (default)
-        ly = ya.d2p(ya.min<0? 0 : ya.min); //lower vertex y value (in points)
-        
-        if(s.bars.centered){
-          lx = xa.d2p(n.x-(bw/2));
-          rx = xa.d2p(n.x+(bw/2));
-        
-          octx.moveTo(lx, ly);
-          octx.lineTo(lx, y);
-          octx.lineTo(rx, y);
-          octx.lineTo(rx, ly);
-        } else {
-          rx = xa.d2p(n.x+bw); //right vertex x value (in points)
-          
-          octx.moveTo(x, ly);
-          octx.lineTo(x, y);
-          octx.lineTo(rx, y);
-          octx.lineTo(rx, ly);
-        }
-      } else { //horizontal bars
-        lx = xa.d2p(xa.min<0? 0 : xa.min); //left vertex y value (in points)
-          
-        if(s.bars.centered){
-          ly = ya.d2p(n.y-(bw/2));
-          uy = ya.d2p(n.y+(bw/2));
-                       
-          octx.moveTo(lx, ly);
-          octx.lineTo(x, ly);
-          octx.lineTo(x, uy);
-          octx.lineTo(lx, uy);
-        } else {
-          uy = ya.d2p(n.y+bw); //upper vertex y value (in points)
-        
-          octx.moveTo(lx, y);
-          octx.lineTo(x, y);
-          octx.lineTo(x, uy);
-          octx.lineTo(lx, uy);
-        }
-      }
+    this.plot(options);
 
-      if(s.mouse.fillColor) octx.fill();
-    }
-
-    octx.stroke();
-    octx.closePath();
-    octx.restore();
+    context.restore();
   },
 
-  clearHit: function() {
-    var prevHit = this.prevHit,
-      plotOffset = this.plotOffset,
-      s = prevHit.series,
-      xa = prevHit.xaxis,
-      ya = prevHit.yaxis,
-      lw = s.bars.lineWidth,
-      bw = s.bars.barWidth;
-        
-    if(!s.bars.horizontal){ // vertical bars (default)
-      var lastY = ya.d2p(prevHit.y >= 0 ? prevHit.y : 0);
-      if(s.bars.centered) {
-        this.octx.clearRect(
-            xa.d2p(prevHit.x - bw/2) + plotOffset.left - lw, 
-            lastY + plotOffset.top - lw, 
-            xa.d2p(bw + xa.min) + lw * 2, 
-            ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + lw * 2
-        );
-      } else {
-        this.octx.clearRect(
-            xa.d2p(prevHit.x) + plotOffset.left - lw, 
-            lastY + plotOffset.top - lw, 
-            xa.d2p(bw + xa.min) + lw * 2, 
-            ya.d2p(prevHit.y < 0 ? prevHit.y : 0) - lastY + lw * 2
-        ); 
+  plot : function (options) {
+
+    var
+      data            = options.data,
+      context         = options.context,
+      shadowSize      = options.shadowSize,
+      i, geometry, left, top, width, height;
+
+    if (data.length < 1) return;
+
+    this.translate(context, options.horizontal);
+
+    for (i = 0; i < data.length; i++) {
+
+      geometry = this.getBarGeometry(data[i][0], data[i][1], options);
+      if (geometry === null) continue;
+
+      left    = geometry.left;
+      top     = geometry.top;
+      width   = geometry.width;
+      height  = geometry.height;
+
+      if (options.fill) context.fillRect(left, top, width, height);
+      if (shadowSize) {
+        context.save();
+        context.fillStyle = 'rgba(0,0,0,0.05)';
+        context.fillRect(left + shadowSize, top + shadowSize, width, height);
+        context.restore();
       }
-    } else { // horizontal bars
-      var lastX = xa.d2p(prevHit.x >= 0 ? prevHit.x : 0);
-      if(s.bars.centered) {
-        this.octx.clearRect(
-            lastX + plotOffset.left + lw, 
-            ya.d2p(prevHit.y + bw/2) + plotOffset.top - lw, 
-            xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - lw*2,
-            ya.d2p(bw + ya.min) + lw * 2
-        );
-      } else {
-        this.octx.clearRect(
-            lastX + plotOffset.left + lw, 
-            ya.d2p(prevHit.y + bw) + plotOffset.top - lw, 
-            xa.d2p(prevHit.x < 0 ? prevHit.x : 0) - lastX - lw*2,
-            ya.d2p(bw + ya.min) + lw * 2
-        );
+      if (options.lineWidth != 0) {
+        context.strokeRect(left, top, width, height);
       }
     }
+  },
+
+  translate : function (context, horizontal) {
+    if (horizontal) {
+      context.rotate(-Math.PI / 2)
+      context.scale(-1, 1);
+    }
+  },
+
+  getBarGeometry : function (x, y, options) {
+
+    var
+      horizontal    = options.horizontal,
+      barWidth      = options.barWidth,
+      centered      = options.centered,
+      stack         = options.stacked ? this.stack : false,
+      bisection     = centered ? barWidth / 2 : 0,
+      xScale        = horizontal ? options.yScale : options.xScale,
+      yScale        = horizontal ? options.xScale : options.yScale,
+      xValue        = horizontal ? y : x,
+      yValue        = horizontal ? x : y,
+      stackOffset   = 0,
+      stackValue, left, right, top, bottom;
+
+    // Stacked bars
+    if (stack) {
+      stackValue          = yValue > 0 ? stack.positive : stack.negative;
+      stackOffset         = stackValue[xValue] || stackOffset;
+      stackValue[xValue]  = stackOffset + yValue;
+    }
+
+    left    = xScale(xValue - bisection);
+    right   = xScale(xValue + barWidth - bisection);
+    top     = yScale(yValue + stackOffset);
+    bottom  = yScale(stackOffset);
+
+    // TODO for test passing... probably looks better without this
+    if (bottom < 0) bottom = 0;
+
+    // TODO Skipping...
+    // if (right < xa.min || left > xa.max || top < ya.min || bottom > ya.max) continue;
+
+    return (x === null || y === null) ? null : {
+      x         : xValue,
+      y         : yValue,
+      xScale    : xScale,
+      yScale    : yScale,
+      top       : top,
+      left      : left,
+      width     : right - left,
+      height    : bottom - top
+    };
+  },
+
+  hit : function (options) {
+    var
+      data = options.data,
+      args = options.args,
+      mouse = args[0],
+      n = args[1],
+      x = mouse.x,
+      y = mouse.y,
+      hitGeometry = this.getBarGeometry(x, y, options),
+      width = Math.abs(hitGeometry.width / 2),
+      left = hitGeometry.left,
+      geometry, i;
+
+    for (i = data.length; i--;) {
+      geometry = this.getBarGeometry(data[i][0], data[i][1], options);
+      if (geometry.y > hitGeometry.y && Math.abs(left - geometry.left) < width) {
+        n.x = data[i][0];
+        n.y = data[i][1];
+        n.index = i;
+        n.seriesIndex = options.index;
+      }
+    }
+  },
+
+  drawHit : function (options) {
+    // TODO hits for stacked bars; implement using calculateStack option?
+    var
+      context     = options.context,
+      args        = options.args,
+      geometry    = this.getBarGeometry(args.x, args.y, options),
+      left        = geometry.left,
+      top         = geometry.top,
+      width       = geometry.width,
+      height      = geometry.height;
+
+    context.save();
+    context.strokeStyle = options.color;
+    context.lineWidth = options.lineWidth;
+    this.translate(context, options.horizontal);
+
+    // Draw highlight
+    context.beginPath();
+    context.moveTo(left, top + height);
+    context.lineTo(left, top);
+    context.lineTo(left + width, top);
+    context.lineTo(left + width, top + height);
+    if (options.fill) {
+      context.fillStyle = options.fillStyle;
+      context.fill();
+    }
+    context.stroke();
+    context.closePath();
+
+    context.restore();
+  },
+
+  clearHit: function (options) {
+    var
+      context     = options.context,
+      args        = options.args,
+      geometry    = this.getBarGeometry(args.x, args.y, options),
+      left        = geometry.left,
+      width       = geometry.width,
+      top         = geometry.top,
+      height      = geometry.height,
+      lineWidth   = 2 * options.lineWidth;
+
+    context.save();
+    this.translate(context, options.horizontal);
+    context.clearRect(
+      Math.min(left, left + width) - lineWidth,
+      Math.min(top, top + height) - lineWidth,
+      Math.abs(width) + 2 * lineWidth,
+      Math.abs(height) + 2 * lineWidth
+    );
+    context.restore();
+  },
+
+  extendXRange : function (axis, data, options, bars) {
+    this._extendRange(axis, data, options, bars);
+  },
+
+  extendYRange : function (axis, data, options, bars) {
+    this._extendRange(axis, data, options, bars);
+  },
+  _extendRange: function (axis, data, options, bars) {
+
+    var
+      max = axis.options.max;
+
+    if (_.isNumber(max) || _.isString(max)) return; 
+
+    var
+      newmin = axis.min,
+      newmax = axis.max,
+      orientation = axis.orientation,
+      positiveSums = bars.positiveSums || {},
+      negativeSums = bars.negativeSums || {},
+      value, datum, index, j;
+
+    // Sides of bars
+    if ((orientation == 1 && !options.horizontal) || (orientation == -1 && options.horizontal)) {
+      if (options.centered) {
+        newmax = Math.max(axis.datamax + 0.5, newmax);
+        newmin = Math.min(axis.datamin - 0.5, newmin);
+      }
+    }
+
+    // End of bars
+    if ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal)) {
+      if (options.barWidth + axis.datamax >= newmax)
+        newmax = axis.max + (options.centered ? options.barWidth/2 : options.barWidth);
+    }
+
+    if (options.stacked && 
+        ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal))){
+
+      for (j = data.length; j--;) {
+        value = data[j][(orientation == 1 ? 1 : 0)]+'';
+        datum = data[j][(orientation == 1 ? 0 : 1)];
+
+        // Positive
+        if (datum > 0) {
+          positiveSums[value] = (positiveSums[value] || 0) + datum;
+          newmax = Math.max(newmax, positiveSums[value]);
+        }
+
+        // Negative
+        else {
+          negativeSums[value] = (negativeSums[value] || 0) + datum;
+          newmin = Math.min(newmin, negativeSums[value]);
+        }
+      }
+    }
+
+    bars.negativeSums = negativeSums;
+    bars.positiveSums = positiveSums;
+
+    axis.max = newmax;
+    axis.min = newmin;
   }
+
 });
 
 /** Bubbles **/
@@ -3653,135 +3757,90 @@ Flotr.addType('bubbles', {
     fillOpacity: 0.4, // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
     baseRadius: 2     // => ratio of the radar, against the plot size
   },
-  draw: function(series){
-    var ctx = this.ctx,
-        options = this.options;
+  draw : function (options) {
+    var
+      context     = options.context,
+      shadowSize  = options.shadowSize;
+
+    context.save();
+    context.lineWidth = options.lineWidth;
     
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    ctx.lineWidth = series.bubbles.lineWidth;
+    // Shadows
+    context.fillStyle = 'rgba(0,0,0,0.05)';
+    context.strokeStyle = 'rgba(0,0,0,0.05)';
+    this.plot(options, shadowSize / 2);
+    context.strokeStyle = 'rgba(0,0,0,0.1)';
+    this.plot(options, shadowSize / 4);
+
+    // Chart
+    context.strokeStyle = options.color;
+    context.fillStyle = options.fillStyle;
+    this.plot(options);
     
-    ctx.fillStyle = 'rgba(0,0,0,0.05)';
-    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
-    this.bubbles.plot(series, series.shadowSize / 2);
-    
-    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-    this.bubbles.plot(series, series.shadowSize / 4);
-    
-    ctx.strokeStyle = series.color;
-    ctx.fillStyle = this.processColor(series.color, {opacity: series.radar.fillOpacity});
-    this.bubbles.plot(series);
-    
-    ctx.restore();
+    context.restore();
   },
-  plot: function(series, offset){
-    var ctx = this.ctx,
-        options = this.options,
-        data = series.data,
-        radius = options.bubbles.baseRadius;
-        
+  plot : function (options, offset) {
+
+    var
+      data    = options.data,
+      context = options.context,
+      geometry,
+      i, x, y, z;
+
     offset = offset || 0;
     
-    for(var i = 0; i < data.length; ++i){
-      var x = data[i][0],
-          y = data[i][1],
-          z = data[i][2];
-          
-      ctx.beginPath();
-      ctx.arc(series.xaxis.d2p(x) + offset, series.yaxis.d2p(y) + offset, radius * z, 0, Math.PI*2, true);
-      ctx.stroke();
-      if (series.bubbles.fill) ctx.fill();
-      ctx.closePath();
+    for (i = 0; i < data.length; ++i){
+
+      geometry = this.getGeometry(data[i], options);
+
+      context.beginPath();
+      context.arc(geometry.x + offset, geometry.y + offset, geometry.z, 0, 2 * Math.PI, true);
+      context.stroke();
+      if (options.fill) context.fill();
+      context.closePath();
     }
   },
-  drawHit: function(n){
-
-    var octx = this.octx,
-        s = n.series,
-        xa = n.xaxis,
-        ya = n.yaxis,
-        z = s.data[0][2],
-        r = this.options.bubbles.baseRadius;
-
-    octx.save();
-    octx.lineWidth = s.points.lineWidth;
-    octx.strokeStyle = s.mouse.lineColor;
-    octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
-
-    octx.translate(this.plotOffset.left, this.plotOffset.top);
-    octx.beginPath();
-      octx.arc(xa.d2p(n.x), ya.d2p(n.y), z*r, 0, 2 * Math.PI, true);
-      octx.fill();
-      octx.stroke();
-    octx.closePath();
-    octx.restore();
+  getGeometry : function (point, options) {
+    return {
+      x : options.xScale(point[0]),
+      y : options.yScale(point[1]),
+      z : point[2] * options.baseRadius
+    }
   },
-  clearHit: function(){
-    var prevHit = this.prevHit,
-        plotOffset = this.plotOffset,
-        s = prevHit.series,
-        lw = s.bars.lineWidth,
-        xa = prevHit.xaxis,
-        ya = prevHit.yaxis,
-        z = s.data[0][2],
-        r = this.options.bubbles.baseRadius,
-        offset = z*r+lw;
+  drawHit : function (options) {
 
-    this.octx.clearRect(
-      plotOffset.left + xa.d2p(prevHit.x) - offset,
-      plotOffset.top  + ya.d2p(prevHit.y) - offset,
-      offset*2,
-      offset*2
+    var
+      context = options.context,
+      geometry = this.getGeometry(options.data[options.args.index], options);
+
+    context.save();
+    context.lineWidth = options.lineWidth;
+    context.fillStyle = options.fillStyle;
+    context.strokeStyle = options.color;
+    context.beginPath();
+    context.arc(geometry.x, geometry.y, geometry.z, 0, 2 * Math.PI, true);
+    context.fill();
+    context.stroke();
+    context.closePath();
+    context.restore();
+  },
+  clearHit : function (options) {
+
+    var
+      context = options.context,
+      geometry = this.getGeometry(options.data[options.args.index], options),
+      offset = geometry.z + options.lineWidth;
+
+    context.save();
+    context.clearRect(
+      geometry.x - offset, 
+      geometry.y - offset,
+      2 * offset,
+      2 * offset
     );
+    context.restore();
   }
-
-/*,
-  extendXRange: function(axis){
-    if(axis.options.max == null){
-      var newmin = axis.min,
-          newmax = axis.max,
-          i, j, c, r, data, d;
-          
-      for(i = 0; i < this.series.length; ++i){
-        c = this.series[i].bubbles;
-        if(c.show && this.series[i].xaxis == axis) {
-          data = this.series[i].data;
-          if (data)
-          for(j = 0; j < data.length; j++) {
-            d = data[j];
-            r = d[2] * c.baseRadius * (this.plotWidth / (axis.datamax - axis.datamin));
-              newmax = Math.max(d[0] + r, newmax);
-              newmin = Math.min(d[0] - r, newmin);
-          }
-        }
-      }
-      axis.max = newmax;
-      axis.min = newmin;
-    }
-  },
-  extendYRange: function(axis){
-    if(axis.options.max == null){
-      var newmin = axis.min,
-          newmax = axis.max,
-          i, j, c, r, data, d;
-
-      for(i = 0; i < this.series.length; ++i){
-        c = this.series[i].bubbles;
-        if(c.show && this.series[i].yaxis == axis) {
-          data = this.series[i].data;
-          if (data)
-          for(j = 0; j < data.length; j++) {
-            d = data[j];
-            r = d[2] * c.baseRadius;
-            newmax = Math.max(d[1] + r, newmax);
-            newmin = Math.min(d[1] - r, newmin);
-          }
-        }
-      }
-      axis.max = newmax;
-      axis.min = newmin;
-    }
-  }*/
+  // TODO Add a hit calculation method (like pie)
 });
 
 /** Candles **/
@@ -3795,154 +3854,118 @@ Flotr.addType('candles', {
     upFillColor: '#00A8F0',// => up sticks fill color
     downFillColor: '#CB4B4B',// => down sticks fill color
     fillOpacity: 0.5,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
+    // TODO Test this barcharts option.
     barcharts: false       // => draw as barcharts (not standard bars but financial barcharts)
   },
-  /**
-   * Draws candles series in the canvas element.
-   * @param {Object} series - Series with options.candles.show = true.
-   */
-  draw: function(series) {
-    var ctx = this.ctx,
-        bw = series.candles.candleWidth;
-    
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    ctx.lineJoin = 'miter';
 
-    /**
-     * @todo linewidth not interpreted the right way.
-     */
-    ctx.lineWidth = series.candles.lineWidth;
-    this.candles.plotShadows(series, bw/2);
-    this.candles.plot(series, bw/2);
-    
-    ctx.restore();
+  draw : function (options) {
+
+    var
+      context = options.context;
+
+    context.save();
+    context.lineJoin = 'miter';
+    context.lineCap = 'butt';
+    // @TODO linewidth not interpreted the right way.
+    context.lineWidth = options.wickLineWidth || options.lineWidth;
+
+    this.plot(options);
+
+    context.restore();
   },
-  plot: function(series, offset){
-    var data = series.data;
-    if(data.length < 1) return;
-    
-    var xa = series.xaxis,
-        ya = series.yaxis,
-        ctx = this.ctx;
 
-    for(var i = 0; i < data.length; i++){
-      var d     = data[i],
-          x     = d[0],
-          open  = d[1],
-          high  = d[2],
-          low   = d[3],
-          close = d[4];
+  plot : function (options) {
 
-      var left    = x - series.candles.candleWidth/2,
-          right   = x + series.candles.candleWidth/2,
-          bottom  = Math.max(ya.min, low),
-          top     = Math.min(ya.max, high),
-          bottom2 = Math.max(ya.min, Math.min(open, close)),
-          top2    = Math.min(ya.max, Math.max(open, close));
+    var
+      data          = options.data,
+      context       = options.context,
+      xScale        = options.xScale,
+      yScale        = options.yScale,
+      width         = options.candleWidth / 2,
+      shadowSize    = options.shadowSize,
+      wickLineWidth = options.wickLineWidth,
+      pixelOffset   = (wickLineWidth % 2) / 2,
+      color,
+      datum, x, y,
+      open, high, low, close,
+      left, right, bottom, top, bottom2, top2,
+      i;
 
+    if (data.length < 1) return;
+
+    for (i = 0; i < data.length; i++) {
+      datum   = data[i];
+      x       = datum[0];
+      open    = datum[1];
+      high    = datum[2];
+      low     = datum[3];
+      close   = datum[4];
+      left    = xScale(x - width);
+      right   = xScale(x + width);
+      bottom  = yScale(low);
+      top     = yScale(high);
+      bottom2 = yScale(Math.min(open, close));
+      top2    = yScale(Math.max(open, close));
+
+      /*
+      // TODO skipping
       if(right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
         continue;
+      */
 
-      var color = series.candles[open>close?'downFillColor':'upFillColor'];
-      /**
-       * Fill the candle.
-       */
-      if(series.candles.fill && !series.candles.barcharts){
-        ctx.fillStyle = this.processColor(color, {opacity: series.candles.fillOpacity});
-        ctx.fillRect(xa.d2p(left), ya.d2p(top2) + offset, xa.d2p(right) - xa.d2p(left), ya.d2p(bottom2) - ya.d2p(top2));
+      color = options[open > close ? 'downFillColor' : 'upFillColor'];
+
+      // Fill the candle.
+      // TODO Test the barcharts option
+      if (options.fill && !options.barcharts) {
+        context.fillStyle = 'rgba(0,0,0,0.05)';
+        context.fillRect(left + shadowSize, top2 + shadowSize, right - left, bottom2 - top2);
+        context.save();
+        context.globalAlpha = options.fillOpacity;
+        context.fillStyle = color;
+        context.fillRect(left, top2 + width, right - left, bottom2 - top2);
+        context.restore();
       }
 
-      /**
-       * Draw candle outline/border, high, low.
-       */
-      if(series.candles.lineWidth || series.candles.wickLineWidth){
-        var x, y, pixelOffset = (series.candles.wickLineWidth % 2) / 2;
+      // Draw candle outline/border, high, low.
+      if (options.lineWidth || wickLineWidth) {
 
-        x = Math.floor(xa.d2p((left + right) / 2)) + pixelOffset;
-        
-        ctx.save();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = series.candles.wickLineWidth;
-        ctx.lineCap = 'butt';
-        
-        if (series.candles.barcharts) {
-          ctx.beginPath();
+        x = Math.floor((left + right) / 2) + pixelOffset;
+
+        context.strokeStyle = color;
+        context.beginPath();
+
+        // TODO Again with the bartcharts
+        if (options.barcharts) {
           
-          ctx.moveTo(x, Math.floor(ya.d2p(top) + offset));
-          ctx.lineTo(x, Math.floor(ya.d2p(bottom) + offset));
+          context.moveTo(x, Math.floor(top + width));
+          context.lineTo(x, Math.floor(bottom + width));
           
-          y = Math.floor(ya.d2p(open) + offset)+0.5;
-          ctx.moveTo(Math.floor(xa.d2p(left))+pixelOffset, y);
-          ctx.lineTo(x, y);
+          y = Math.floor(open + width) + 0.5;
+          context.moveTo(Math.floor(left) + pixelOffset, y);
+          context.lineTo(x, y);
           
-          y = Math.floor(ya.d2p(close) + offset)+0.5;
-          ctx.moveTo(Math.floor(xa.d2p(right))+pixelOffset, y);
-          ctx.lineTo(x, y);
-        } 
-        else {
-          ctx.strokeRect(xa.d2p(left), ya.d2p(top2) + offset, xa.d2p(right) - xa.d2p(left), ya.d2p(bottom2) - ya.d2p(top2));
-          
-          ctx.beginPath();
-          ctx.moveTo(x, Math.floor(ya.d2p(top2   ) + offset));
-          ctx.lineTo(x, Math.floor(ya.d2p(top    ) + offset));
-          ctx.moveTo(x, Math.floor(ya.d2p(bottom2) + offset));
-          ctx.lineTo(x, Math.floor(ya.d2p(bottom ) + offset));
+          y = Math.floor(close + width) + 0.5;
+          context.moveTo(Math.floor(right) + pixelOffset, y);
+          context.lineTo(x, y);
+        } else {
+          context.strokeRect(left, top2 + width, right - left, bottom2 - top2);
+
+          context.moveTo(x, Math.floor(top2 + width));
+          context.lineTo(x, Math.floor(top + width));
+          context.moveTo(x, Math.floor(bottom2 + width));
+          context.lineTo(x, Math.floor(bottom + width));
         }
         
-        ctx.stroke();
-        ctx.closePath();
-        ctx.restore();
+        context.closePath();
+        context.stroke();
       }
     }
   },
-  plotShadows: function(series, offset){
-    var data = series.data;
-    if(data.length < 1 || series.candles.barcharts) return;
-    
-    var xa = series.xaxis,
-        ya = series.yaxis,
-        sw = this.options.shadowSize;
-    
-    for(var i = 0; i < data.length; i++){
-      var d     = data[i],
-          x     = d[0],
-          open  = d[1],
-          high  = d[2],
-          low   = d[3],
-          close = d[4];
-      
-      var left   = x - series.candles.candleWidth/2,
-          right  = x + series.candles.candleWidth/2,
-          bottom = Math.max(ya.min, Math.min(open, close)),
-          top    = Math.min(ya.max, Math.max(open, close));
-      
-      if(right < xa.min || left > xa.max || top < ya.min || bottom > ya.max)
-        continue;
-      
-      var width =  xa.d2p(right)-xa.d2p(left)-((xa.d2p(right)+sw <= this.plotWidth) ? 0 : sw);
-      var height = Math.max(0, ya.d2p(bottom)-ya.d2p(top)-((ya.d2p(bottom)+sw <= this.plotHeight) ? 0 : sw));
-      
-      this.ctx.fillStyle = 'rgba(0,0,0,0.05)';
-      this.ctx.fillRect(Math.min(xa.d2p(left)+sw, this.plotWidth), Math.min(ya.d2p(top)+sw, this.plotWidth), width, height);
-    }
-  },
-  extendXRange: function(axis){
-    if(axis.options.max == null){
-      var newmin = axis.min,
-          newmax = axis.max,
-          i, c;
-
-      for(i = 0; i < this.series.length; ++i){
-        c = this.series[i].candles;
-        if(c.show && this.series[i].xaxis == axis) {
-          // We don't use c.candleWidth in order not to stick the borders
-          newmax = Math.max(axis.datamax + 0.5, newmax);
-          newmin = Math.min(axis.datamin - 0.5, newmin);
-        }
-      }
-      axis.max = newmax;
-      axis.min = newmin;
+  extendXRange: function (axis, data, options) {
+    if (axis.options.max == null) {
+      axis.max = Math.max(axis.datamax + 0.5, axis.max);
+      axis.min = Math.min(axis.datamin - 0.5, axis.min);
     }
   }
 });
@@ -4205,103 +4228,78 @@ Flotr.addType('markers', {
     stackingType: 'b',     // => define staching behavior, (b- bars like, a - area like) (see Issue 125 for details)
     horizontal: false      // => true if markers should be horizontal (For now only in a case on horizontal stacked bars, stacks should be calculated horizontaly)
   },
-  getStack: function (series) {
-    var stack = false;
-    if(series.bars.stacked) {
-      stack = (series.bars.horizontal ? series.yaxis : series.xaxis).getStack('bars');
-      if (Flotr._.isEmpty(stack)) {
-        stack.positive = [];
-        stack.negative = [];
-        stack.values = [];
-      }
-    }
 
-    return stack;
+  // TODO test stacked markers.
+  stack : {
+      positive : [],
+      negative : [],
+      values : []
   },
-  /**
-   * Draws lines series in the canvas element.
-   * @param {Object} series - Series with options.lines.show = true.
-   */
-  draw: function(series){
-    series = series || this.series;
-    var ctx = this.ctx,
-        xa = series.xaxis,
-        ya = series.yaxis,
-        options = series.markers,
-        stack = this.markers.getStack(series),
-        data = series.data;
-        
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = options.lineWidth;
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillStyle = this.processColor(options.fillColor, {opacity: options.fillOpacity});
 
-    for(var i = 0; i < data.length; ++i){
+  draw : function (options) {
+
+    var
+      data            = options.data,
+      context         = options.context,
+      stack           = options.stacked ? options.stack : false,
+      stackType       = options.stackingType,
+      stackOffsetNeg,
+      stackOffsetPos,
+      stackOffset,
+      i, x, y, label;
+
+    context.save();
+    context.lineJoin = 'round';
+    context.lineWidth = options.lineWidth;
+    context.strokeStyle = 'rgba(0,0,0,0.5)';
+    context.fillStyle = options.fillStyle;
+
+    for (i = 0; i < data.length; ++i) {
     
-      var x = data[i][0],
-        y = data[i][1],
-        label;
+      x = data[i][0];
+      y = data[i][1];
         
-      if(stack) {
-        if(series.markers.stackingType == 'b'){
+      if (stack) {
+        if (stackType == 'b') {
 
-          var stackOffsetPos = 0,
-            stackOffsetNeg = 0;
-            
-          if(series.markers.horizontal) {
-            stackOffsetPos = stack.positive[y] || 0;
-            stackOffsetNeg = stack.negative[y] || 0;
-            if(x > 0) {
-              stack.positive[y] = stackOffsetPos + x;
-              x = stackOffsetPos + x;
+          function stackPos (a, b) {
+            stackOffsetPos = stack.negative[a] || 0;
+            stackOffsetNeg = stack.positive[a] || 0;
+            if (b > 0) {
+              stack.positive[a] = stackOffsetPos + b;
+              return stackOffsetPos + b;
             } else {
-              stack.negative[y] = stackOffsetNeg + x;
-              x = stackOffsetNeg + x;
+              stack.negative[a] = stackOffsetNeg + b;
+              return stackOffsetNeg + b;
             }
           }
-          else {
-            stackOffsetPos = stack.negative[x] || 0;
-            stackOffsetNeg = stack.positive[x] || 0;
-            if(y > 0) {
-              stack.positive[x] = stackOffsetPos + y;
-              y = stackOffsetPos + y;
-            } else {
-              stack.negative[x] = stackOffsetNeg + y;
-              y = stackOffsetNeg + y;
-            }
-          }
-        } else if(series.markers.stackingType == 'a') {
-          var stackOffset = stack.values[x] || 0;
+
+          if (options.horizontal) y = stackPos(y, x);
+          else x = stackPos(x, y);
+
+        } else if (stackType == 'a') {
+          stackOffset = stack.values[x] || 0;
           stack.values[x] = stackOffset + y;
           y = stackOffset + y;
         }
       }
-      var xPos = xa.d2p(x),
-        yPos = ya.d2p(y);
-        label = options.labelFormatter({x: x, y: y, index: i, data : data});
 
-      this.markers.plot(xPos, yPos, label, options);
+      label = options.labelFormatter({x: x, y: y, index: i, data : data});
+      this.plot(options.xScale(x), options.yScale(y), label, options);
     }
-    ctx.restore();
+    context.restore();
   },
   plot: function(x, y, label, options) {
-    if ( isImage(label) && !label.complete) {
-      Flotr.EventAdapter.observe(label, 'load', Flotr._.bind(function () {
-        var ctx = this.ctx;
-        ctx.save();
-        ctx.translate(this.plotOffset.left, this.plotOffset.top);
-        this.markers._plot(x, y, label, options);
-        ctx.restore();
-      }, this));
+    var context = options.context;
+    if (isImage(label) && !label.complete) {
+      throw 'Marker image not loaded.';
     } else {
-      this.markers._plot(x, y, label, options);
+      this._plot(x, y, label, options);
     }
   },
 
   _plot: function(x, y, label, options) {
-    var ctx = this.ctx,
+    var context = options.context,
         margin = 2,
         left = x,
         top = y,
@@ -4310,7 +4308,7 @@ Flotr.addType('markers', {
     if (isImage(label))
       dim = {height : label.height, width: label.width};
     else
-      dim = this._text.canvas(label);
+      dim = options.text.canvas(label);
 
     dim.width = Math.floor(dim.width+margin*2);
     dim.height = Math.floor(dim.height+margin*2);
@@ -4325,15 +4323,15 @@ Flotr.addType('markers', {
     top = Math.floor(top)+0.5;
     
     if(options.fill)
-      ctx.fillRect(left, top, dim.width, dim.height);
+      context.fillRect(left, top, dim.width, dim.height);
       
     if(options.stroke)
-      ctx.strokeRect(left, top, dim.width, dim.height);
+      context.strokeRect(left, top, dim.width, dim.height);
     
     if (isImage(label))
-      ctx.drawImage(label, left+margin, top+margin);
+      context.drawImage(label, left+margin, top+margin);
     else
-      Flotr.drawText(ctx, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
+      Flotr.drawText(context, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
   }
 });
 
@@ -4354,8 +4352,8 @@ function isImage (i) {
 var
   _ = Flotr._;
 
-Flotr.defaultPieLabelFormatter = function(slice) {
-  return (slice.fraction*100).toFixed(2)+'%';
+Flotr.defaultPieLabelFormatter = function (total, value) {
+  return (100 * value / total).toFixed(2)+'%';
 };
 
 Flotr.addType('pie', {
@@ -4373,274 +4371,189 @@ Flotr.addType('pie', {
     pie3DviewAngle: (Math.PI/2 * 0.8),
     pie3DspliceThickness: 20
   },
-  /**
-   * Draws a pie in the canvas element.
-   * @param {Object} series - Series with options.pie.show = true.
-   */
-  draw: function(series) {
-    if (this.options.pie.drawn) return;
-    var ctx = this.ctx,
-        options = this.options,
-        lw = series.pie.lineWidth,
-        sw = series.shadowSize,
-        data = series.data,
-        plotOffset = this.plotOffset,
-        radius = (Math.min(this.canvasWidth, this.canvasHeight) * series.pie.sizeRatio) / 2,
-        html = [],
-      vScale = 1,//Math.cos(series.pie.viewAngle);
-      plotTickness = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale,
-    
-    style = {
-      size: options.fontSize*1.2,
-      color: options.grid.color,
-      weight: 1.5
-    },
-    
-    center = {
-      x: plotOffset.left + (this.plotWidth)/2,
-      y: plotOffset.top + (this.plotHeight)/2
-    },
-    
-    portions = this.pie._getPortions(),
-    slices = this.pie._getSlices(portions, series);
 
-    ctx.save();
+  draw : function (options) {
+
+    // TODO 3D charts what?
+
+    var
+      data          = options.data,
+      context       = options.context,
+      canvas        = context.canvas,
+      lineWidth     = options.lineWidth,
+      shadowSize    = options.shadowSize,
+      sizeRatio     = options.sizeRatio,
+      height        = options.height,
+      explode       = options.explode,
+      color         = options.color,
+      fill          = options.fill,
+      fillStyle     = options.fillStyle,
+      radius        = Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      value         = data[0][1],
+      html          = [],
+      vScale        = 1,//Math.cos(series.pie.viewAngle);
+      measure       = Math.PI * 2 * value / this.total,
+      startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
+      endAngle      = startAngle + measure,
+      bisection     = startAngle + measure / 2,
+      label         = options.labelFormatter(this.total, value),
+      //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
+      alignRight    = (Math.cos(bisection) < 0),
+      alignTop      = (Math.sin(bisection) > 0),
+      explodeCoeff  = explode + radius + 4,
+      style,
+      x, y,
+      distX, distY;
     
-    if(sw > 0){
-      _.each(slices, function (slice) {
-        if (slice.startAngle == slice.endAngle) return;
-        
-        var bisection = (slice.startAngle + slice.endAngle) / 2,
-            xOffset = center.x + Math.cos(bisection) * slice.options.explode + sw,
-            yOffset = center.y + Math.sin(bisection) * slice.options.explode + sw;
-        
-        this.pie.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
-        
-        if (series.pie.fill) {
-          ctx.fillStyle = 'rgba(0,0,0,0.1)';
-          ctx.fill();
-        }
-      }, this);
+    context.save();
+    context.translate(options.width / 2, options.height / 2);
+    context.scale(1, vScale);
+
+    // TODO wtf is this for?
+    if (startAngle == endAngle) return;
+
+    x = Math.cos(bisection) * explode;
+    y = Math.sin(bisection) * explode;
+
+    // Shadows
+    if (shadowSize > 0) {
+      this.plotSlice(x + shadowSize, y + shadowSize, radius, startAngle, endAngle, context);
+      if (fill) {
+        context.fillStyle = 'rgba(0,0,0,0.1)';
+        context.fill();
+      }
+    }
+
+    this.plotSlice(x, y, radius, startAngle, endAngle, context);
+    if (fill) {
+      context.fillStyle = fillStyle;
+      context.fill();
+    }
+    context.lineWidth = lineWidth;
+    context.strokeStyle = color;
+    context.stroke();
+
+    distX = Math.cos(bisection) * explodeCoeff;
+    distY = Math.sin(bisection) * explodeCoeff;
+    style = {
+      size : options.fontSize * 1.2,
+      color : options.fontColor,
+      weight : 1.5
+    };
+
+    if (label) {
+      if (options.htmlText || !options.textEnabled) {
+        // TODO HTML text is broken here.
+        var yAlignDist = textAlignTop ? (distY - 5) : (height - distY + 5),
+            divStyle = 'position:absolute;' + (textAlignTop ? 'top' : 'bottom') + ':' + yAlignDist + 'px;'; //@todo: change
+        if (textAlignRight)
+          divStyle += 'right:'+(this.canvasWidth - distX)+'px;text-align:right;';
+        else 
+          divStyle += 'left:'+distX+'px;text-align:left;';
+        html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
+      }
+      else {
+        style.textAlign = alignRight ? 'right' : 'left';
+        style.textBaseline = alignTop ? 'top' : 'bottom';
+        Flotr.drawText(context, label, distX, distY, style);
+      }
     }
     
-    if (options.HtmlText || !this.textEnabled)
-      html = [];
-    
-    _.each(slices, function (slice, index) {
-      if (slice.startAngle == slice.endAngle) return;
-      
-      var bisection = (slice.startAngle + slice.endAngle) / 2,
-          color = slice.series.color,
-          fillColor = slice.options.fillColor || color,
-          xOffset = center.x + Math.cos(bisection) * slice.options.explode,
-          yOffset = center.y + Math.sin(bisection) * slice.options.explode;
-      
-      this.pie.plotSlice(xOffset, yOffset, radius, slice.startAngle, slice.endAngle, false, vScale);
-      
-      if(series.pie.fill){
-        ctx.fillStyle = this.processColor(fillColor, {opacity: series.pie.fillOpacity});
-        ctx.fill();
-      }
-      ctx.lineWidth = lw;
-      ctx.strokeStyle = color;
-      ctx.stroke();
-      
-      var label = options.pie.labelFormatter(slice),
-          textAlignRight = (Math.cos(bisection) < 0),
-          textAlignTop = (Math.sin(bisection) > 0),
-          explodeCoeff = (slice.options.explode || series.pie.explode) + radius + 4,
-          distX = center.x + Math.cos(bisection) * explodeCoeff,
-          distY = center.y + Math.sin(bisection) * explodeCoeff;
-      
-      if (slice.fraction && label) {
-        if (options.HtmlText || !this.textEnabled) {
-          var yAlignDist = textAlignTop ? (distY - 5) : (this.plotHeight - distY + 5),
-              divStyle = 'position:absolute;' + (textAlignTop ? 'top' : 'bottom') + ':' + yAlignDist + 'px;'; //@todo: change
-          if (textAlignRight)
-            divStyle += 'right:'+(this.canvasWidth - distX)+'px;text-align:right;';
-          else 
-            divStyle += 'left:'+distX+'px;text-align:left;';
-          html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
-        }
-        else {
-          style.textAlign = textAlignRight ? 'right' : 'left';
-          style.textBaseline = textAlignTop ? 'top' : 'bottom';
-          Flotr.drawText(ctx, label, distX, distY, style);
-        }
-      }
-    }, this);
-    
-    if (options.HtmlText || !this.textEnabled) {
-      var div = Flotr.DOM.node('<div style="color:' + this.options.grid.color + '" class="flotr-labels"></div>');
+    if (options.htmlText || !options.textEnabled) {
+      var div = Flotr.DOM.node('<div style="color:' + options.fontColor + '" class="flotr-labels"></div>');
       Flotr.DOM.insert(div, html.join(''));
       Flotr.DOM.insert(this.el, div);
     }
     
-    ctx.restore();
-    options.pie.drawn = true;
+    context.restore();
+
+    // New start angle
+    this.startAngle = endAngle;
+    this.slices = this.slices || [];
+    this.slices.push({
+      radius : Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      x : x,
+      y : y,
+      explode : explode,
+      start : startAngle,
+      end : endAngle
+    });
   },
-  plotSlice: function(x, y, radius, startAngle, endAngle, fill, vScale) {
-    var ctx = this.ctx;
-    vScale = vScale || 1;
-
-    ctx.scale(1, vScale);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.arc   (x, y, radius, startAngle, endAngle, fill);
-    ctx.lineTo(x, y);
-    ctx.closePath();
+  plotSlice : function (x, y, radius, startAngle, endAngle, context) {
+    context.beginPath();
+    context.moveTo(x, y);
+    context.arc(x, y, radius, startAngle, endAngle, false);
+    context.lineTo(x, y);
+    context.closePath();
   },
-  hit: function(mouse, n){
+  hit : function (options) {
 
-    var series = this.series,
-      options = this.options,
-      radius = (Math.min(this.canvasWidth, this.canvasHeight) * options.pie.sizeRatio) / 2,
-      vScale = 1,//Math.cos(series.pie.viewAngle),
-      angle = options.pie.startAngle,
-      center, // Center of the pie
-      s, x, y;
+    var
+      data      = options.data[0],
+      args      = options.args,
+      index     = options.index,
+      mouse     = args[0],
+      n         = args[1],
+      slice     = this.slices[index],
+      x         = mouse.relX - options.width / 2,
+      y         = mouse.relY - options.height / 2,
+      r         = Math.sqrt(x * x + y * y);
+      theta     = Math.atan(y / x),
+      circle    = Math.PI * 2,
+      explode   = slice.explode || options.explode,
+      start     = slice.start % circle,
+      end       = slice.end % circle;
 
-    center = {
-      x: (this.plotWidth)/2,
-      y: (this.plotHeight)/2
-    };
-
-    portions = this.pie._getPortions();
-    slices = this.pie._getSlices(portions, series, angle);
-
-    // Add a circle
-    function circle (angle) {
-      return angle > 0 ? angle: angle + (2 * Math.PI);
+    if (x < 0) {
+      theta += Math.PI;
+    } else if (x > 0 && y < 0) {
+      theta += circle;
     }
 
-    //
-    for (i = 0; i < series.length; i++){
+    if (r < slice.radius + explode && r > explode) {
+      if ((start > end && (theta < end || theta > start))
+        || (theta > start && theta < end)) {
 
-      s = series[i];
-      x = s.data[0][0];
-      y = s.data[0][1];
-
-      if (y === null) continue;
-      
-      var a = (mouse.relX-center.x),
-        b = (mouse.relY-center.y),
-        c = Math.sqrt(Math.pow(a, 2)+Math.pow(b, 2)),
-        sAngle = circle((slices[i].startAngle)%(2 * Math.PI)),
-        eAngle = circle((slices[i].endAngle)%(2 * Math.PI)),
-        xSin = b/c,
-        kat = circle(Math.asin(xSin)%(2 * Math.PI)),
-        kat2 = Math.asin(-xSin)+(Math.PI);
-
-      //if (c<radius && (a>0 && sAngle < kat && eAngle > kat)) //I i IV quarter
-      //if (c<radius && (a<0 && sAngle < kat2 && eAngle > kat2)) //II i III quarter
-      //if(sAngle>aAngle && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2)))) //if a slice is crossing 0 angle
-      
-      if (c<radius+10 && ((((a>0 && sAngle < kat && eAngle > kat)) || (a<0 && sAngle < kat2 && eAngle > kat2)) || 
-          ( (sAngle>eAngle || slices[i].fraction==1) && ((a>0 && (sAngle < kat || eAngle > kat)) || (a<0 && (sAngle < kat2 || eAngle > kat2))))))
-      { 
-        n.x = x;
-        n.y = y;
-        n.sAngle = sAngle;
-        n.eAngle = eAngle;
-        n.mouse = s.mouse;
-        n.series = s;
-        n.allSeries = series;
-        n.seriesIndex = i;
-        n.fraction = slices[i].fraction;
+        // TODO Decouple this from hit plugin (chart shouldn't know what n means)
+         n.x = data[0];
+         n.y = data[1];
+         n.sAngle = start;
+         n.eAngle = end;
+         n.index = 0;
+         n.seriesIndex = index;
+         n.fraction = data[1] / this.total;
       }
     }
   },
-  drawHit: function(n){
-    var octx = this.octx,
-      s = n.series,
-      xa = n.xaxis,
-      ya = n.yaxis;
+  drawHit: function (options) {
+    var
+      context = options.context,
+      slice = this.slices[options.args.seriesIndex];
 
-    octx.save();
-    octx.translate(this.plotOffset.left, this.plotOffset.top);
-    octx.beginPath();
-
-    if (s.mouse.trackAll) {
-      octx.moveTo(xa.d2p(n.x), ya.d2p(0));
-      octx.lineTo(xa.d2p(n.x), ya.d2p(n.yaxis.max));
-    }
-    else {
-      var center = {
-        x: (this.plotWidth)/2,
-        y: (this.plotHeight)/2
-      },
-      radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
-
-      bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2 : (n.sAngle + n.eAngle + 2* Math.PI) / 2,
-      xOffset = center.x + Math.cos(bisection) * n.series.pie.explode,
-      yOffset = center.y + Math.sin(bisection) * n.series.pie.explode;
-      
-      octx.beginPath();
-      octx.moveTo(xOffset, yOffset);
-      if (n.fraction != 1)
-        octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle, false);
-      else
-        octx.arc(xOffset, yOffset, radius, n.sAngle, n.eAngle-0.00001, false);
-      octx.lineTo(xOffset, yOffset);
-      octx.closePath();
-    }
-
-    octx.stroke();
-    octx.closePath();
-    octx.restore();
+    context.save();
+    context.translate(options.width / 2, options.height / 2);
+    this.plotSlice(slice.x, slice.y, slice.radius, slice.start, slice.end, context);
+    context.stroke();
+    context.restore();
   },
-  clearHit: function(){
-    var center = {
-      x: this.plotOffset.left + (this.plotWidth)/2,
-      y: this.plotOffset.top + (this.plotHeight)/2
-    },
-    pie = this.prevHit.series.pie,
-    radius = (Math.min(this.canvasWidth, this.canvasHeight) * pie.sizeRatio) / 2,
-    margin = (pie.explode + pie.lineWidth) * 4;
-      
-    this.octx.clearRect(
-      center.x - radius - margin, 
-      center.y - radius - margin, 
-      2*(radius + margin), 
-      2*(radius + margin)
+  clearHit : function (options) {
+    var
+      context = options.context,
+      slice = this.slices[options.args.seriesIndex],
+      radius = slice.radius + options.lineWidth;
+
+    context.save();
+    context.translate(options.width / 2, options.height / 2);
+    context.clearRect(
+      slice.x - radius,
+      slice.y - radius,
+      2 * radius,
+      2 * radius
     );
+    context.restore();
   },
-  _getPortions: function(){
-    return _.map(this.series, function(hash, index){
-      if (hash.pie.show && hash.data[0][1] !== null)
-        return {
-          name: (hash.label || hash.data[0][1]),
-          value: [index, hash.data[0][1]],
-          options: hash.pie,
-          series: hash
-        };
-    });
-  },
-  _getSum: function(portions){
-    // Sum of the portions' angles
-    return _.inject(_.pluck(_.pluck(portions, 'value'), 1), function(acc, n) { return acc + n; }, 0);
-  },
-  _getSlices: function(portions, series, startAngle){
-    var sum = this.pie._getSum(portions),
-      fraction = 0.0,
-      angle = (!_.isUndefined(startAngle) ? startAngle : series.pie.startAngle),
-      value = 0.0;
-    return _.map(portions, function(slice){
-      angle += fraction;
-      value = parseFloat(slice.value[1]); // @warning : won't support null values !!
-      fraction = value/sum;
-      return {
-        name:     slice.name,
-        fraction: fraction,
-        x:        slice.value[0],
-        y:        value,
-        value:    value,
-        options:  slice.options,
-        series:   slice.series,
-        startAngle: 2 * angle * Math.PI,
-        endAngle:   2 * (angle + fraction) * Math.PI
-      };
-    });
+  extendYRange : function (axis, data) {
+    this.total = (this.total || 0) + data[0][1];
   }
 });
 })();
@@ -4655,115 +4568,60 @@ Flotr.addType('points', {
     fillColor: '#FFFFFF',  // => fill color
     fillOpacity: 0.4       // => opacity of color inside the points
   },
-  /**
-   * Draws point series in the canvas element.
-   * @param {Object} series - Series with options.points.show = true.
-   */
-  draw: function(series) {
-    var ctx = this.ctx,
-        lw = series.lines.lineWidth,
-        sw = series.shadowSize;
-    
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    
-    if(sw > 0){
-      ctx.lineWidth = sw / 2;
-      
-      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-      this.points.plotShadows(series, sw/2 + ctx.lineWidth/2, series.points.radius);
 
-      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-      this.points.plotShadows(series, ctx.lineWidth/2, series.points.radius);
+  draw : function (options) {
+    var
+      context     = options.context,
+      lineWidth   = options.lineWidth,
+      shadowSize  = options.shadowSize;
+
+    context.save();
+
+    if (shadowSize > 0) {
+      context.lineWidth = shadowSize / 2;
+      
+      context.strokeStyle = 'rgba(0,0,0,0.1)';
+      this.plot(options, shadowSize / 2 + context.lineWidth / 2);
+
+      context.strokeStyle = 'rgba(0,0,0,0.2)';
+      this.plot(options, context.lineWidth / 2);
     }
 
-    ctx.lineWidth = series.points.lineWidth;
-    ctx.strokeStyle = series.color;
-    ctx.fillStyle = series.points.fillColor ? series.points.fillColor : series.color;
-    this.points.plot(series, series.points.radius, series.points.fill);
-    ctx.restore();
+    context.lineWidth = options.lineWidth;
+    context.strokeStyle = options.color;
+    context.fillStyle = options.fillColor || options.color;
+
+    this.plot(options);
+    context.restore();
   },
-  plot: function (series, radius, fill) {
-    var xa = series.xaxis,
-        ya = series.yaxis,
-        ctx = this.ctx,
-        data = series.data,
-        i, x, y;
+
+  plot : function (options, offset) {
+    var
+      data    = options.data,
+      context = options.context,
+      xScale  = options.xScale,
+      yScale  = options.yScale,
+      i, x, y;
       
-    for(i = data.length - 1; i > -1; --i){
-      x = data[i][0];
+    for (i = data.length - 1; i > -1; --i) {
       y = data[i][1];
-      // To allow empty values
-      if(y === null || x < xa.min || x > xa.max || y < ya.min || y > ya.max)
-        continue;
+      if (y === null) continue;
+
+      x = xScale(data[i][0]);
+      y = yScale(y);
+
+      if (x < 0 || x > options.width || y < 0 || y > options.height) continue;
       
-      ctx.beginPath();
-      ctx.arc(xa.d2p(x), ya.d2p(y), radius, 0, 2 * Math.PI, true);
-      if(fill) ctx.fill();
-      ctx.stroke();
-      ctx.closePath();
-    }
-  },
-  plotShadows: function(series, offset, radius){
-    var xa = series.xaxis,
-        ya = series.yaxis,
-        ctx = this.ctx,
-        data = series.data,
-        i, x, y;
-      
-    for(i = data.length - 1; i > -1; --i){
-      x = data[i][0];
-      y = data[i][1];
-      if (y === null || x < xa.min || x > xa.max || y < ya.min || y > ya.max)
-        continue;
-      ctx.beginPath();
-      ctx.arc(xa.d2p(x), ya.d2p(y) + offset, radius, 0, Math.PI, false);
-      ctx.stroke();
-      ctx.closePath();
-    }
-  },
-  getHit: function(series, pos) {
-    var xdiff, ydiff, i, d, dist, x, y,
-        o = series.points,
-        data = series.data,
-        sens = series.mouse.sensibility * (o.lineWidth + o.radius),
-        hit = {
-        index: null,
-        series: series,
-        distance: Number.MAX_VALUE,
-        x: null,
-        y: null,
-        precision: 1
-        };
-    
-    for (i = data.length-1; i > -1; --i) {
-      d = data[i];
-      x = series.xaxis.d2p(d[0]);
-      y = series.yaxis.d2p(d[1]);
-      xdiff = x - pos.relX;
-      ydiff = y - pos.relY;
-      dist = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
-      
-      if (dist < sens && dist < hit.distance) {
-        hit = {
-          index: i,
-          series: series,
-          distance: dist,
-          data: d,
-          x: x,
-          y: y,
-          precision: 1
-        };
+      context.beginPath();
+      if (offset) {
+        context.arc(x, y + offset, options.radius, 0, Math.PI, false);
+      } else {
+        context.arc(x, y, options.radius, 0, 2 * Math.PI, true);
+        if (options.fill) context.fill();
       }
+      context.stroke();
+      context.closePath();
     }
-    
-    return hit;
-  },
-  drawHit: function(series, index) {
-    
-  },
-  clearHit: function(series, index) {
-    
   }
 });
 
@@ -4776,48 +4634,55 @@ Flotr.addType('radar', {
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
     radiusRatio: 0.90      // => ratio of the radar, against the plot size
   },
-  draw: function(series){
-    var ctx = this.ctx,
-        options = this.options;
-    
-    ctx.save();
-    ctx.translate(this.plotOffset.left+this.plotWidth/2, this.plotOffset.top+this.plotHeight/2);
-    ctx.lineWidth = series.radar.lineWidth;
-    
-    ctx.fillStyle = 'rgba(0,0,0,0.05)';
-    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
-    this.radar.plot(series, series.shadowSize / 2);
-    
-    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-    this.radar.plot(series, series.shadowSize / 4);
-    
-    ctx.strokeStyle = series.color;
-    ctx.fillStyle = this.processColor(series.color, {opacity: series.radar.fillOpacity});
-    this.radar.plot(series);
-    
-    ctx.restore();
-  },
-  plot: function(series, offset){
-    var ctx = this.ctx,
-        options = this.options,
-        data = series.data,
-        radius = Math.min(this.plotHeight, this.plotWidth)*options.radar.radiusRatio/2,
-        coeff = 2*(Math.PI/data.length),
-        angle = -Math.PI/2;
-        
-    offset = offset || 0;
-    
-    ctx.beginPath();
-    for(var i = 0; i < data.length; ++i){
-      var x = data[i][0],
-          y = data[i][1],
-          ratio = y / this.axes.y.max;
+  draw : function (options) {
+    var
+      context = options.context,
+      shadowSize = options.shadowSize;
 
-      ctx[i == 0 ? 'moveTo' : 'lineTo'](Math.cos(i*coeff+angle)*radius*ratio + offset, Math.sin(i*coeff+angle)*radius*ratio + offset);
+    context.save();
+    context.translate(options.width / 2, options.height / 2);
+    context.lineWidth = options.lineWidth;
+    
+    // Shadow
+    context.fillStyle = 'rgba(0,0,0,0.05)';
+    context.strokeStyle = 'rgba(0,0,0,0.05)';
+    this.plot(options, shadowSize / 2);
+    context.strokeStyle = 'rgba(0,0,0,0.1)';
+    this.plot(options, shadowSize / 4);
+
+    // Chart
+    context.strokeStyle = options.color;
+    context.fillStyle = options.fillStyle;
+    this.plot(options);
+    
+    context.restore();
+  },
+  plot : function (options, offset) {
+    var
+      data    = options.data,
+      context = options.context,
+      radius  = Math.min(options.height, options.width) * options.radiusRatio / 2,
+      step    = 2 * Math.PI / data.length,
+      angle   = -Math.PI / 2,
+      i, ratio;
+
+    offset = offset || 0;
+
+    context.beginPath();
+    for (i = 0; i < data.length; ++i) {
+      ratio = data[i][1] / 10;
+
+      context[i == 0 ? 'moveTo' : 'lineTo'](
+        Math.cos(i * step + angle) * radius * ratio + offset,
+        Math.sin(i * step + angle) * radius * ratio + offset
+      );
     }
-    ctx.closePath();
-    if (series.radar.fill) ctx.fill();
-    ctx.stroke();
+    context.closePath();
+    if (options.fill) context.fill();
+    context.stroke();
+  },
+  extendYRange : function (axis, data) {
+    this.max = Math.max(axis.max, this.max || -Number.MAX_VALUE);
   }
 });
 
@@ -4832,35 +4697,31 @@ Flotr.addType('timeline', {
     centered: true
   },
 
-  draw : function (series) {
+  draw : function (options) {
 
     var
-      ctx       = this.ctx,
-      barWidth  = series.timeline.barWidth,
-      lineWidth = series.timeline.lineWidth,
-      color     = series.color,
-      fillColor = series.timeline.fillColor || color,
-      opacity   = series.timeline.fillOpacity;
+      context = options.context;
 
-    ctx.save();
-    ctx.translate(this.plotOffset.left, this.plotOffset.top);
-    ctx.lineJoin    = 'miter';
-    ctx.lineWidth   = lineWidth;
-    ctx.strokeStyle = color;
-    ctx.fillStyle   = this.processColor(fillColor, {opacity: opacity});
+    context.save();
+    context.lineJoin    = 'miter';
+    context.lineWidth   = options.lineWidth;
+    context.strokeStyle = options.color;
+    context.fillStyle   = options.fillStyle;
 
-    this.timeline.plot(series, barWidth, lineWidth);
+    this.plot(options);
 
-    ctx.restore();
+    context.restore();
   },
 
-  plot : function (series, barWidth, lineWidth) {
+  plot : function (options) {
 
     var
-      data  = series.data,
-      xa    = series.xaxis,
-      ya    = series.yaxis,
-      ctx   = this.ctx,
+      data      = options.data,
+      context   = options.context,
+      xScale    = options.xScale,
+      yScale    = options.yScale,
+      barWidth  = options.barWidth,
+      lineWidth = options.lineWidth,
       i;
 
     Flotr._.each(data, function (timeline) {
@@ -4871,18 +4732,18 @@ Flotr.addType('timeline', {
         w   = timeline[2],
         h   = barWidth,
 
-        xt  = Math.ceil(xa.d2p(x)),
-        wt  = Math.ceil(xa.d2p(x + w)) - xt,
-        yt  = Math.round(ya.d2p(y)),
-        ht  = Math.round(ya.d2p(y - h)) - yt,
+        xt  = Math.ceil(xScale(x)),
+        wt  = Math.ceil(xScale(x + w)) - xt,
+        yt  = Math.round(yScale(y)),
+        ht  = Math.round(yScale(y - h)) - yt,
 
         x0  = xt - lineWidth / 2,
         y0  = Math.round(yt - ht / 2) - lineWidth / 2;
 
-      ctx.strokeRect(x0, y0, wt, ht);
-      ctx.fillRect(x0, y0, wt, ht);
+      context.strokeRect(x0, y0, wt, ht);
+      context.fillRect(x0, y0, wt, ht);
 
-    }, this);
+    });
   },
 
   extendRange : function (series) {
@@ -5244,7 +5105,8 @@ Flotr.addPlugin('graphGrid', {
 var
   D = Flotr.DOM,
   _ = Flotr._,
-  flotr = Flotr;
+  flotr = Flotr,
+  S_MOUSETRACK = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
 
 Flotr.addPlugin('hit', {
   callbacks: {
@@ -5265,19 +5127,26 @@ Flotr.addPlugin('hit', {
    * @return executed successfully or failed.
    */
   executeOnType: function(s, method, args){
-    var success = false;
+    var
+      success = false,
+      options;
+
     if (!_.isArray(s)) s = [s];
 
-    function e(s) {
+    function e(s, index) {
       _.each(_.keys(flotr.graphTypes), function (type) {
-        if (s[type] && s[type].show) {
-          try {
-            if (!_.isUndefined(args))
-                this[type][method].apply(this[type], args);
-            else
-                this[type][method].apply(this[type]);
-            success = true;
-          } catch (e) {}
+        if (s[type] && s[type].show && this[type][method]) {
+          options = this.getOptions(s, type);
+
+          options.fill = !!s.mouse.fillColor;
+          options.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
+          options.color = s.mouse.lineColor;
+          options.context = this.octx;
+          options.index = index;
+
+          if (args) options.args = args;
+          this[type][method].call(this[type], options);
+          success = true;
         }
       }, this);
     }
@@ -5297,14 +5166,15 @@ Flotr.addPlugin('hit', {
       octx.lineWidth = (s.points ? s.points.lineWidth : 1);
       octx.strokeStyle = s.mouse.lineColor;
       octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
+      octx.translate(this.plotOffset.left, this.plotOffset.top);
 
-      if (!this.hit.executeOnType(s, 'drawHit', [n])) {
+      if (!this.hit.executeOnType(s, 'drawHit', n)) {
         var xa = n.xaxis,
           ya = n.yaxis;
 
-        octx.translate(this.plotOffset.left, this.plotOffset.top);
         octx.beginPath();
-          octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.mouse.radius, 0, 2 * Math.PI, true);
+          // TODO fix this (points) should move to general testable graph mixin
+          octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.points.radius || s.mouse.radius, 0, 2 * Math.PI, true);
           octx.fill();
           octx.stroke();
         octx.closePath();
@@ -5317,20 +5187,29 @@ Flotr.addPlugin('hit', {
    * Removes the mouse tracking point from the overlay.
    */
   clearHit: function(){
-    var prev = this.prevHit;
-    if(prev && !this.hit.executeOnType(prev.series, 'clearHit')){
-      var plotOffset = this.plotOffset,
-        s = prev.series,
-        lw = (s.bars ? s.bars.lineWidth : 1),
-        offset = s.mouse.radius + lw;
-      this.octx.clearRect(
-        plotOffset.left + prev.xaxis.d2p(prev.x) - offset,
-        plotOffset.top  + prev.yaxis.d2p(prev.y) - offset,
-        offset*2,
-        offset*2
-      );
+    var prev = this.prevHit,
+        octx = this.octx,
+        plotOffset = this.plotOffset;
+    octx.save();
+    octx.translate(plotOffset.left, plotOffset.top);
+    if (prev) {
+      if (!this.hit.executeOnType(prev.series, 'clearHit', this.prevHit)) {
+        // TODO fix this (points) should move to general testable graph mixin
+        var
+          s = prev.series,
+          lw = (s.bars ? s.bars.lineWidth : 1),
+          offset = (s.points.radius || s.mouse.radius) + lw;
+        octx.clearRect(
+          prev.xaxis.d2p(prev.x) - offset,
+          prev.yaxis.d2p(prev.y) - offset,
+          offset*2,
+          offset*2
+        );
+      }
       D.hide(this.mouseTrack);
+      this.prevHit = null;
     }
+    octx.restore();
   },
   /**
    * Retrieves the nearest data point from the mouse cursor. If it's within
@@ -5339,221 +5218,214 @@ Flotr.addPlugin('hit', {
    * @param {Object} mouse - Object that holds the relative x and y coordinates of the cursor.
    */
   hit: function(mouse){
-    var series = this.series,
+
+    var
       options = this.options,
       prevHit = this.prevHit,
-      plotOffset = this.plotOffset,
-      octx = this.octx, 
-      data, sens, xsens, ysens, x, y, xa, ya, mx, my, i,
-      /**
-       * Nearest data element.
-       */
-      n = {
-        dist:Number.MAX_VALUE,
-        x:null,
-        y:null,
-        relX:mouse.relX,
-        relY:mouse.relY,
-        absX:mouse.absX,
-        absY:mouse.absY,
-        sAngle:null,
-        eAngle:null,
-        fraction: null,
-        mouse:null,
-        xaxis:null,
-        yaxis:null,
-        series:null,
-        index:null,
-        seriesIndex:null
-      };
+      closest, sensibility, dataIndex, seriesIndex, series, value, xaxis, yaxis;
 
-    if (options.mouse.trackAll) {
-      for(i = 0; i < series.length; i++){
-        s = series[0];
-        data = s.data;
-        xa = s.xaxis;
-        ya = s.yaxis;
-        xsens = (2*options.points.lineWidth)/xa.scale * s.mouse.sensibility;
-        mx = xa.p2d(mouse.relX);
-        my = ya.p2d(mouse.relY);
-    
-        for(var j = 0; j < data.length; j++){
-          x = data[j][0];
-          y = data[j][1];
-    
-          if (y === null ||
-              xa.min > x || xa.max < x ||
-              ya.min > y || ya.max < y ||
-              mx < xa.min || mx > xa.max ||
-              my < ya.min || my > ya.max) continue;
-    
-          var xdiff = Math.abs(x - mx);
-    
-          // Bars and Pie are not supported yet. Not sure how it should look with bars or Pie
-          if((!s.bars.show && xdiff < xsens) 
-              || (s.bars.show && xdiff < s.bars.barWidth/2) 
-              || (y < 0 && my < 0 && my > y)) {
-            
-            var distance = xdiff;
-            
-            if (distance < n.dist) {
-              n.dist = distance;
-              n.x = x;
-              n.y = y;
-              n.xaxis = xa;
-              n.yaxis = ya;
-              n.mouse = s.mouse;
-              n.series = s; 
-              n.allSeries = series; // include all series
-              n.index = j;
-            }
-          }
+    if (this.series.length === 0) return;
+
+    // Nearest data element.
+    // dist, x, y, relX, relY, absX, absY, sAngle, eAngle, fraction, mouse,
+    // xaxis, yaxis, series, index, seriesIndex
+    n = {
+      relX : mouse.relX,
+      relY : mouse.relY,
+      absX : mouse.absX,
+      absY : mouse.absY
+    };
+
+    if (options.mouse.trackY
+        && !options.mouse.trackAll
+        && this.hit.executeOnType(this.series, 'hit', [mouse, n]))
+      {
+
+      if (!_.isUndefined(n.seriesIndex)) {
+        series    = this.series[n.seriesIndex];
+        n.series  = series;
+        n.mouse   = series.mouse;
+        n.xaxis   = series.xaxis;
+        n.yaxis   = series.yaxis;
+      }
+    } else {
+
+      closest = this.hit.closest(mouse);
+
+      if (closest) {
+
+        closest     = options.mouse.trackY ? closest.point : closest.x;
+        seriesIndex = closest.seriesIndex;
+        series      = this.series[seriesIndex];
+        xaxis       = series.xaxis;
+        yaxis       = series.yaxis;
+        sensibility = 2 * series.mouse.sensibility;
+
+        if
+          (options.mouse.trackAll ||
+          (closest.distanceX < sensibility / xaxis.scale &&
+          (!options.mouse.trackY || closest.distanceY < sensibility / yaxis.scale)))
+        {
+          n.series      = series;
+          n.xaxis       = series.xaxis;
+          n.yaxis       = series.yaxis;
+          n.mouse       = series.mouse;
+          n.x           = closest.x;
+          n.y           = closest.y;
+          n.dist        = closest.distance;
+          n.index       = closest.dataIndex;
+          n.seriesIndex = seriesIndex;
         }
       }
     }
-    else if(!this.hit.executeOnType(series, 'hit', [mouse, n])) {
-      for(i = 0; i < series.length; i++){
-        s = series[i];
-        if(!s.mouse.track) continue;
-        
-        data = s.data;
-        xa = s.xaxis;
-        ya = s.yaxis;
-        sens = 2 * (options.points ? options.points.lineWidth : 1) * s.mouse.sensibility;
-        xsens = sens/xa.scale;
-        ysens = sens/ya.scale;
-        mx = xa.p2d(mouse.relX);
-        my = ya.p2d(mouse.relY);
-        
-        //if (s.points) {
-        //  var h = this.points.getHit(s, mouse);
-        //  if (h.index !== undefined) console.log(h);
-        //}
-                
-        for(var j = 0, xpow, ypow; j < data.length; j++){
-          x = data[j][0];
-          y = data[j][1];
-          
-          if (y === null || 
-              xa.min > x || xa.max < x || 
-              ya.min > y || ya.max < y) continue;
-          
-          if(s.bars.show && s.bars.centered){
-            var xdiff = Math.abs(x - mx),
-              ydiff = Math.abs(y - my);
-          } else {
-            if (s.bars.horizontal){
-              var xdiff = Math.abs(x - mx),
-                ydiff = Math.abs(y + s.bars.barWidth/2 - my);
-            } else {
-              var xdiff = Math.abs(x + s.bars.barWidth/2 - mx),
-                ydiff = Math.abs(y - my);
-            }
-          }
-          
-          // we use a different set of criteria to determin if there has been a hit
-          // depending on what type of graph we have
-          if(((!s.bars.show) && xdiff < xsens && (!s.mouse.trackY || ydiff < ysens)) ||
-              // Bars check
-              (s.bars.show && (!s.bars.horizontal && xdiff < s.bars.barWidth/2 + 1/xa.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
-              && (!s.mouse.trackY || (y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y))) 
-              || (s.bars.horizontal && ydiff < s.bars.barWidth/2 + 1/ya.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
-              && ((x > 0 && mx > 0 && mx < x) || (x < 0 && mx < 0 && mx > x))))){ // for horizontal bars there is need to use y-axis tracking, so s.mouse.trackY is ignored
-            
-            var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
-            if(distance < n.dist){
-              n.dist = distance;
-              n.x = x;
-              n.y = y;
-              n.xaxis = xa;
-              n.yaxis = ya;
-              n.mouse = s.mouse;
-              n.series = s;
-              n.allSeries = series;
-              n.index = j;
-              n.seriesIndex = i;
-            }
-          }
-        }
-      }
-    }
-    
-    if(n.series && (n.mouse && n.mouse.track && !prevHit || (prevHit /*&& (n.x != prevHit.x || n.y != prevHit.y)*/))){
-      var mt = this.hit.getMouseTrack(),
-          pos = '', 
-          s = n.series,
-          p = n.mouse.position, 
-          m = n.mouse.margin,
-          elStyle = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
-      
-      if (!n.mouse.relative) { // absolute to the canvas
-             if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;bottom:auto;';
-        else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;top:auto;';
-             if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;left:auto;';
-        else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;right:auto;';
-      }
-      else { // relative to the mouse or in the case of bar like graphs to the bar
-        if(!s.bars.show && !s.pie.show){
-               if(p.charAt(0) == 'n') pos += 'bottom:' + (m - plotOffset.top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
-          else if(p.charAt(0) == 's') pos += 'top:' + (m + plotOffset.top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
-               if(p.charAt(1) == 'e') pos += 'left:' + (m + plotOffset.left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
-          else if(p.charAt(1) == 'w') pos += 'right:' + (m - plotOffset.left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
-        }
 
-        else if (s.bars.show) {
-          pos += 'bottom:' + (m - plotOffset.top - n.yaxis.d2p(n.y/2) + this.canvasHeight) + 'px;top:auto;';
-          pos += 'left:' + (m + plotOffset.left + n.xaxis.d2p(n.x - options.bars.barWidth/2)) + 'px;right:auto;';
-        }
-        else {
-          var center = {
-            x: (this.plotWidth)/2,
-            y: (this.plotHeight)/2
-          },
-          radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
-          bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2: (n.sAngle + n.eAngle + 2* Math.PI) / 2;
-          
-          pos += 'bottom:' + (m - plotOffset.top - center.y - Math.sin(bisection) * radius/2 + this.canvasHeight) + 'px;top:auto;';
-          pos += 'left:' + (m + plotOffset.left + center.x + Math.cos(bisection) * radius/2) + 'px;right:auto;';
-        }
-      }
-      elStyle += pos;
-
-      mt.style.cssText = elStyle;
-
-      if(n.x !== null && n.y !== null){
-        
-        this.hit.clearHit();
+    if (!prevHit || (prevHit.index !== n.index || prevHit.seriesIndex !== n.seriesIndex)) {
+      this.hit.clearHit();
+      if (n.series && n.mouse && n.mouse.track) {
+        this.hit.drawMouseTrack(n);
         this.hit.drawHit(n);
-        D.show(mt);
-        
-        var decimals = n.mouse.trackDecimals;
-        if(decimals == null || decimals < 0) decimals = 0;
-        
-        mt.innerHTML = n.mouse.trackFormatter({
-          x: n.x.toFixed(decimals), 
-          y: n.y.toFixed(decimals), 
-          series: n.series, 
-          index: n.index,
-          nearest: n,
-          fraction: n.fraction
-        });
         Flotr.EventAdapter.fire(this.el, 'flotr:hit', [n, this]);
       }
-      else if(prevHit){
-        this.hit.clearHit();
-      }
-    }
-    else if(this.prevHit) {
-      this.hit.clearHit();
     }
   },
-  getMouseTrack: function() {
-    if (!this.mouseTrack) {
-      this.mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
-      D.insert(this.el, this.mouseTrack);
+
+  closest : function (mouse) {
+
+    var
+      series    = this.series,
+      options   = this.options,
+      mouseX    = mouse.x,
+      mouseY    = mouse.y,
+      compare   = Number.MAX_VALUE,
+      compareX  = Number.MAX_VALUE,
+      closest   = {},
+      closestX  = {},
+      check     = false,
+      serie, data,
+      distance, distanceX, distanceY,
+      x, y, i, j;
+
+    function setClosest (o) {
+      o.distance = distance;
+      o.distanceX = distanceX;
+      o.distanceY = distanceY;
+      o.seriesIndex = i;
+      o.dataIndex = j;
+      o.x = x;
+      o.y = y;
     }
-    return this.mouseTrack;
+
+    for (i = 0; i < series.length; i++) {
+
+      serie = series[i];
+      data = serie.data;
+
+      if (data.length) check = true;
+
+      for (j = data.length; j--;) {
+
+        x = data[j][0];
+        y = data[j][1];
+
+        if (x === null || y === null) continue;
+
+        distanceX = Math.abs(x - mouseX);
+        distanceY = Math.abs(y - mouseY);
+
+        // Skip square root for speed
+        distance = distanceX * distanceX + distanceY * distanceY;
+
+        if (distance < compare) {
+          compare = distance;
+          setClosest(closest);
+        }
+
+        if (distanceX < compareX) {
+          compareX = distanceX;
+          setClosest(closestX);
+        }
+      }
+    }
+
+    return check ? {
+      point : closest,
+      x : closestX
+    } : false;
+  },
+
+  drawMouseTrack : function (n) {
+
+    var
+      pos         = '', 
+      s           = n.series,
+      p           = n.mouse.position, 
+      m           = n.mouse.margin,
+      elStyle     = S_MOUSETRACK,
+      mouseTrack  = this.mouseTrack,
+      plotOffset  = this.plotOffset,
+      left        = plotOffset.left,
+      right       = plotOffset.right,
+      bottom      = plotOffset.bottom,
+      top         = plotOffset.top,
+      decimals    = n.mouse.trackDecimals,
+      options     = this.options;
+
+    // Create
+    if (!mouseTrack) {
+      mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
+      this.mouseTrack = mouseTrack;
+      D.insert(this.el, mouseTrack);
+    }
+
+    if (!n.mouse.relative) { // absolute to the canvas
+
+      if      (p.charAt(0) == 'n') pos += 'top:' + (m + top) + 'px;bottom:auto;';
+      else if (p.charAt(0) == 's') pos += 'bottom:' + (m + bottom) + 'px;top:auto;';
+      if      (p.charAt(1) == 'e') pos += 'right:' + (m + right) + 'px;left:auto;';
+      else if (p.charAt(1) == 'w') pos += 'left:' + (m + left) + 'px;right:auto;';
+
+    // Bars
+    } else if (s.bars.show) {
+        pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y/2) + this.canvasHeight) + 'px;top:auto;';
+        pos += 'left:' + (m + left + n.xaxis.d2p(n.x - options.bars.barWidth/2)) + 'px;right:auto;';
+
+    // Pie
+    } else if (s.pie.show) {
+      var center = {
+          x: (this.plotWidth)/2,
+          y: (this.plotHeight)/2
+        },
+        radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
+        bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2: (n.sAngle + n.eAngle + 2* Math.PI) / 2;
+      
+      pos += 'bottom:' + (m - top - center.y - Math.sin(bisection) * radius/2 + this.canvasHeight) + 'px;top:auto;';
+      pos += 'left:' + (m + left + center.x + Math.cos(bisection) * radius/2) + 'px;right:auto;';
+
+    // Default
+    } else {
+      if      (p.charAt(0) == 'n') pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
+      else if (p.charAt(0) == 's') pos += 'top:' + (m + top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
+      if      (p.charAt(1) == 'e') pos += 'left:' + (m + left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
+      else if (p.charAt(1) == 'w') pos += 'right:' + (m - left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
+    }
+
+    elStyle += pos;
+    mouseTrack.style.cssText = elStyle;
+
+    if (!decimals || decimals < 0) decimals = 0;
+    
+    mouseTrack.innerHTML = n.mouse.trackFormatter({
+      x: n.x.toFixed(decimals), 
+      y: n.y.toFixed(decimals), 
+      series: n.series, 
+      index: n.index,
+      nearest: n,
+      fraction: n.fraction
+    });
+
+    D.show(mouseTrack);
   }
+
 });
 })();
 

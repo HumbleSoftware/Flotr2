@@ -83,18 +83,20 @@ function handleSelect(selection) {
 
   s = selection;
 
-  if (o.drag) {
-    positionDrag(this, left, selection.x1);
-    positionDrag(this, right, selection.x2);
-  }
+  if (o) {
+    if (o.drag) {
+      positionDrag(this, left, selection.x1);
+      positionDrag(this, right, selection.x2);
+    }
 
-  if (o.scroll) {
-    positionScroll(
-      this,
-      scroll,
-      selection.x1,
-      selection.x2
-    );
+    if (o.scroll) {
+      positionScroll(
+        this,
+        scroll,
+        selection.x1,
+        selection.x2
+      );
+    }
   }
 }
 
@@ -129,19 +131,23 @@ function reset() {
 }
 
 function show() {
-  if (o.drag) {
-    D.show(left);
-    D.show(right);
+  if (o) {
+    if (o.drag) {
+      D.show(left);
+      D.show(right);
+    }
+    if (o.scroll) D.show(scroll);
   }
-  if (o.scroll) D.show(scroll);
 }
 function hide() {
-  if (o.drag) {
-    D.hide(left);
-    D.hide(right);
-  }
-  if (o.scroll) {
-    D.hide(scroll);
+  if (o) {
+    if (o.drag) {
+      D.hide(left);
+      D.hide(right);
+    }
+    if (o.scroll) {
+      D.hide(scroll);
+    }
   }
 }
 
