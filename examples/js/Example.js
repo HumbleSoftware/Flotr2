@@ -1,7 +1,6 @@
 (function () {
 
 var 
-
   _             = Flotr._,
 
   DOT           = '.',
@@ -9,23 +8,16 @@ var
   CN_EXAMPLE    = 'flotr-example',
   CN_LABEL      = 'flotr-example-label',
   CN_TITLE      = 'flotr-example-title',
-  CN_GRAPH      = 'flotr-example-graph',
   CN_MARKUP     = 'flotr-example-description',
   CN_EDITOR     = 'flotr-example-editor',
-  CN_SOURCE     = 'flotr-example-source',
-  CN_CONTAINER  = 'flotr-example-source-container',
 
   ID_GRAPH      = 'flotr-example-graph',
 
   TEMPLATE      = '' +
     '<div class="' + CN_EXAMPLE + '">' +
       '<div class="' + CN_LABEL + ' ' + CN_TITLE + '"></div>' +
-      '<div id="' + ID_GRAPH + '" class="' + CN_GRAPH + '"></div>' +
       '<div class="' + CN_MARKUP + '"></div>' +
-      '<div class="' + CN_CONTAINER + '">' +
-        '<div class="' + CN_LABEL+ '">Source:</div>' + 
-        '<div class="' + CN_SOURCE + '"></div>' +
-      '</div>' +
+      '<div class="' + CN_EDITOR + '"></div>' +
     '</div>',
 
 Example = function (o) {
@@ -34,25 +26,41 @@ Example = function (o) {
   this.example = null;
 
   this._initNodes();
-
-  this._editor = new Flotr.Examples.Editor({
-    node : this._exampleNode.find(DOT+CN_CONTAINER),
-    sourceNode : this._sourceNode
-  });
 };
 
 Example.prototype = {
 
   setExample : function (example) {
 
-    this._renderSource(example);
-    this._renderGraph(example);
+    var
+      source = this.getSource(example);
 
     this.example = example;
+
+    Math.seedrandom(example.key);
+    this._exampleNode.css({ display: 'block' });
+    this._titleNode.html(example.name || '');
+    this._markupNode.html(example.description || '');
+
+    if (!this._editor) {
+      this._editor = new Flotr.Examples.Editor(this._editorNode, {
+          example : source
+      });
+    } else {
+      this._editor.setExample(source);
+    }
   },
 
-  getExample : function () {
-    return this.example;
+  getSource : function (example) {
+
+    var
+      source = example.callback.toString();
+
+    // Hack for FF code style
+    if (navigator.userAgent.search(/firefox/i) !== -1)
+      source = js_beautify(source);
+
+    return source;
   },
 
   executeCallback : function (example, node) {
@@ -68,62 +76,12 @@ Example.prototype = {
       node    = this.options.node,
       example = $(TEMPLATE);
 
-    this._titleNode   = example.find(DOT+CN_TITLE);
-    this._sourceNode  = example.find(DOT+CN_SOURCE);
-    this._markupNode  = example.find(DOT+CN_MARKUP);
-    this._graphNode   = example.find(DOT+CN_GRAPH);
+    this._titleNode   = example.find(DOT + CN_TITLE);
+    this._markupNode  = example.find(DOT + CN_MARKUP);
+    this._editorNode  = example.find(DOT + CN_EDITOR);
     this._exampleNode = example;
 
     node.append(example);
-  },
-
-  _renderSource : function (example) {
-
-    var
-      sourceNode = this._sourceNode,
-      exampleString = this._getSource(example);
-
-    // Example
-    this._exampleNode.css({ display: 'block' });
-
-    // Source
-    sourceNode.show();
-    sourceNode.html('<pre class="prettyprint javascript">' + exampleString + '</pre>');
-
-    // Editor
-    if (this.example) this.example.editorText = this._editor.getSource();
-    this._editor.off();
-    this._editor.setSource(example.editorText || exampleString);
-
-    // Label
-    this._titleNode.html(example.name);
-    this._markupNode.html(example.description || '');
-
-    // Code Styling
-    prettyPrint();
-  },
-
-  _getSource : function (example) {
-
-    var
-      args = (example.args ? ', '+example.args.join(', ') : ''),
-      callback = example.callback + '';
-
-    // Hack for FF code style
-    if (navigator.userAgent.search(/firefox/i) !== -1)
-      callback = js_beautify(callback);
-
-    return '' +
-      '(' +
-      callback +
-      ')(document.getElementById("' + ID_GRAPH + '"' +
-      args +
-      '));'; 
-  },
-
-  _renderGraph : function (example) {
-    Flotr.EventAdapter.stopObserving(this._graphNode[0]);
-    this.current = this.executeCallback(example, this._graphNode) || null;
   }
 };
 

@@ -1,121 +1,220 @@
 (function () {
 
-var 
+  var
+    ONERROR   = window.onerror,
+    EXAMPLES  = Flotr.ExampleList.examples,
+    COUNT     = 0,
+    TYPES     = {},
 
-  _             = Flotr._,
+    T_CONTROLS =
+      '<div class="controls">' +
+        '<button class="run">Run</button>' +
+      '</div>',
+    T_EDITOR = '<div class="editor"></div>',
+    T_SOURCE = '<div class="source"></div>',
+    T_ERRORS = '<div class="errors"></div>',
+    T_RENDER = '<div class="render"></div>',
+    T_IFRAME = '<iframe></iframe>';
 
-  DOT           = '.',
 
-  ON            = 'on',
-  OFF           = 'off',
+  // Javascript type:
+  TYPES.javascript = function Javascript (o) {
+    this.onerror = o.onerror;
+  };
+  TYPES.javascript.prototype = {
+    codeMirrorType : 'javascript',
+    example : function (o) {
 
-  CN_EDITOR     = 'flotr-example-editor',
-  CN_TEXT       = 'flotr-example-editor-text',
-  CN_RUN        = 'flotr-example-editor-run',
-  CN_CONTROLS   = 'flotr-example-editor-controls',
-  CN_TOGGLE     = 'flotr-example-editor-toggle',
+      var
+        example = o.example,
+        render = o.render,
+        renderId = $(render).attr('id');
 
-  LABEL_EDIT    = 'Edit',
-  LABEL_RUN     = 'Run',
-  LABEL_SOURCE  = 'Source',
+      return '(' + example + ')(document.getElementById("' + renderId + '"));';
+    },
+    render : function (o) {
+      eval(o.example);
+    }
+  };
 
-  TEMPLATE  = '' +
-    '<div class="' + CN_EDITOR + '">' +
-      '<textarea class="' + CN_TEXT + '"></textarea>' +
-      '<div class="' + CN_CONTROLS + '">' +
-        '<button class="' + CN_TOGGLE + '">' + LABEL_EDIT +'</button>' +
-        '<button class="' + CN_RUN + '">' + LABEL_RUN + '</button>' +
-      '</div>' +
-    '</div>',
+  // HTML Type:
+  TYPES.html = function Html (o) {
+    this.onerror = o.onerror;
+  };
+  TYPES.html.prototype = {
+    codeMirrorType : 'htmlmixed',
+    example : function (o) {
+      return $.trim(o.example);
+    },
+    render : function (o) {
 
-Editor = function (o) {
-  this.options = o;
-  this.editMode = OFF;
-  this._initNodes();
-  this._initEditor();
-};
+      var
+        example = o.example,
+        render = o.render,
+        iframe = $(T_IFRAME),
+        that = this,
+        win, doc;
 
-Editor.prototype = {
+      render.html(iframe);
 
-  setSource : function (source) {
-    this._textNode.val(source);
-  },
+      win = iframe[0].contentWindow;
 
-  getSource : function () {
-    return this._textNode.val();
-  },
+      doc = win.document;
+      doc.open();
 
-  on : function () {
+      // Error
+      win.onerror = iframe.onerror = function () {
+        that.onerror.apply(null, arguments);
+      }
+
+      doc.write(example);
+      doc.close();
+    }
+  };
+
+  // Editor
+  function Editor (container, o) {
 
     var
-      textNode  = this._textNode,
-      preNode   = this._sourceNode.children().first(),
-      height    = preNode.height(),
-      width     = preNode.width(),
-      position  = preNode.position();
+      type      = o.type || 'javascript',
+      example   = o.example || '',
+      controls  = $(T_CONTROLS),
+      render    = $(T_RENDER),
+      errors    = $(T_ERRORS),
+      source    = $(T_SOURCE),
+      node      = $(T_EDITOR),
+      renderId  = 'editor-render-' + COUNT,
+      api,
+      render,
+      codeMirror;
 
-    textNode.css({
-      height : height,
-      width : width,
-      left : position.left,
-      top : position.top
+    api = new TYPES[type]({
+      onerror : onerror
     });
-    textNode.show();
-    textNode.focus();
+    if (!api) throw 'Invalid type: API not found for type `' + type + '`.';
 
-    this._toggleNode.text(LABEL_SOURCE);
-    this._runNode.show();
+    render
+      .attr('id', renderId);
 
-    this.editMode = ON;
-  },
+    node
+      .append(render)
+      .append(controls)
+      .append(source)
+      .addClass(type);
 
-  off : function () {
+    container = $(container);
+    container
+      .append(node);
 
-    this._toggleNode.text(LABEL_EDIT);
-    this._runNode.hide();
-    this._textNode.hide();
+    source
+      .append(errors)
 
-    this.editMode = OFF;
-  },
+    example = api.example({
+      example : example,
+      render : render
+    });
 
-  _initEditor : function () {
-    this._toggleNode.click(_.bind(this._handleEditClick, this));
-    this._runNode.click(_.bind(this._handleRunClick, this));
-  },
+    codeMirror = CodeMirror(source[0], {
+      value : example,
+      lineNumbers : true,
+      mode : api.codeMirrorType
+    });
 
-  _initNodes : function () {
+    if (COUNT === 0) {
+      codeMirror.focus();
+    }
 
-    var
-      node    = this.options.node,
-      editor  = $(TEMPLATE);
+    controls.delegate('.run', 'click', function () {
+      example = codeMirror.getValue();
+      execute();
+    });
 
-    this._toggleNode    = editor.find(DOT+CN_TOGGLE);
-    this._textNode      = editor.find(DOT+CN_TEXT);
-    this._runNode       = editor.find(DOT+CN_RUN);
-    this._sourceNode    = this.options.sourceNode;
-    this._editorNode    = editor;
+    execute();
 
-    node.append(editor);
-  },
+    // Error handling:
+    window.onerror = function (message, url, line) {
 
-  _handleEditClick : function () {
-    if (this.editMode == OFF)
-      this.on(); 
-    else 
-      this.off();
-  },
+      onerror(message, url, line);
+      console.log(message);
 
-  _handleRunClick : function () {
-    var
-      textNode  = this._textNode;
-    try {
-      eval(textNode.val());
-    } catch (e) { alert(e); }
-    textNode.focus();
+      if (ONERROR && $.isFunction(ONERROR)) {
+        return ONERROR(message, url, line);
+      } else {
+        return false;
+      }
+    }
+
+    // Helpers
+
+    function execute () {
+      errors.hide();
+      api.render({
+        example : example,
+        render : render
+      });
+    }
+
+    function onerror (message, url, line) {
+      // @TODO Find some js error normalizing lib
+
+      var
+        doThatSexyThang = false,
+        html = '<span class="error">Error: </span>',
+        error, stack;
+
+      /*
+      // Native error type handling:
+      if (typeof (message) !== 'string') {
+        error = message;
+        message = error.message;
+        stack = error.stack;
+
+        //if (stack) {
+          console.log(stack);
+        //}
+
+        //console.log(message);
+
+      }
+
+      */
+
+      html += '<span class="message">' + message + '</span>';
+      if (typeof (line) !== "undefined") {
+        html += '<span class="position">';
+        html += 'Line <span class="line">' + line + '</span>';
+        console.log(url);
+        if (url) {
+          html += ' of ';
+          if (url == window.location) {
+            html += '<span class="url">script</span>';
+            if (doThatSexyThang) {
+              //codeMirror.setMarker(line, '&#8226;');
+            }
+          } else {
+            html += '<span class="url">' + url + '</span>';
+          }
+        }
+        html += '.</span>';
+      }
+
+      errors.show();
+      errors.html(html);
+    }
+
+    COUNT++;
+
+    this.setExample = function (source) {
+      example = api.example({
+        example : source,
+        render : render
+      });
+      codeMirror.setValue(example);
+      codeMirror.refresh();
+      execute();
+    }
   }
-};
 
-
-Flotr.Examples.Editor = Editor;
-
+  if (typeof Flotr.Examples === 'undefined') Flotr.Examples = {};
+  Flotr.Examples.Editor = Editor;
 })();
