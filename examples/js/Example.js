@@ -36,6 +36,8 @@ Example.prototype = {
 
     Math.seedrandom(example.key);
     this._exampleNode.css({ display: 'block' });
+    this._titleNode.html(example.name || '');
+    this._markupNode.html(example.description || '');
 
     if (!this._editor) {
       this._editor = new Flotr.Examples.Editor(this._editorNode, {
