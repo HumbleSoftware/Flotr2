@@ -201,10 +201,10 @@ Examples.prototype = {
         width = page.width(),
         newClass;
 
-      if (width > 1640) {
+      if (width > 1760) {
         newClass = CN_LARGE;
         that._thumbsNode.height(height);
-      } else if (width > 1000) {
+      } else if (width > 1140) {
         newClass = CN_MEDIUM;
         that._thumbsNode.height(height);
       } else {

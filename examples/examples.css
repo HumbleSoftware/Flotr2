@@ -15,22 +15,18 @@ body {
   font-size: 18px;
   padding: 14px 0px;
 }
-/*
-.flotr-example-editor {
-  width: 600px;
-  position: absolute;
-  top: 0px;
-}
-*/
 .flotr-example-editor .editor .render {
   width: 600px;
   height: 400px;
-  margin: 12px 0px;
+  margin: 12px auto 18px auto;
+}
+.flotr-example-editor .editor .source {
+  width: 720px;
 }
 
 /* Chart no-select */
 
-.flotr-example-graph,
+.flotr-example-editor .editor .render,
 .flotr-examples-thumb {
   -webkit-user-select: none;
   -khtml-user-select: none;
@@ -156,9 +152,13 @@ body {
 
 /* Large */
 .flotr-examples-large .flotr-example {
-  width: 1240px;
+  width: 1360px;
   margin: 0px auto;
   position: relative;
+}
+.flotr-examples-large .flotr-example-editor .editor .render {
+  margin-left: 0px;
+  margin-right: 0px;
 }
 .flotr-examples-large .flotr-example-editor .controls {
   top: 0px;
@@ -201,7 +201,7 @@ body {
 
 .flotr-examples-small .flotr-example,
 .flotr-examples-medium .flotr-example {
-  width: 600px;
+  width: 720px;
 }
 .flotr-examples-small .flotr-example-editor .source,
 .flotr-examples-medium .flotr-example-editor .source {
