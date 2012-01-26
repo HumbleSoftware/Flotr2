@@ -210,9 +210,11 @@
         render : render
       });
       codeMirror.setValue(example);
+      codeMirror.refresh();
       execute();
     }
   }
 
+  if (typeof Flotr.Examples === 'undefined') Flotr.Examples = {};
   Flotr.Examples.Editor = Editor;
 })();
