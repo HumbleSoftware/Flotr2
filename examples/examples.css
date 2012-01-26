@@ -15,36 +15,17 @@ body {
   font-size: 18px;
   padding: 14px 0px;
 }
-.flotr-example-editor,
-.flotr-example-source {
-  width: 600px;
-}
-.flotr-example-source pre.prettyprint {
-  padding: 12px;
-  margin: 0px;
-  display: block;
-  background: #eee;
-  white-space : pre;
-  font-weight: normal;
-  overflow-x: auto;
-}
+/*
 .flotr-example-editor {
+  width: 600px;
   position: absolute;
   top: 0px;
 }
-.flotr-example-editor-text {
-  padding: 12px;
-  position: absolute;
-  resize: none;
-}
-.flotr-example-editor-controls {
-  top: 38px;
-  right: 16px;
-  position: absolute;
-}
-.flotr-example-editor-controls button {
-  height: 26px;
-  margin-left: 6px;
+*/
+.flotr-example-editor .editor .render {
+  width: 600px;
+  height: 400px;
+  margin: 12px 0px;
 }
 
 /* Chart no-select */
@@ -179,7 +160,10 @@ body {
   margin: 0px auto;
   position: relative;
 }
-.flotr-examples-large .flotr-example-source-container {
+.flotr-examples-large .flotr-example-editor .controls {
+  top: 0px;
+}
+.flotr-examples-large .flotr-example-editor .source {
   position: absolute;
   top: 0px;
   right: 0px;
@@ -219,7 +203,7 @@ body {
 .flotr-examples-medium .flotr-example {
   width: 600px;
 }
-.flotr-examples-small .flotr-example-source-container,
-.flotr-examples-medium .flotr-example-source-container {
+.flotr-examples-small .flotr-example-editor .source,
+.flotr-examples-medium .flotr-example-editor .source {
   position: relative;
 }
