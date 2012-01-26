@@ -12,10 +12,10 @@
     border-radius: 3px;
 }
 .editor .controls {
-    position: relative;
+    position: absolute;;
     z-index: 100;
     right: 8px;
-    top: -12px;
+    margin-top: -12px;
 }
 .editor .controls button {
     float: right;
@@ -59,6 +59,7 @@
 .CodeMirror-scroll {
     height: auto;
     overflow: visible;
+    overflow-x: auto;
 }
 .CodeMirror-lines pre,
 .CodeMirror-gutter pre {
