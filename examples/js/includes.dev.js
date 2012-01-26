@@ -11,7 +11,8 @@ yepnope([
       '../lib/canvastext.js'
     ]
   },
-  'lib/google-code-prettify/prettify.js',
+  'lib/codemirror/lib/codemirror.js',
+  'lib/codemirror/mode/javascript/javascript.js',
   'lib/beautify.js',
   'lib/randomseed.js',
   'lib/jquery-1.7.1.min.js',
