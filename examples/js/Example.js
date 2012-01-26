@@ -32,6 +32,9 @@ Example.prototype = {
 
   setExample : function (example) {
 
+    var
+      source = this.getSource(example);
+
     this.example = example;
 
     Math.seedrandom(example.key);
@@ -41,11 +44,23 @@ Example.prototype = {
 
     if (!this._editor) {
       this._editor = new Flotr.Examples.Editor(this._editorNode, {
-          example : example.callback
+          example : source
       });
     } else {
-      this._editor.setExample(example.callback);
+      this._editor.setExample(source);
     }
+  },
+
+  getSource : function (example) {
+
+    var
+      source = example.callback.toString();
+
+    // Hack for FF code style
+    if (navigator.userAgent.search(/firefox/i) !== -1)
+      source = js_beautify(source);
+
+    return source;
   },
 
   executeCallback : function (example, node) {
