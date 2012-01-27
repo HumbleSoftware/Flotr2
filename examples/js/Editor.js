@@ -8,7 +8,7 @@
 
     T_CONTROLS =
       '<div class="controls">' +
-        '<button class="run">Run</button>' +
+        '<button class="run btn large primary">Run</button>' +
       '</div>',
     T_EDITOR = '<div class="editor"></div>',
     T_SOURCE = '<div class="source"></div>',
