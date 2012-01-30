@@ -126,10 +126,6 @@
       mode : api.codeMirrorType
     });
 
-    if (COUNT === 0) {
-      codeMirror.focus();
-    }
-
     if (!noRun) {
       controls.delegate('.run', 'click', function () {
         example = codeMirror.getValue();
