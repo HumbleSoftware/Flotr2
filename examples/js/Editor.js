@@ -8,7 +8,7 @@
 
     T_CONTROLS =
       '<div class="controls">' +
-        '<button class="run">Run</button>' +
+        '<button class="run btn large primary">Run</button>' +
       '</div>',
     T_EDITOR = '<div class="editor"></div>',
     T_SOURCE = '<div class="source"></div>',
@@ -78,6 +78,7 @@
     var
       type      = o.type || 'javascript',
       example   = o.example || '',
+      noRun     = o.noRun || false,
       controls  = $(T_CONTROLS),
       render    = $(T_RENDER),
       errors    = $(T_ERRORS),
@@ -96,11 +97,15 @@
     render
       .attr('id', renderId);
 
+    errors
+      .hide();
+
     node
       .append(render)
       .append(controls)
       .append(source)
-      .addClass(type);
+      .addClass(type)
+      .addClass(noRun ? 'no-run' : '');
 
     container = $(container);
     container
@@ -116,6 +121,7 @@
 
     codeMirror = CodeMirror(source[0], {
       value : example,
+      readOnly : noRun,
       lineNumbers : true,
       mode : api.codeMirrorType
     });
@@ -124,12 +130,14 @@
       codeMirror.focus();
     }
 
-    controls.delegate('.run', 'click', function () {
-      example = codeMirror.getValue();
-      execute();
-    });
+    if (!noRun) {
+      controls.delegate('.run', 'click', function () {
+        example = codeMirror.getValue();
+        execute();
+      });
 
-    execute();
+      execute();
+    }
 
     // Error handling:
     window.onerror = function (message, url, line) {

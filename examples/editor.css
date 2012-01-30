@@ -37,6 +37,10 @@
     display: block;
     margin-top: 4px;
 }
+.editor.no-run .controls,
+.editor.no-run .render {
+    display: none;
+}
 
 /* html type */
 .editor.html .render {
