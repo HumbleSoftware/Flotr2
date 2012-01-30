@@ -38,6 +38,9 @@ body {
 
 /* Examples */
 
+.flotr-examples-thumbs {
+  text-align: center;
+}
 .flotr-examples-reset {
   z-index: 100;
   cursor: pointer;
