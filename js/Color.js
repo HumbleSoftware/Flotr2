@@ -52,9 +52,9 @@ Color.prototype = {
   },
   normalize: function(){
     var limit = this.limit;
-    this.r = limit(parseInt(this.r), 0, 255);
-    this.g = limit(parseInt(this.g), 0, 255);
-    this.b = limit(parseInt(this.b), 0, 255);
+    this.r = limit(parseInt(this.r, 10), 0, 255);
+    this.g = limit(parseInt(this.g, 10), 0, 255);
+    this.b = limit(parseInt(this.b, 10), 0, 255);
     this.a = limit(this.a, 0, 1);
     return this;
   },
@@ -86,11 +86,11 @@ _.extend(Color, {
 
     // #a0b1c2
     if((result = /#([a-fA-F0-9]{2})([a-fA-F0-9]{2})([a-fA-F0-9]{2})/.exec(color)))
-      return new Color(parseInt(result[1],16), parseInt(result[2],16), parseInt(result[3],16));
+      return new Color(parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16));
 
     // rgb(num,num,num)
     if((result = /rgb\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*\)/.exec(color)))
-      return new Color(parseInt(result[1]), parseInt(result[2]), parseInt(result[3]));
+      return new Color(parseInt(result[1], 10), parseInt(result[2], 10), parseInt(result[3], 10));
   
     // #fff
     if((result = /#([a-fA-F0-9])([a-fA-F0-9])([a-fA-F0-9])/.exec(color)))
@@ -98,7 +98,7 @@ _.extend(Color, {
   
     // rgba(num,num,num,num)
     if((result = /rgba\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]+(?:\.[0-9]+)?)\s*\)/.exec(color)))
-      return new Color(parseInt(result[1]), parseInt(result[2]), parseInt(result[3]), parseFloat(result[4]));
+      return new Color(parseInt(result[1], 10), parseInt(result[2], 10), parseInt(result[3], 10), parseFloat(result[4]));
       
     // rgb(num%,num%,num%)
     if((result = /rgb\(\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*,\s*([0-9]+(?:\.[0-9]+)?)\%\s*\)/.exec(color)))
