@@ -64,8 +64,8 @@ Axis.prototype = {
 
     var axis  = this,
       o       = axis.options,
-      min     = o.min != null ? o.min : axis.datamin,
-      max     = o.max != null ? o.max : axis.datamax,
+      min     = o.min !== null ? o.min : axis.datamin,
+      max     = o.max !== null ? o.max : axis.datamax,
       margin  = o.autoscaleMargin;
         
     if (o.scaling == 'logarithmic') {
@@ -75,8 +75,8 @@ Axis.prototype = {
       if (max <= 0) max = min;
     }
 
-    if(max - min == 0.0){
-      var widen = (max == 0.0) ? 1.0 : 0.01;
+    if (max == min) {
+      var widen = max ? 0.01 : 1.00;
       min -= widen;
       max += widen;
     }
@@ -111,14 +111,14 @@ Axis.prototype = {
     axis.max = max; //extendRange may use axis.min or axis.max, so it should be set before it is caled
 
     // Autoscaling. @todo This probably fails with log scale. Find a testcase and fix it
-    if(o.min == null && o.autoscale){
+    if(o.min === null && o.autoscale){
       axis.min -= axis.tickSize * margin;
       // Make sure we don't go below zero if all values are positive.
       if(axis.min < 0 && axis.datamin >= 0) axis.min = 0;
       axis.min = axis.tickSize * Math.floor(axis.min / axis.tickSize);
     }
     
-    if(o.max == null && o.autoscale){
+    if(o.max === null && o.autoscale){
       axis.max += axis.tickSize * margin;
       if(axis.max > 0 && axis.datamax <= 0 && axis.datamax != axis.datamin) axis.max = 0;        
       axis.max = axis.tickSize * Math.ceil(axis.max / axis.tickSize);
@@ -254,7 +254,7 @@ Axis.prototype = {
       
       // Round (this is always needed to fix numerical instability).
       decimals = o.tickDecimals;
-      if (decimals == null) decimals = 1 - Math.floor(Math.log(tickSize) / Math.LN10);
+      if (decimals === null) decimals = 1 - Math.floor(Math.log(tickSize) / Math.LN10);
       if (decimals < 0) decimals = 0;
       
       v = v.toFixed(decimals);
