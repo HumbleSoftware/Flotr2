@@ -85,7 +85,9 @@ Flotr.addPlugin('spreadsheet', {
     }
     
     // The data grid is sorted by x value
-    this.seriesData = _.sortBy(dg, function(v){return v[0]});
+    this.seriesData = _.sortBy(dg, function (v) {
+      return v[0];
+    });
     return this.seriesData;
   },
   /**
@@ -123,7 +125,9 @@ Flotr.addPlugin('spreadsheet', {
           tag = 'th';
           var label;
           if(this.options.xaxis.ticks) {
-            var tick = this.options.xaxis.ticks.find(function (x) { return x[0] == datagrid[j][i] });
+            var tick = this.options.xaxis.ticks.find(function (x) {
+              return x[0] == datagrid[j][i];
+            });
             if (tick) label = tick[1];
           } 
           else if (this.options.spreadsheet.tickFormatter){
@@ -272,7 +276,9 @@ Flotr.addPlugin('spreadsheet', {
       var rowLabel = '';
       // The first column
       if (options.xaxis.ticks) {
-        var tick = options.xaxis.ticks.find(function(x){return x[0] == dg[i][0]});
+        var tick = options.xaxis.ticks.find(function (x) {
+          return x[0] == dg[i][0];
+        });
         if (tick) rowLabel = tick[1];
       }
       else if (options.spreadsheet.tickFormatter){
