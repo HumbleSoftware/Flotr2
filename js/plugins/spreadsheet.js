@@ -123,9 +123,9 @@ Flotr.addPlugin('spreadsheet', {
       html.push('<tr>');
       for (i = 0; i < s.length+1; ++i) {
         var tag = 'td',
-            content = (datagrid[j][i] != null ? Math.round(datagrid[j][i]*100000)/100000 : '');
+            content = (datagrid[j][i] !== null ? Math.round(datagrid[j][i]*100000)/100000 : '');
         
-        if (i == 0) {
+        if (i === 0) {
           tag = 'th';
           var label;
           if(this.options.xaxis.ticks) {
