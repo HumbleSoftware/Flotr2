@@ -29,7 +29,7 @@ Flotr.addType('bars', {
     // @TODO linewidth not interpreted the right way.
     context.lineWidth = options.lineWidth;
     context.strokeStyle = options.color;
-    if (options.fill) context.fillStyle = options.fillStyle
+    if (options.fill) context.fillStyle = options.fillStyle;
     
     this.plot(options);
 
@@ -73,7 +73,7 @@ Flotr.addType('bars', {
 
   translate : function (context, horizontal) {
     if (horizontal) {
-      context.rotate(-Math.PI / 2)
+      context.rotate(-Math.PI / 2);
       context.scale(-1, 1);
     }
   },
