@@ -215,6 +215,7 @@ function basic_bars (container, horizontal) {
       bars : {
         show : true,
         horizontal : horizontal,
+        shadowSize : 0,
         barWidth : 0.5
       },
       mouse : {
@@ -279,7 +280,9 @@ function bars_stacked (container, horizontal) {
       show : true,
       stacked : true,
       horizontal : horizontal,
-      barWidth : 0.6
+      barWidth : 0.6,
+      lineWidth : 1,
+      shadowSize : 0
     },
     grid : {
       verticalLines : horizontal,
