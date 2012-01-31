@@ -50,11 +50,13 @@ Flotr.addPlugin('labels', {
       drawLabelNoHtmlText(this, a.y, 'right', 'middle');
       drawLabelNoHtmlText(this, a.y2, 'left', 'middle');
     
-    } else if ((a.x.options.showLabels
-        || a.x2.options.showLabels
-        || a.y.options.showLabels
-        || a.y2.options.showLabels)
-        && !options.grid.circular) {
+    } else if ((
+        a.x.options.showLabels ||
+        a.x2.options.showLabels ||
+        a.y.options.showLabels ||
+        a.y2.options.showLabels) &&
+        !options.grid.circular
+      ) {
 
       html = '';
 
