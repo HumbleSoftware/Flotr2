@@ -33,8 +33,8 @@ var COLOR_NAMES = {
 Color.prototype = {
   scale: function(rf, gf, bf, af){
     var x = 4;
-    while(-1<--x){
-      if(arguments[x] != null) this[this.rgba[x]] *= arguments[x];
+    while (-1 < --x) {
+      if (!_.isUndefined(arguments[x])) this[this.rgba[x]] *= arguments[x];
     }
     return this.normalize();
   },
