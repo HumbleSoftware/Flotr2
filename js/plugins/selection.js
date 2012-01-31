@@ -167,12 +167,13 @@ Flotr.addPlugin('selection', {
       plotOffset = this.plotOffset,
       prevSelection = this.selection.prevSelection;
     
-    if(prevSelection != null &&
+    if (prevSelection &&
       s.first.x == prevSelection.first.x &&
       s.first.y == prevSelection.first.y && 
       s.second.x == prevSelection.second.x &&
-      s.second.y == prevSelection.second.y)
+      s.second.y == prevSelection.second.y) {
       return;
+    }
 
     octx.save();
     octx.strokeStyle = this.processColor(options.selection.color, {opacity: 0.8});
@@ -199,7 +200,7 @@ Flotr.addPlugin('selection', {
    * Updates (draws) the selection box.
    */
   updateSelection: function(){
-    if(this.lastMousePos.pageX == null) return;
+    if (!this.lastMousePos.pageX) return;
 
     this.selection.setSelectionPos(this.selection.selection.second, this.lastMousePos);
 
@@ -212,7 +213,7 @@ Flotr.addPlugin('selection', {
    * Removes the selection box from the overlay canvas.
    */
   clearSelection: function() {
-    if(this.selection.prevSelection == null) return;
+    if (!this.selection.prevSelection) return;
       
     var prevSelection = this.selection.prevSelection,
       lw = this.octx.lineWidth,
