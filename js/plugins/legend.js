@@ -151,7 +151,7 @@ Flotr.addPlugin('legend', {
             D.insert(div, table);
             D.insert(this.el, div);
             
-            if(legend.backgroundOpacity == 0.0)
+            if(!legend.backgroundOpacity)
               return;
 
             var c = legend.backgroundColor || options.grid.backgroundColor || '#ffffff';
