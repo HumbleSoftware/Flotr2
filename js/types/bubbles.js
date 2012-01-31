@@ -55,7 +55,7 @@ Flotr.addType('bubbles', {
       x : options.xScale(point[0]),
       y : options.yScale(point[1]),
       z : point[2] * options.baseRadius
-    }
+    };
   },
   drawHit : function (options) {
 
