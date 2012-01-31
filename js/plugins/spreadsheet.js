@@ -226,7 +226,6 @@ Flotr.addPlugin('spreadsheet', {
    * Selects the data table in the DOM for copy/paste
    */
   selectAllData: function(){
-    console.log('selectAllData');
     if (this.spreadsheet.tabs) {
       var selection, range, doc, win, node = this.spreadsheet.constructDataGrid();
 
@@ -257,7 +256,6 @@ Flotr.addPlugin('spreadsheet', {
    * Converts the data into CSV in order to download a file
    */
   downloadCSV: function(){
-    console.log('downloadCSV');
     var i, csv = '',
         series = this.series,
         options = this.options,
