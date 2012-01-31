@@ -639,7 +639,7 @@ Graph.prototype = {
       s = this.series[i];
 
       // Assign the color.
-      if(s.color == null){
+      if (!s.color){
         s.color = colors[j++].toString();
       }else if(_.isNumber(s.color)){
         s.color = colors[s.color].toString();
@@ -660,7 +660,7 @@ Graph.prototype = {
       }
       s.mouse = _.extend(_.clone(this.options.mouse), s.mouse);
 
-      if(s.shadowSize == null) s.shadowSize = this.options.shadowSize;
+      if (_.isUndefined(s.shadowSize)) s.shadowSize = this.options.shadowSize;
     }
   },
 
