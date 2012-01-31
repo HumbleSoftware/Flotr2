@@ -50,6 +50,7 @@ function basic_bars (container, horizontal) {
       bars : {
         show : true,
         horizontal : horizontal,
+        shadowSize : 0,
         barWidth : 0.5
       },
       mouse : {

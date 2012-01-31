@@ -46,7 +46,9 @@ function bars_stacked (container, horizontal) {
       show : true,
       stacked : true,
       horizontal : horizontal,
-      barWidth : 0.6
+      barWidth : 0.6,
+      lineWidth : 1,
+      shadowSize : 0
     },
     grid : {
       verticalLines : horizontal,
