@@ -36,6 +36,35 @@ Flotr.addPlugin('graphGrid', {
     ctx.lineWidth = 1;
     ctx.strokeStyle = grid.tickColor;
     
+    function circularHorizontalTicks (ticks) {
+      for(i = 0; i < ticks.length; ++i){
+        var ratio = ticks[i].v / a.max;
+        for(j = 0; j <= sides; ++j){
+          ctx[j === 0 ? 'moveTo' : 'lineTo'](
+            Math.cos(j*coeff+angle)*radius*ratio,
+            Math.sin(j*coeff+angle)*radius*ratio
+          );
+        }
+      }
+    }
+    function drawGridLines (ticks, callback) {
+      _.each(_.pluck(ticks, 'v'), function(v){
+        // Don't show lines on upper and lower bounds.
+        if ((v <= a.min || v >= a.max) || 
+            (v == a.min || v == a.max) && grid.outlineWidth)
+          return;
+        callback(Math.floor(a.d2p(v)) + ctx.lineWidth/2);
+      });
+    }
+    function drawVerticalLines (x) {
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, plotHeight);
+    }
+    function drawHorizontalLines (y) {
+      ctx.moveTo(0, y);
+      ctx.lineTo(plotWidth, y);
+    }
+
     if (grid.circular) {
       ctx.translate(this.plotOffset.left+plotWidth/2, this.plotOffset.top+plotHeight/2);
       var radius = Math.min(plotHeight, plotWidth)*options.radar.radiusRatio/2,
@@ -47,17 +76,6 @@ Flotr.addPlugin('graphGrid', {
       ctx.beginPath();
       
       a = this.axes.y;
-      function circularHorizontalTicks (ticks) {
-        for(i = 0; i < ticks.length; ++i){
-          var ratio = ticks[i].v / a.max;
-          for(j = 0; j <= sides; ++j){
-            ctx[j === 0 ? 'moveTo' : 'lineTo'](
-              Math.cos(j*coeff+angle)*radius*ratio,
-              Math.sin(j*coeff+angle)*radius*ratio
-            );
-          }
-        }
-      }
 
       if(horizontalLines){
         circularHorizontalTicks(a.ticks);
@@ -75,25 +93,6 @@ Flotr.addPlugin('graphGrid', {
       ctx.stroke();
     }
     else {
-
-      function drawGridLines (ticks, callback) {
-        _.each(_.pluck(ticks, 'v'), function(v){
-          // Don't show lines on upper and lower bounds.
-          if ((v <= a.min || v >= a.max) || 
-              (v == a.min || v == a.max) && grid.outlineWidth)
-            return;
-          callback(Math.floor(a.d2p(v)) + ctx.lineWidth/2);
-        });
-      }
-      function drawVerticalLines (x) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, plotHeight);
-      }
-      function drawHorizontalLines (y) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(plotWidth, y);
-      }
-
       ctx.translate(this.plotOffset.left, this.plotOffset.top);
   
       // Draw grid background, if present in options.
