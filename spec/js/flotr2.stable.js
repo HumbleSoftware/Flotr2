@@ -7,367 +7,501 @@
   * dperini: https://github.com/dperini/nwevents
   * the entire mootools team: github.com/mootools/mootools-core
   */
-!function (name, definition) {
-  if (typeof module != 'undefined') module.exports = definition();
-  else if (typeof define == 'function' && typeof define.amd  == 'object') define(definition);
-  else this[name] = definition();
-}('bean', function () {
-  var win = window,
-      __uid = 1,
-      registry = {},
-      collected = {},
-      overOut = /over|out/,
-      namespace = /[^\.]*(?=\..*)\.|.*/,
-      stripName = /\..*/,
-      addEvent = 'addEventListener',
-      attachEvent = 'attachEvent',
-      removeEvent = 'removeEventListener',
-      detachEvent = 'detachEvent',
-      doc = document || {},
-      root = doc.documentElement || {},
-      W3C_MODEL = root[addEvent],
-      eventSupport = W3C_MODEL ? addEvent : attachEvent,
+/*global module:true, define:true*/
+!function (name, context, definition) {
+  if (typeof module !== 'undefined') module.exports = definition(name, context);
+  else if (typeof define === 'function' && typeof define.amd  === 'object') define(definition);
+  else context[name] = definition(name, context);
+}('bean', this, function (name, context) {
+  var win = window
+    , old = context[name]
+    , overOut = /over|out/
+    , namespaceRegex = /[^\.]*(?=\..*)\.|.*/
+    , nameRegex = /\..*/
+    , addEvent = 'addEventListener'
+    , attachEvent = 'attachEvent'
+    , removeEvent = 'removeEventListener'
+    , detachEvent = 'detachEvent'
+    , doc = document || {}
+    , root = doc.documentElement || {}
+    , W3C_MODEL = root[addEvent]
+    , eventSupport = W3C_MODEL ? addEvent : attachEvent
+    , slice = Array.prototype.slice
+    , mouseTypeRegex = /click|mouse|menu|drag|drop/i
+    , touchTypeRegex = /^touch|^gesture/i
+    , ONE = { one: 1 } // singleton for quick matching making add() do one()
 
-  isDescendant = function (parent, child) {
-    var node = child.parentNode;
-    while (node !== null) {
-      if (node == parent) {
-        return true;
+    , nativeEvents = (function (hash, events, i) {
+        for (i = 0; i < events.length; i++)
+          hash[events[i]] = 1
+        return hash
+      })({}, (
+          'click dblclick mouseup mousedown contextmenu ' +                  // mouse buttons
+          'mousewheel DOMMouseScroll ' +                                     // mouse wheel
+          'mouseover mouseout mousemove selectstart selectend ' +            // mouse movement
+          'keydown keypress keyup ' +                                        // keyboard
+          'orientationchange ' +                                             // mobile
+          'focus blur change reset select submit ' +                         // form elements
+          'load unload beforeunload resize move DOMContentLoaded readystatechange ' + // window
+          'error abort scroll ' +                                            // misc
+          (W3C_MODEL ? // element.fireEvent('onXYZ'... is not forgiving if we try to fire an event
+                       // that doesn't actually exist, so make sure we only do these on newer browsers
+            'show ' +                                                          // mouse buttons
+            'input invalid ' +                                                 // form elements
+            'touchstart touchmove touchend touchcancel ' +                     // touch
+            'gesturestart gesturechange gestureend ' +                         // gesture
+            'message readystatechange pageshow pagehide popstate ' +           // window
+            'hashchange offline online ' +                                     // window
+            'afterprint beforeprint ' +                                        // printing
+            'dragstart dragenter dragover dragleave drag drop dragend ' +      // dnd
+            'loadstart progress suspend emptied stalled loadmetadata ' +       // media
+            'loadeddata canplay canplaythrough playing waiting seeking ' +     // media
+            'seeked ended durationchange timeupdate play pause ratechange ' +  // media
+            'volumechange cuechange ' +                                        // media
+            'checking noupdate downloading cached updateready obsolete ' +     // appcache
+            '' : '')
+        ).split(' ')
+      )
+
+    , customEvents = (function () {
+        function isDescendant(parent, node) {
+          while ((node = node.parentNode) !== null) {
+            if (node === parent) return true
+          }
+          return false
+        }
+
+        function check(event) {
+          var related = event.relatedTarget
+          if (!related) return related === null
+          return (related !== this && related.prefix !== 'xul' && !/document/.test(this.toString()) && !isDescendant(this, related))
+        }
+
+        return {
+            mouseenter: { base: 'mouseover', condition: check }
+          , mouseleave: { base: 'mouseout', condition: check }
+          , mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
+        }
+      })()
+
+    , fixEvent = (function () {
+        var commonProps = 'altKey attrChange attrName bubbles cancelable ctrlKey currentTarget detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey srcElement target timeStamp type view which'.split(' ')
+          , mouseProps = commonProps.concat('button buttons clientX clientY dataTransfer fromElement offsetX offsetY pageX pageY screenX screenY toElement'.split(' '))
+          , keyProps = commonProps.concat('char charCode key keyCode'.split(' '))
+          , touchProps = commonProps.concat('touches targetTouches changedTouches scale rotation'.split(' '))
+          , preventDefault = 'preventDefault'
+          , createPreventDefault = function (event) {
+              return function () {
+                if (event[preventDefault])
+                  event[preventDefault]()
+                else
+                  event.returnValue = false
+              }
+            }
+          , stopPropagation = 'stopPropagation'
+          , createStopPropagation = function (event) {
+              return function () {
+                if (event[stopPropagation])
+                  event[stopPropagation]()
+                else
+                  event.cancelBubble = true
+              }
+            }
+          , createStop = function (synEvent) {
+              return function () {
+                synEvent[preventDefault]()
+                synEvent[stopPropagation]()
+                synEvent.stopped = true
+              }
+            }
+          , copyProps = function (event, result, props) {
+              var i, p
+              for (i = props.length; i--;) {
+                p = props[i]
+                if (!(p in result) && p in event) result[p] = event[p]
+              }
+            }
+
+        return function (event, isNative) {
+          var result = { originalEvent: event, isNative: isNative }
+          if (!event)
+            return result
+
+          var props
+            , type = event.type
+            , target = event.target || event.srcElement
+
+          result[preventDefault] = createPreventDefault(event)
+          result[stopPropagation] = createStopPropagation(event)
+          result.stop = createStop(result)
+          result.target = target && target.nodeType === 3 ? target.parentNode : target
+
+          if (isNative) { // we only need basic augmentation on custom events, the rest is too expensive
+            if (type.indexOf('key') !== -1) {
+              props = keyProps
+              result.keyCode = event.which || event.keyCode
+            } else if (mouseTypeRegex.test(type)) {
+              props = mouseProps
+              result.rightClick = event.which === 3 || event.button === 2
+              result.pos = { x: 0, y: 0 }
+              if (event.pageX || event.pageY) {
+                result.clientX = event.pageX
+                result.clientY = event.pageY
+              } else if (event.clientX || event.clientY) {
+                result.clientX = event.clientX + doc.body.scrollLeft + root.scrollLeft
+                result.clientY = event.clientY + doc.body.scrollTop + root.scrollTop
+              }
+              if (overOut.test(type))
+                result.relatedTarget = event.relatedTarget || event[(type === 'mouseover' ? 'from' : 'to') + 'Element']
+            } else if (touchTypeRegex.test(type)) {
+              props = touchProps
+            }
+            copyProps(event, result, props || commonProps)
+          }
+          return result
+        }
+      })()
+
+      // if we're in old IE we can't do onpropertychange on doc or win so we use doc.documentElement for both
+    , targetElement = function (element, isNative) {
+        return !W3C_MODEL && !isNative && (element === doc || element === win) ? root : element
       }
-      node = node.parentNode;
-    }
-  },
 
-  retrieveUid = function (obj, uid) {
-    return (obj.__uid = uid && (uid + '::' + __uid++) || obj.__uid || __uid++);
-  },
+      // we use one of these per listener, of any type
+    , RegEntry = (function () {
+        function entry(element, type, handler, original, namespaces) {
+          this.element = element
+          this.type = type
+          this.handler = handler
+          this.original = original
+          this.namespaces = namespaces
+          this.custom = customEvents[type]
+          this.isNative = nativeEvents[type] && element[eventSupport]
+          this.eventType = W3C_MODEL || this.isNative ? type : 'propertychange'
+          this.customType = !W3C_MODEL && !this.isNative && type
+          this.target = targetElement(element, this.isNative)
+          this.eventSupport = this.target[eventSupport]
+        }
 
-  retrieveEvents = function (element) {
-    var uid = retrieveUid(element);
-    return (registry[uid] = registry[uid] || {});
-  },
+        entry.prototype = {
+            // given a list of namespaces, is our entry in any of them?
+            inNamespaces: function (checkNamespaces) {
+              var i, j
+              if (!checkNamespaces)
+                return true
+              if (!this.namespaces)
+                return false
+              for (i = checkNamespaces.length; i--;) {
+                for (j = this.namespaces.length; j--;) {
+                  if (checkNamespaces[i] === this.namespaces[j])
+                    return true
+                }
+              }
+              return false
+            }
 
-  listener = W3C_MODEL ? function (element, type, fn, add) {
-    element[add ? addEvent : removeEvent](type, fn, false);
-  } : function (element, type, fn, add, custom) {
-    if (custom && add && element['_on' + custom] === null) {
-      element['_on' + custom] = 0;
-    }
-    element[add ? attachEvent : detachEvent]('on' + type, fn);
-  },
+            // match by element, original fn (opt), handler fn (opt)
+          , matches: function (checkElement, checkOriginal, checkHandler) {
+              return this.element === checkElement &&
+                (!checkOriginal || this.original === checkOriginal) &&
+                (!checkHandler || this.handler === checkHandler)
+            }
+        }
 
-  nativeHandler = function (element, fn, args) {
-    return function (event) {
-      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event);
-      return fn.apply(element, [event].concat(args));
-    };
-  },
+        return entry
+      })()
 
-  customHandler = function (element, fn, type, condition, args) {
-    return function (event) {
-      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event) {
-        event = event ? fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event) : null;
-        fn.apply(element, Array.prototype.slice.call(arguments, event ? 0 : 1).concat(args));
+    , registry = (function () {
+        // our map stores arrays by event type, just because it's better than storing
+        // everything in a single array. uses '$' as a prefix for the keys for safety
+        var map = {}
+
+          // generic functional search of our registry for matching listeners,
+          // `fn` returns false to break out of the loop
+          , forAll = function (element, type, original, handler, fn) {
+              if (!type || type === '*') {
+                // search the whole registry
+                for (var t in map) {
+                  if (t.charAt(0) === '$')
+                    forAll(element, t.substr(1), original, handler, fn)
+                }
+              } else {
+                var i = 0, l, list = map['$' + type], all = element === '*'
+                if (!list)
+                  return
+                for (l = list.length; i < l; i++) {
+                  if (all || list[i].matches(element, original, handler))
+                    if (!fn(list[i], list, i, type))
+                      return
+                }
+              }
+            }
+
+          , has = function (element, type, original) {
+              // we're not using forAll here simply because it's a bit slower and this
+              // needs to be fast
+              var i, list = map['$' + type]
+              if (list) {
+                for (i = list.length; i--;) {
+                  if (list[i].matches(element, original, null))
+                    return true
+                }
+              }
+              return false
+            }
+
+          , get = function (element, type, original) {
+              var entries = []
+              forAll(element, type, original, null, function (entry) { return entries.push(entry) })
+              return entries
+            }
+
+          , put = function (entry) {
+              (map['$' + entry.type] || (map['$' + entry.type] = [])).push(entry)
+              return entry
+            }
+
+          , del = function (entry) {
+              forAll(entry.element, entry.type, null, entry.handler, function (entry, list, i) {
+                list.splice(i, 1)
+                if (list.length === 0)
+                  delete map['$' + entry.type]
+                return false
+              })
+            }
+
+            // dump all entries, used for onunload
+          , entries = function () {
+              var t, entries = []
+              for (t in map) {
+                if (t.charAt(0) === '$')
+                  entries = entries.concat(map[t])
+              }
+              return entries
+            }
+
+        return { has: has, get: get, put: put, del: del, entries: entries }
+      })()
+
+      // add and remove listeners to DOM elements
+    , listener = W3C_MODEL ? function (element, type, fn, add) {
+        element[add ? addEvent : removeEvent](type, fn, false)
+      } : function (element, type, fn, add, custom) {
+        if (custom && add && element['_on' + custom] === null)
+          element['_on' + custom] = 0
+        element[add ? attachEvent : detachEvent]('on' + type, fn)
       }
-    };
-  },
 
-  addListener = function (element, orgType, fn, args) {
-    var type = orgType.replace(stripName, ''),
-        events = retrieveEvents(element),
-        handlers = events[type] || (events[type] = {}),
-        originalFn = fn,
-        uid = retrieveUid(fn, orgType.replace(namespace, ''));
-    if (handlers[uid]) {
-      return element;
-    }
-    var custom = customEvents[type];
-    if (custom) {
-      fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
-      type = custom.base || type;
-    }
-    var isNative = nativeEvents[type];
-    fn = isNative ? nativeHandler(element, fn, args) : customHandler(element, fn, type, false, args);
-    isNative = W3C_MODEL || isNative;
-    if (type == 'unload') {
-      var org = fn;
-      fn = function () {
-        removeListener(element, type, fn) && org();
-      };
-    }
-    element[eventSupport] && listener(element, isNative ? type : 'propertychange', fn, true, !isNative && type);
-    handlers[uid] = fn;
-    fn.__uid = uid;
-    fn.__originalFn = originalFn;
-    return type == 'unload' ? element : (collected[retrieveUid(element)] = element);
-  },
-
-  removeListener = function (element, orgType, handler) {
-    var uid = element.__uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
-
-    if (!events || !events[type]) {
-      return element;
-    }
-
-    names = orgType.replace(namespace, '');
-    uids = names ? names.split('.') : [handler.__uid];
-
-    function destroyHandler(uid) {
-      handler = events[type][uid];
-      if (!handler) {
-        return;
+    , nativeHandler = function (element, fn, args) {
+        return function (event) {
+          event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, true)
+          return fn.apply(element, [event].concat(args))
+        }
       }
-      delete events[type][uid];
-      if (element[eventSupport]) {
-        type = customEvents[type] ? customEvents[type].base : type;
-        var isNative = W3C_MODEL || nativeEvents[type];
-        listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
-      }
-    }
 
-    destroyHandler(names); //get combos
-    for (i = uids.length; i--; destroyHandler(uids[i])) {} //get singles
-
-    if (isEmpty(events[type])) {
-      delete events[type];
-    }
-
-    if (isEmpty(registry[uid])) {
-      delete registry[uid];
-      delete collected[uid];
-    }
-
-    return element;
-  },
-
-  del = function (selector, fn, $) {
-    return function (e) {
-      var array = typeof selector == 'string' ? $(selector, this) : selector;
-      for (var target = e.target; target && target != this; target = target.parentNode) {
-        for (var i = array.length; i--;) {
-          if (array[i] == target) {
-            return fn.apply(target, arguments);
+    , customHandler = function (element, fn, type, condition, args, isNative) {
+        return function (event) {
+          if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event) {
+            if (event)
+              event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, isNative)
+            fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args))
           }
         }
       }
-    };
-  },
 
-  add = function (element, events, fn, delfn, $) {
-    if (typeof events == 'object' && !fn) {
-      for (var type in events) {
-        events.hasOwnProperty(type) && add(element, type, events[type]);
+    , once = function (rm, element, type, fn, originalFn) {
+        // wrap the handler in a handler that does a remove as well
+        return function () {
+          rm(element, type, originalFn)
+          fn.apply(this, arguments)
+        }
       }
-    } else {
-      var isDel = typeof fn == 'string', types = (isDel ? fn : events).split(' ');
-      fn = isDel ? del(events, delfn, $) : fn;
-      for (var i = types.length; i--;) {
-        addListener(element, types[i], fn, Array.prototype.slice.call(arguments, isDel ? 4 : 3));
-      }
-    }
-    return element;
-  },
 
-  remove = function (element, orgEvents, fn) {
-    var k, m, type, events, i,
-        isString = typeof(orgEvents) == 'string',
-        names = isString && orgEvents.replace(namespace, ''),
-        rm = removeListener,
-        attached = retrieveEvents(element);
-    names = names && names.split('.');
-    if (isString && /\s/.test(orgEvents)) {
-      orgEvents = orgEvents.split(' ');
-      i = orgEvents.length - 1;
-      while (remove(element, orgEvents[i]) && i--) {}
-      return element;
-    }
-    events = isString ? orgEvents.replace(stripName, '') : orgEvents;
-    if (!attached || names || (isString && !attached[events])) {
-      for (k in attached) {
-        if (attached.hasOwnProperty(k)) {
-          for (i in attached[k]) {
-            for (m = names.length; m--;) {
-              attached[k].hasOwnProperty(i)
-                && new RegExp('^' + names[m] + '::\\d*(\\..*)?$').test(i)
-                && rm(element, [k, i].join('.'));
+    , removeListener = function (element, orgType, handler, namespaces) {
+        var i, l, entry
+          , type = (orgType && orgType.replace(nameRegex, ''))
+          , handlers = registry.get(element, type, handler)
+
+        for (i = 0, l = handlers.length; i < l; i++) {
+          if (handlers[i].inNamespaces(namespaces)) {
+            if ((entry = handlers[i]).eventSupport)
+              listener(entry.target, entry.eventType, entry.handler, false, entry.type)
+            // TODO: this is problematic, we have a registry.get() and registry.del() that
+            // both do registry searches so we waste cycles doing this. Needs to be rolled into
+            // a single registry.forAll(fn) that removes while finding, but the catch is that
+            // we'll be splicing the arrays that we're iterating over. Needs extra tests to
+            // make sure we don't screw it up. @rvagg
+            registry.del(entry)
+          }
+        }
+      }
+
+    , addListener = function (element, orgType, fn, originalFn, args) {
+        var entry
+          , type = orgType.replace(nameRegex, '')
+          , namespaces = orgType.replace(namespaceRegex, '').split('.')
+
+        if (registry.has(element, type, fn))
+          return element // no dupe
+        if (type === 'unload')
+          fn = once(removeListener, element, type, fn, originalFn) // self clean-up
+        if (customEvents[type]) {
+          if (customEvents[type].condition)
+            fn = customHandler(element, fn, type, customEvents[type].condition, true)
+          type = customEvents[type].base || type
+        }
+        entry = registry.put(new RegEntry(element, type, fn, originalFn, namespaces[0] && namespaces))
+        entry.handler = entry.isNative ?
+          nativeHandler(element, entry.handler, args) :
+          customHandler(element, entry.handler, type, false, args, false)
+        if (entry.eventSupport)
+          listener(entry.target, entry.eventType, entry.handler, true, entry.customType)
+      }
+
+    , del = function (selector, fn, $) {
+        return function (e) {
+          var target, i, array = typeof selector === 'string' ? $(selector, this) : selector
+          for (target = e.target; target && target !== this; target = target.parentNode) {
+            for (i = array.length; i--;) {
+              if (array[i] === target) {
+                return fn.apply(target, arguments)
+              }
             }
           }
         }
       }
-      return element;
-    }
-    if (typeof fn == 'function') {
-      rm(element, events, fn);
-    } else if (names) {
-      rm(element, orgEvents);
-    } else {
-      rm = events ? rm : remove;
-      type = isString && events;
-      events = events ? (fn || attached[events] || events) : attached;
-      for (k in events) {
-        if (events.hasOwnProperty(k)) {
-          rm(element, type || k, events[k]);
-          delete events[k]; // remove unused leaf keys
-        }
-      }
-    }
-    return element;
-  },
 
-  fire = function (element, type, args) {
-    var evt, k, i, m, types = type.split(' ');
-    for (i = types.length; i--;) {
-      type = types[i].replace(stripName, '');
-      var isNative = nativeEvents[type],
-          isNamespace = types[i].replace(namespace, ''),
-          handlers = retrieveEvents(element)[type];
-      if (isNamespace) {
-        isNamespace = isNamespace.split('.');
-        for (k = isNamespace.length; k--;) {
-          for (m in handlers) {
-            handlers.hasOwnProperty(m) && new RegExp('^' + isNamespace[k] + '::\\d*(\\..*)?$').test(m) && handlers[m].apply(element, [false].concat(args));
+    , remove = function (element, typeSpec, fn) {
+        var k, m, type, namespaces, i
+          , rm = removeListener
+          , isString = typeSpec && typeof typeSpec === 'string'
+
+        if (isString && typeSpec.indexOf(' ') > 0) {
+          // remove(el, 't1 t2 t3', fn) or remove(el, 't1 t2 t3')
+          typeSpec = typeSpec.split(' ')
+          for (i = typeSpec.length; i--;)
+            remove(element, typeSpec[i], fn)
+          return element
+        }
+        type = isString && typeSpec.replace(nameRegex, '')
+        if (type && customEvents[type])
+          type = customEvents[type].type
+        if (!typeSpec || isString) {
+          // remove(el) or remove(el, t1.ns) or remove(el, .ns) or remove(el, .ns1.ns2.ns3)
+          if (namespaces = isString && typeSpec.replace(namespaceRegex, ''))
+            namespaces = namespaces.split('.')
+          rm(element, type, fn, namespaces)
+        } else if (typeof typeSpec === 'function') {
+          // remove(el, fn)
+          rm(element, null, typeSpec)
+        } else {
+          // remove(el, { t1: fn1, t2, fn2 })
+          for (k in typeSpec) {
+            if (typeSpec.hasOwnProperty(k))
+              remove(element, k, typeSpec[k])
           }
         }
-      } else if (!args && element[eventSupport]) {
-        fireListener(isNative, type, element);
-      } else {
-        for (k in handlers) {
-          handlers.hasOwnProperty(k) && handlers[k].apply(element, [false].concat(args));
+        return element
+      }
+
+    , add = function (element, events, fn, delfn, $) {
+        var type, types, i, args
+          , originalFn = fn
+          , isDel = fn && typeof fn === 'string'
+
+        if (events && !fn && typeof events === 'object') {
+          for (type in events) {
+            if (events.hasOwnProperty(type))
+              add.apply(this, [ element, type, events[type] ])
+          }
+        } else {
+          args = arguments.length > 3 ? slice.call(arguments, 3) : []
+          types = (isDel ? fn : events).split(' ')
+          isDel && (fn = del(events, (originalFn = delfn), $)) && (args = slice.call(args, 1))
+          // special case for one()
+          this === ONE && (fn = once(remove, element, events, fn, originalFn))
+          for (i = types.length; i--;) addListener(element, types[i], fn, originalFn, args)
         }
+        return element
       }
-    }
-    return element;
-  },
 
-  fireListener = W3C_MODEL ? function (isNative, type, element) {
-    evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
-    evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1);
-    element.dispatchEvent(evt);
-  } : function (isNative, type, element) {
-    isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
-  },
-
-  clone = function (element, from, type) {
-    var events = retrieveEvents(from), obj, k;
-    var uid = retrieveUid(element);
-    obj = type ? events[type] : events;
-    for (k in obj) {
-      obj.hasOwnProperty(k) && (type ? add : clone)(element, type || from, type ? obj[k].__originalFn : k);
-    }
-    return element;
-  },
-
-  fixEvent = function (e) {
-    var result = {};
-    if (!e) {
-      return result;
-    }
-    var type = e.type, target = e.target || e.srcElement;
-    result.preventDefault = fixEvent.preventDefault(e);
-    result.stopPropagation = fixEvent.stopPropagation(e);
-    result.target = target && target.nodeType == 3 ? target.parentNode : target;
-    if (~type.indexOf('key')) {
-      result.keyCode = e.which || e.keyCode;
-    } else if ((/click|mouse|menu/i).test(type)) {
-      result.rightClick = e.which == 3 || e.button == 2;
-      result.pos = { x: 0, y: 0 };
-      if (e.pageX || e.pageY) {
-        result.clientX = e.pageX;
-        result.clientY = e.pageY;
-      } else if (e.clientX || e.clientY) {
-        result.clientX = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-        result.clientY = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+    , one = function () {
+        return add.apply(ONE, arguments)
       }
-      overOut.test(type) && (result.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element']);
-    }
-    for (var k in e) {
-      if (!(k in result)) {
-        result[k] = e[k];
+
+    , fireListener = W3C_MODEL ? function (isNative, type, element) {
+        var evt = doc.createEvent(isNative ? 'HTMLEvents' : 'UIEvents')
+        evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1)
+        element.dispatchEvent(evt)
+      } : function (isNative, type, element) {
+        element = targetElement(element, isNative)
+        // if not-native then we're using onpropertychange so we just increment a custom property
+        isNative ? element.fireEvent('on' + type, doc.createEventObject()) : element['_on' + type]++
       }
-    }
-    return result;
-  },
 
-  isEmpty = function (obj) {
-    for (var prop in obj) {
-      if (obj.hasOwnProperty(prop)) return false;
-    }
-    return true;
-  }
+    , fire = function (element, type, args) {
+        var i, j, l, names, handlers
+          , types = type.split(' ')
 
-  fixEvent.preventDefault = function (e) {
-    return function () {
-      if (e.preventDefault) {
-        e.preventDefault();
+        for (i = types.length; i--;) {
+          type = types[i].replace(nameRegex, '')
+          if (names = types[i].replace(namespaceRegex, ''))
+            names = names.split('.')
+          if (!names && !args && element[eventSupport]) {
+            fireListener(nativeEvents[type], type, element)
+          } else {
+            // non-native event, either because of a namespace, arguments or a non DOM element
+            // iterate over all listeners and manually 'fire'
+            handlers = registry.get(element, type)
+            args = [false].concat(args)
+            for (j = 0, l = handlers.length; j < l; j++) {
+              if (handlers[j].inNamespaces(names))
+                handlers[j].handler.apply(element, args)
+            }
+          }
+        }
+        return element
       }
-      else {
-        e.returnValue = false;
+
+    , clone = function (element, from, type) {
+        var i = 0
+          , handlers = registry.get(from, type)
+          , l = handlers.length
+
+        for (;i < l; i++)
+          handlers[i].original && add(element, handlers[i].type, handlers[i].original)
+        return element
       }
-    };
-  };
 
-  fixEvent.stopPropagation = function (e) {
-    return function () {
-      if (e.stopPropagation) {
-        e.stopPropagation();
-      } else {
-        e.cancelBubble = true;
+    , bean = {
+          add: add
+        , one: one
+        , remove: remove
+        , clone: clone
+        , fire: fire
+        , noConflict: function () {
+            context[name] = old
+            return this
+          }
       }
-    };
-  };
-
-  var nativeEvents = { click: 1, dblclick: 1, mouseup: 1, mousedown: 1, contextmenu: 1, //mouse buttons
-    mousewheel: 1, DOMMouseScroll: 1, //mouse wheel
-    mouseover: 1, mouseout: 1, mousemove: 1, selectstart: 1, selectend: 1, //mouse movement
-    keydown: 1, keypress: 1, keyup: 1, //keyboard
-    orientationchange: 1, // mobile
-    touchstart: 1, touchmove: 1, touchend: 1, touchcancel: 1, // touch
-    gesturestart: 1, gesturechange: 1, gestureend: 1, // gesture
-    focus: 1, blur: 1, change: 1, reset: 1, select: 1, submit: 1, //form elements
-    load: 1, unload: 1, beforeunload: 1, resize: 1, move: 1, DOMContentLoaded: 1, readystatechange: 1, //window
-    error: 1, abort: 1, scroll: 1 }; //misc
-
-  function check(event) {
-    var related = event.relatedTarget;
-    if (!related) {
-      return related === null;
-    }
-    return (related != this && related.prefix != 'xul' && !/document/.test(this.toString()) && !isDescendant(this, related));
-  }
-
-  var customEvents = {
-    mouseenter: { base: 'mouseover', condition: check },
-    mouseleave: { base: 'mouseout', condition: check },
-    mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
-  };
-
-  var bean = { add: add, remove: remove, clone: clone, fire: fire };
-
-  var clean = function (el) {
-    var uid = remove(el).__uid;
-    if (uid) {
-      delete collected[uid];
-      delete registry[uid];
-    }
-  };
 
   if (win[attachEvent]) {
-    add(win, 'unload', function () {
-      for (var k in collected) {
-        collected.hasOwnProperty(k) && clean(collected[k]);
+    // for IE, clean up on unload to avoid leaks
+    var cleanup = function () {
+      var i, entries = registry.entries()
+      for (i in entries) {
+        if (entries[i].type && entries[i].type !== 'unload')
+          remove(entries[i].element, entries[i].type)
       }
-      win.CollectGarbage && CollectGarbage();
-    });
+      win[detachEvent]('onunload', cleanup)
+      win.CollectGarbage && win.CollectGarbage()
+    }
+    win[attachEvent]('onunload', cleanup)
   }
 
-  bean.noConflict = function () {
-    context.bean = old;
-    return this;
-  };
-
-  return bean;
-
+  return bean
 });
+
 //     Underscore.js 1.1.7
 //     (c) 2011 Jeremy Ashkenas, DocumentCloud Inc.
 //     Underscore is freely distributable under the MIT license.
@@ -1285,10 +1419,22 @@ Flotr = {
    */
   merge: function(src, dest){
     var i, v, result = dest || {};
-    for(i in src){
+
+    for (i in src) {
       v = src[i];
-      result[i] = (v && typeof(v) === 'object' && !(v.constructor === Array || v.constructor === RegExp) && !this._.isElement(v)) ? Flotr.merge(v, (dest ? dest[i] : undefined)) : result[i] = v;
+      if (v && typeof(v) === 'object') {
+        if (v.constructor === Array) {
+          result[i] = this._.clone(v);
+        } else if (v.constructor !== RegExp && !this._.isElement(v)) {
+          result[i] = Flotr.merge(v, (dest ? dest[i] : undefined))
+        } else {
+          result[i] = v;
+        }
+      } else {
+        result[i] = v;
+      }
     }
+
     return result;
   },
   
@@ -1927,8 +2073,8 @@ Flotr.DOM = {
    */
   size: function(element){
     return {
-      height : element.scrollHeight,
-      width: element.scrollWidth };
+      height : element.offsetHeight,
+      width : element.offsetWidth };
   }
 };
 
@@ -2277,14 +2423,22 @@ Graph.prototype = {
    */
   draw: function(after) {
 
+    var
+      context = this.ctx,
+      i;
+
     E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
 
-    if(this.series.length){
-      for(var i = 0; i < this.series.length; i++){
-        if (!this.series[i].hide)
-          this.drawSeries(this.series[i]);
+    if (this.series.length) {
+
+      context.save();
+      context.translate(this.plotOffset.left, this.plotOffset.top);
+
+      for (i = 0; i < this.series.length; i++) {
+        if (!this.series[i].hide) this.drawSeries(this.series[i]);
       }
 
+      context.restore();
       this.clip();
     }
 
@@ -2323,8 +2477,6 @@ Graph.prototype = {
         context     : this.ctx,
         width       : this.plotWidth,
         height      : this.plotHeight,
-        offsetLeft  : this.plotOffset.left,
-        offsetTop   : this.plotOffset.top,
         fontSize    : this.options.fontSize,
         fontColor   : this.options.fontColor,
         textEnabled : this.textEnabled,
@@ -2423,6 +2575,7 @@ Graph.prototype = {
     this.mouseUpHandler = _.bind(this.mouseUpHandler, this);
     E.observe(document, 'mouseup', this.mouseUpHandler);
     E.fire(this.el, 'flotr:mousedown', [event, this]);
+    this.ignoreClick = false;
   },
   /**
    * Observes the mouseup event for the document.
@@ -2494,13 +2647,13 @@ Graph.prototype = {
     this._handles = [];
     this.lastMousePos = {pageX: null, pageY: null };
     this.plotOffset = {left: 0, right: 0, top: 0, bottom: 0};
-    this.ignoreClick = false;
+    this.ignoreClick = true;
     this.prevHit = null;
   },
 
   _initGraphTypes: function() {
     _.each(flotr.graphTypes, function(handler, graphType){
-      this[graphType] = _.clone(handler);
+      this[graphType] = flotr.clone(handler);
     }, this);
   },
 
@@ -2544,9 +2697,26 @@ Graph.prototype = {
   _initCanvas: function(){
     var el = this.el,
       o = this.options,
+      children = el.children,
+      removedChildren = [],
+      child, i,
       size, style;
 
-    D.empty(el);
+    // Empty the el
+    for (i = children.length; i--;) {
+      child = children[i];
+      if (!this.canvas && child.className === 'flotr-canvas') {
+        this.canvas = child;
+      } else if (!this.overlay && child.className === 'flotr-overlay') {
+        this.overlay = child;
+      } else {
+        removedChildren.push(child);
+      }
+    }
+    for (i = removedChildren.length; i--;) {
+      el.removeChild(removedChildren[i]);
+    }
+
     D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
     size = D.size(el);
 
@@ -2554,14 +2724,14 @@ Graph.prototype = {
       throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
     }
 
-    // The old canvases are retrieved to avoid memory leaks ...
-    // @TODO Confirm.
-    // this.canvas = el.select('.flotr-canvas')[0];
-    // this.overlay = el.select('.flotr-overlay')[0];
-    this.canvas = getCanvas(this.canvas, 'canvas'); // Main canvas for drawing graph types
-    this.overlay = getCanvas(this.overlay, 'overlay'); // Overlay canvas for interactive features
+    // Main canvas for drawing graph types
+    this.canvas = getCanvas(this.canvas, 'canvas');
+    // Overlay canvas for interactive features
+    this.overlay = getCanvas(this.overlay, 'overlay');
     this.ctx = getContext(this.canvas);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.octx = getContext(this.overlay);
+    this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
     this.canvasHeight = size.height*o.resolution;
     this.canvasWidth = size.width*o.resolution;
     this.textEnabled = !!this.ctx.drawText || !!this.ctx.fillText; // Enable text functions
@@ -2569,8 +2739,12 @@ Graph.prototype = {
     function getCanvas(canvas, name){
       if(!canvas){
         canvas = D.create('canvas');
+        if (typeof FlashCanvas != "undefined") {
+          FlashCanvas.initElement(canvas);
+        }
         canvas.className = 'flotr-'+name;
         canvas.style.cssText = 'position:absolute;left:0px;top:0px;';
+        D.insert(el, canvas);
       }
       _.each(size, function(size, attribute){
         canvas.setAttribute(attribute, size*o.resolution);
@@ -2578,7 +2752,6 @@ Graph.prototype = {
         D.show(canvas);
       });
       canvas.context_ = null; // Reset the ExCanvas context
-      D.insert(el, canvas);
       return canvas;
     }
 
@@ -3124,6 +3297,11 @@ Flotr.addType('lines', {
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
     stacked: false         // => setting to true will show stacked lines, false will show normal lines
   },
+
+  stack : {
+    values : []
+  },
+
   /**
    * Draws lines series in the canvas element.
    * @param {Object} options
@@ -3137,7 +3315,6 @@ Flotr.addType('lines', {
       offset;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'round';
 
     if (shadowSize) {
@@ -3262,8 +3439,6 @@ Flotr.addType('lines', {
   // }
 
   extendYRange : function (axis, data, options, lines) {
-    // TODO construction:
-    this.stack = { values : [] };
 
     var o = axis.options;
 
@@ -3300,7 +3475,7 @@ Flotr.addType('lines', {
       axis.max = newmax;
       axis.min = newmin;
     }
-  },
+  }
 
 });
 
@@ -3319,15 +3494,21 @@ Flotr.addType('bars', {
     centered: true         // => center the bars to their x axis value
   },
 
+  stack : { 
+    positive : [],
+    negative : [],
+    _positive : [], // Shadow
+    _negative : []  // Shadow
+  },
+
   draw : function (options) {
     var
       context = options.context;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'miter';
     // @TODO linewidth not interpreted the right way.
-    context.lineWidth = Math.min(options.lineWidth, options.barWidth);
+    context.lineWidth = options.lineWidth;
     context.strokeStyle = options.color;
     if (options.fill) context.fillStyle = options.fillStyle
     
@@ -3385,6 +3566,7 @@ Flotr.addType('bars', {
       barWidth      = options.barWidth,
       centered      = options.centered,
       stack         = options.stacked ? this.stack : false,
+      lineWidth     = options.lineWidth,
       bisection     = centered ? barWidth / 2 : 0,
       xScale        = horizontal ? options.yScale : options.xScale,
       yScale        = horizontal ? options.xScale : options.yScale,
@@ -3417,10 +3599,34 @@ Flotr.addType('bars', {
       xScale    : xScale,
       yScale    : yScale,
       top       : top,
-      left      : left,
-      width     : right - left,
+      left      : Math.min(left, right) - lineWidth / 2,
+      width     : Math.abs(right - left) - lineWidth,
       height    : bottom - top
     };
+  },
+
+  hit : function (options) {
+    var
+      data = options.data,
+      args = options.args,
+      mouse = args[0],
+      n = args[1],
+      x = mouse.x,
+      y = mouse.y,
+      hitGeometry = this.getBarGeometry(x, y, options),
+      width = hitGeometry.width / 2,
+      left = hitGeometry.left,
+      geometry, i;
+
+    for (i = data.length; i--;) {
+      geometry = this.getBarGeometry(data[i][0], data[i][1], options);
+      if (geometry.y > hitGeometry.y && Math.abs(left - geometry.left) < width) {
+        n.x = data[i][0];
+        n.y = data[i][1];
+        n.index = i;
+        n.seriesIndex = options.index;
+      }
+    }
   },
 
   drawHit : function (options) {
@@ -3436,8 +3642,7 @@ Flotr.addType('bars', {
 
     context.save();
     context.strokeStyle = options.color;
-    context.lineWidth = Math.min(options.lineWidth, width);
-    context.translate(options.offsetLeft, options.offsetTop);
+    context.lineWidth = options.lineWidth;
     this.translate(context, options.horizontal);
 
     // Draw highlight
@@ -3461,28 +3666,24 @@ Flotr.addType('bars', {
       context     = options.context,
       args        = options.args,
       geometry    = this.getBarGeometry(args.x, args.y, options),
-      lineWidth   = 2 * Math.min(options.lineWidth, geometry.width);
+      left        = geometry.left,
+      width       = geometry.width,
+      top         = geometry.top,
+      height      = geometry.height,
+      lineWidth   = 2 * options.lineWidth;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     this.translate(context, options.horizontal);
     context.clearRect(
-      geometry.left - lineWidth,
-      geometry.top - lineWidth,
-      geometry.width + 2 * lineWidth,
-      geometry.height + 2 * lineWidth
+      left - lineWidth,
+      Math.min(top, top + height) - lineWidth,
+      width + 2 * lineWidth,
+      Math.abs(height) + 2 * lineWidth
     );
     context.restore();
   },
 
   extendXRange : function (axis, data, options, bars) {
-    // TODO construction:
-    this.stack = { 
-      positive : [],
-      negative : [],
-      _positive : [], // Shadow
-      _negative : []  // Shadow
-    };
     this._extendRange(axis, data, options, bars);
   },
 
@@ -3563,7 +3764,6 @@ Flotr.addType('bubbles', {
       shadowSize  = options.shadowSize;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineWidth = options.lineWidth;
     
     // Shadows
@@ -3618,7 +3818,6 @@ Flotr.addType('bubbles', {
     context.lineWidth = options.lineWidth;
     context.fillStyle = options.fillStyle;
     context.strokeStyle = options.color;
-    context.translate(options.offsetLeft, options.offsetTop);
     context.beginPath();
     context.arc(geometry.x, geometry.y, geometry.z, 0, 2 * Math.PI, true);
     context.fill();
@@ -3634,7 +3833,6 @@ Flotr.addType('bubbles', {
       offset = geometry.z + options.lineWidth;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.clearRect(
       geometry.x - offset, 
       geometry.y - offset,
@@ -3667,7 +3865,6 @@ Flotr.addType('candles', {
       context = options.context;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'miter';
     context.lineCap = 'butt';
     // @TODO linewidth not interpreted the right way.
@@ -4033,15 +4230,14 @@ Flotr.addType('markers', {
     horizontal: false      // => true if markers should be horizontal (For now only in a case on horizontal stacked bars, stacks should be calculated horizontaly)
   },
 
-  draw : function (options) {
+  // TODO test stacked markers.
+  stack : {
+      positive : [],
+      negative : [],
+      values : []
+  },
 
-    // TODO construction...
-    // TODO test stacked markers.
-    this.stack = this.stack || {
-        positive : [],
-        negative : [],
-        values : []
-    };
+  draw : function (options) {
 
     var
       data            = options.data,
@@ -4054,7 +4250,6 @@ Flotr.addType('markers', {
       i, x, y, label;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin = 'round';
     context.lineWidth = options.lineWidth;
     context.strokeStyle = 'rgba(0,0,0,0.5)';
@@ -4098,12 +4293,7 @@ Flotr.addType('markers', {
   plot: function(x, y, label, options) {
     var context = options.context;
     if (isImage(label) && !label.complete) {
-      Flotr.EventAdapter.observe(label, 'load', Flotr._.bind(function () {
-        context.save();
-        context.translate(options.offsetLeft, options.offsetTop);
-        this._plot(x, y, label, options);
-        context.restore();
-      }, this));
+      throw 'Marker image not loaded.';
     } else {
       this._plot(x, y, label, options);
     }
@@ -4217,12 +4407,8 @@ Flotr.addType('pie', {
       distX, distY;
     
     context.save();
-
-    context.translate(options.offsetLeft, options.offsetTop);
     context.translate(options.width / 2, options.height / 2);
-
     context.scale(1, vScale);
-
 
     // TODO wtf is this for?
     if (startAngle == endAngle) return;
@@ -4305,7 +4491,6 @@ Flotr.addType('pie', {
 
     var
       data      = options.data[0],
-      context   = options.context,
       args      = options.args,
       index     = options.index,
       mouse     = args[0],
@@ -4347,7 +4532,6 @@ Flotr.addType('pie', {
       slice = this.slices[options.args.seriesIndex];
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.translate(options.width / 2, options.height / 2);
     this.plotSlice(slice.x, slice.y, slice.radius, slice.start, slice.end, context);
     context.stroke();
@@ -4360,7 +4544,6 @@ Flotr.addType('pie', {
       radius = slice.radius + options.lineWidth;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.translate(options.width / 2, options.height / 2);
     context.clearRect(
       slice.x - radius,
@@ -4394,8 +4577,7 @@ Flotr.addType('points', {
       shadowSize  = options.shadowSize;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
-    
+
     if (shadowSize > 0) {
       context.lineWidth = shadowSize / 2;
       
@@ -4459,7 +4641,6 @@ Flotr.addType('radar', {
       shadowSize = options.shadowSize;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.translate(options.width / 2, options.height / 2);
     context.lineWidth = options.lineWidth;
     
@@ -4523,7 +4704,6 @@ Flotr.addType('timeline', {
       context = options.context;
 
     context.save();
-    context.translate(options.offsetLeft, options.offsetTop);
     context.lineJoin    = 'miter';
     context.lineWidth   = options.lineWidth;
     context.strokeStyle = options.color;
@@ -4926,7 +5106,8 @@ Flotr.addPlugin('graphGrid', {
 var
   D = Flotr.DOM,
   _ = Flotr._,
-  flotr = Flotr;
+  flotr = Flotr,
+  S_MOUSETRACK = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
 
 Flotr.addPlugin('hit', {
   callbacks: {
@@ -4986,12 +5167,12 @@ Flotr.addPlugin('hit', {
       octx.lineWidth = (s.points ? s.points.lineWidth : 1);
       octx.strokeStyle = s.mouse.lineColor;
       octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
+      octx.translate(this.plotOffset.left, this.plotOffset.top);
 
       if (!this.hit.executeOnType(s, 'drawHit', n)) {
         var xa = n.xaxis,
           ya = n.yaxis;
 
-        octx.translate(this.plotOffset.left, this.plotOffset.top);
         octx.beginPath();
           // TODO fix this (points) should move to general testable graph mixin
           octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.points.radius || s.mouse.radius, 0, 2 * Math.PI, true);
@@ -5007,21 +5188,29 @@ Flotr.addPlugin('hit', {
    * Removes the mouse tracking point from the overlay.
    */
   clearHit: function(){
-    var prev = this.prevHit;
-    if(prev && !this.hit.executeOnType(prev.series, 'clearHit', this.prevHit)){
-      // TODO fix this (points) should move to general testable graph mixin
-      var plotOffset = this.plotOffset,
-        s = prev.series,
-        lw = (s.bars ? s.bars.lineWidth : 1),
-        offset = (s.points.radius || s.mouse.radius) + lw;
-      this.octx.clearRect(
-        plotOffset.left + prev.xaxis.d2p(prev.x) - offset,
-        plotOffset.top  + prev.yaxis.d2p(prev.y) - offset,
-        offset*2,
-        offset*2
-      );
+    var prev = this.prevHit,
+        octx = this.octx,
+        plotOffset = this.plotOffset;
+    octx.save();
+    octx.translate(plotOffset.left, plotOffset.top);
+    if (prev) {
+      if (!this.hit.executeOnType(prev.series, 'clearHit', this.prevHit)) {
+        // TODO fix this (points) should move to general testable graph mixin
+        var
+          s = prev.series,
+          lw = (s.bars ? s.bars.lineWidth : 1),
+          offset = (s.points.radius || s.mouse.radius) + lw;
+        octx.clearRect(
+          prev.xaxis.d2p(prev.x) - offset,
+          prev.yaxis.d2p(prev.y) - offset,
+          offset*2,
+          offset*2
+        );
+      }
       D.hide(this.mouseTrack);
+      this.prevHit = null;
     }
+    octx.restore();
   },
   /**
    * Retrieves the nearest data point from the mouse cursor. If it's within
@@ -5030,223 +5219,214 @@ Flotr.addPlugin('hit', {
    * @param {Object} mouse - Object that holds the relative x and y coordinates of the cursor.
    */
   hit: function(mouse){
-    var series = this.series,
+
+    var
       options = this.options,
       prevHit = this.prevHit,
-      plotOffset = this.plotOffset,
-      octx = this.octx, 
-      data, sens, xsens, ysens, x, y, xa, ya, mx, my, i,
-      /**
-       * Nearest data element.
-       */
-      n = {
-        dist:Number.MAX_VALUE,
-        x:null,
-        y:null,
-        relX:mouse.relX,
-        relY:mouse.relY,
-        absX:mouse.absX,
-        absY:mouse.absY,
-        sAngle:null,
-        eAngle:null,
-        fraction: null,
-        mouse:null,
-        xaxis:null,
-        yaxis:null,
-        series:null,
-        index:null,
-        seriesIndex:null
-      };
+      closest, sensibility, dataIndex, seriesIndex, series, value, xaxis, yaxis;
 
-    if (options.mouse.trackAll) {
-      for(i = 0; i < series.length; i++){
-        s = series[0];
-        data = s.data;
-        xa = s.xaxis;
-        ya = s.yaxis;
-        xsens = (2*options.points.lineWidth)/xa.scale * s.mouse.sensibility;
-        mx = xa.p2d(mouse.relX);
-        my = ya.p2d(mouse.relY);
-    
-        for(var j = 0; j < data.length; j++){
-          x = data[j][0];
-          y = data[j][1];
-    
-          if (y === null ||
-              xa.min > x || xa.max < x ||
-              ya.min > y || ya.max < y ||
-              mx < xa.min || mx > xa.max ||
-              my < ya.min || my > ya.max) continue;
-    
-          var xdiff = Math.abs(x - mx);
-    
-          // Bars and Pie are not supported yet. Not sure how it should look with bars or Pie
-          if((!s.bars.show && xdiff < xsens) 
-              || (s.bars.show && xdiff < s.bars.barWidth/2) 
-              || (y < 0 && my < 0 && my > y)) {
-            
-            var distance = xdiff;
-            
-            if (distance < n.dist) {
-              n.dist = distance;
-              n.x = x;
-              n.y = y;
-              n.xaxis = xa;
-              n.yaxis = ya;
-              n.mouse = s.mouse;
-              n.series = s; 
-              n.allSeries = series; // include all series
-              n.index = j;
-            }
-          }
-        }
-      }
-    }
-    else if (this.hit.executeOnType(series, 'hit', [mouse, n])) {
-      if (n.seriesIndex !== null) {
-        n.series = series[n.seriesIndex];
-        n.mouse = n.series.mouse;
-        n.xaxis = n.series.xaxis;
-        n.yaxis = n.series.yaxis;
+    if (this.series.length === 0) return;
+
+    // Nearest data element.
+    // dist, x, y, relX, relY, absX, absY, sAngle, eAngle, fraction, mouse,
+    // xaxis, yaxis, series, index, seriesIndex
+    n = {
+      relX : mouse.relX,
+      relY : mouse.relY,
+      absX : mouse.absX,
+      absY : mouse.absY
+    };
+
+    if (options.mouse.trackY
+        && !options.mouse.trackAll
+        && this.hit.executeOnType(this.series, 'hit', [mouse, n]))
+      {
+
+      if (!_.isUndefined(n.seriesIndex)) {
+        series    = this.series[n.seriesIndex];
+        n.series  = series;
+        n.mouse   = series.mouse;
+        n.xaxis   = series.xaxis;
+        n.yaxis   = series.yaxis;
       }
     } else {
-      for (i = 0; i < series.length; i++) {
-        s = series[i];
-        if(!s.mouse.track) continue;
-        
-        data = s.data;
-        xa = s.xaxis;
-        ya = s.yaxis;
-        sens = 2 * (options.points ? options.points.lineWidth : 1) * s.mouse.sensibility;
-        xsens = sens/xa.scale;
-        ysens = sens/ya.scale;
-        mx = xa.p2d(mouse.relX);
-        my = ya.p2d(mouse.relY);
 
-        for(var j = 0, xpow, ypow; j < data.length; j++){
-          x = data[j][0];
-          y = data[j][1];
-          
-          if (y === null || 
-              xa.min > x || xa.max < x || 
-              ya.min > y || ya.max < y) continue;
-          
-          if(s.bars.show && s.bars.centered){
-            var xdiff = Math.abs(x - mx),
-              ydiff = Math.abs(y - my);
-          } else {
-            if (s.bars.horizontal){
-              var xdiff = Math.abs(x - mx),
-                ydiff = Math.abs(y + s.bars.barWidth/2 - my);
-            } else {
-              var xdiff = Math.abs(x + s.bars.barWidth/2 - mx),
-                ydiff = Math.abs(y - my);
-            }
-          }
-          
-          // we use a different set of criteria to determin if there has been a hit
-          // depending on what type of graph we have
-          if(((!s.bars.show) && xdiff < xsens && (!s.mouse.trackY || ydiff < ysens)) ||
-              // Bars check
-              (s.bars.show && (!s.bars.horizontal && xdiff < s.bars.barWidth/2 + 1/xa.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
-              && (!s.mouse.trackY || (y > 0 && my > 0 && my < y) || (y < 0 && my < 0 && my > y))) 
-              || (s.bars.horizontal && ydiff < s.bars.barWidth/2 + 1/ya.scale // Check x bar boundary, with adjustment for scale (when bars ~1px)
-              && ((x > 0 && mx > 0 && mx < x) || (x < 0 && mx < 0 && mx > x))))){ // for horizontal bars there is need to use y-axis tracking, so s.mouse.trackY is ignored
-            
-            var distance = Math.sqrt(xdiff*xdiff + ydiff*ydiff);
-            if(distance < n.dist){
-              n.dist = distance;
-              n.x = x;
-              n.y = y;
-              n.xaxis = xa;
-              n.yaxis = ya;
-              n.mouse = s.mouse;
-              n.series = s;
-              n.allSeries = series;
-              n.index = j;
-              n.seriesIndex = i;
-            }
-          }
+      closest = this.hit.closest(mouse);
+
+      if (closest) {
+
+        closest     = options.mouse.trackY ? closest.point : closest.x;
+        seriesIndex = closest.seriesIndex;
+        series      = this.series[seriesIndex];
+        xaxis       = series.xaxis;
+        yaxis       = series.yaxis;
+        sensibility = 2 * series.mouse.sensibility;
+
+        if
+          (options.mouse.trackAll ||
+          (closest.distanceX < sensibility / xaxis.scale &&
+          (!options.mouse.trackY || closest.distanceY < sensibility / yaxis.scale)))
+        {
+          n.series      = series;
+          n.xaxis       = series.xaxis;
+          n.yaxis       = series.yaxis;
+          n.mouse       = series.mouse;
+          n.x           = closest.x;
+          n.y           = closest.y;
+          n.dist        = closest.distance;
+          n.index       = closest.dataIndex;
+          n.seriesIndex = seriesIndex;
         }
       }
     }
-    
-    if(n.series && (n.mouse && n.mouse.track && !prevHit || (prevHit /*&& (n.x != prevHit.x || n.y != prevHit.y)*/))){
-      var mt = this.hit.getMouseTrack(),
-          pos = '', 
-          s = n.series,
-          p = n.mouse.position, 
-          m = n.mouse.margin,
-          elStyle = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
-      
-      if (!n.mouse.relative) { // absolute to the canvas
-             if(p.charAt(0) == 'n') pos += 'top:' + (m + plotOffset.top) + 'px;bottom:auto;';
-        else if(p.charAt(0) == 's') pos += 'bottom:' + (m + plotOffset.bottom) + 'px;top:auto;';
-             if(p.charAt(1) == 'e') pos += 'right:' + (m + plotOffset.right) + 'px;left:auto;';
-        else if(p.charAt(1) == 'w') pos += 'left:' + (m + plotOffset.left) + 'px;right:auto;';
-      }
-      else { // relative to the mouse or in the case of bar like graphs to the bar
-        if(!s.bars.show && !s.pie.show){
-               if(p.charAt(0) == 'n') pos += 'bottom:' + (m - plotOffset.top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
-          else if(p.charAt(0) == 's') pos += 'top:' + (m + plotOffset.top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
-               if(p.charAt(1) == 'e') pos += 'left:' + (m + plotOffset.left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
-          else if(p.charAt(1) == 'w') pos += 'right:' + (m - plotOffset.left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
-        }
 
-        else if (s.bars.show) {
-          pos += 'bottom:' + (m - plotOffset.top - n.yaxis.d2p(n.y/2) + this.canvasHeight) + 'px;top:auto;';
-          pos += 'left:' + (m + plotOffset.left + n.xaxis.d2p(n.x - options.bars.barWidth/2)) + 'px;right:auto;';
-        }
-        else {
-          var center = {
-            x: (this.plotWidth)/2,
-            y: (this.plotHeight)/2
-          },
-          radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
-          bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2: (n.sAngle + n.eAngle + 2* Math.PI) / 2;
-          
-          pos += 'bottom:' + (m - plotOffset.top - center.y - Math.sin(bisection) * radius/2 + this.canvasHeight) + 'px;top:auto;';
-          pos += 'left:' + (m + plotOffset.left + center.x + Math.cos(bisection) * radius/2) + 'px;right:auto;';
-        }
-      }
-      elStyle += pos;
-
-      mt.style.cssText = elStyle;
-
-      if(n.x !== null && n.y !== null){
-        
-        this.hit.clearHit();
+    if (!prevHit || (prevHit.index !== n.index || prevHit.seriesIndex !== n.seriesIndex)) {
+      this.hit.clearHit();
+      if (n.series && n.mouse && n.mouse.track) {
+        this.hit.drawMouseTrack(n);
         this.hit.drawHit(n);
-        D.show(mt);
-        
-        var decimals = n.mouse.trackDecimals;
-        if(decimals == null || decimals < 0) decimals = 0;
-        
-        mt.innerHTML = n.mouse.trackFormatter({
-          x: n.x.toFixed(decimals), 
-          y: n.y.toFixed(decimals), 
-          series: n.series, 
-          index: n.index,
-          nearest: n,
-          fraction: n.fraction
-        });
         Flotr.EventAdapter.fire(this.el, 'flotr:hit', [n, this]);
       }
-      else if(prevHit){
-        this.hit.clearHit();
-      }
-    }
-    else if(this.prevHit) {
-      this.hit.clearHit();
     }
   },
-  getMouseTrack: function() {
-    if (!this.mouseTrack) {
-      this.mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
-      D.insert(this.el, this.mouseTrack);
+
+  closest : function (mouse) {
+
+    var
+      series    = this.series,
+      options   = this.options,
+      mouseX    = mouse.x,
+      mouseY    = mouse.y,
+      compare   = Number.MAX_VALUE,
+      compareX  = Number.MAX_VALUE,
+      closest   = {},
+      closestX  = {},
+      check     = false,
+      serie, data,
+      distance, distanceX, distanceY,
+      x, y, i, j;
+
+    function setClosest (o) {
+      o.distance = distance;
+      o.distanceX = distanceX;
+      o.distanceY = distanceY;
+      o.seriesIndex = i;
+      o.dataIndex = j;
+      o.x = x;
+      o.y = y;
     }
-    return this.mouseTrack;
+
+    for (i = 0; i < series.length; i++) {
+
+      serie = series[i];
+      data = serie.data;
+
+      if (data.length) check = true;
+
+      for (j = data.length; j--;) {
+
+        x = data[j][0];
+        y = data[j][1];
+
+        if (x === null || y === null) continue;
+
+        distanceX = Math.abs(x - mouseX);
+        distanceY = Math.abs(y - mouseY);
+
+        // Skip square root for speed
+        distance = distanceX * distanceX + distanceY * distanceY;
+
+        if (distance < compare) {
+          compare = distance;
+          setClosest(closest);
+        }
+
+        if (distanceX < compareX) {
+          compareX = distanceX;
+          setClosest(closestX);
+        }
+      }
+    }
+
+    return check ? {
+      point : closest,
+      x : closestX
+    } : false;
+  },
+
+  drawMouseTrack : function (n) {
+
+    var
+      pos         = '', 
+      s           = n.series,
+      p           = n.mouse.position, 
+      m           = n.mouse.margin,
+      elStyle     = S_MOUSETRACK,
+      mouseTrack  = this.mouseTrack,
+      plotOffset  = this.plotOffset,
+      left        = plotOffset.left,
+      right       = plotOffset.right,
+      bottom      = plotOffset.bottom,
+      top         = plotOffset.top,
+      decimals    = n.mouse.trackDecimals,
+      options     = this.options;
+
+    // Create
+    if (!mouseTrack) {
+      mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
+      this.mouseTrack = mouseTrack;
+      D.insert(this.el, mouseTrack);
+    }
+
+    if (!n.mouse.relative) { // absolute to the canvas
+
+      if      (p.charAt(0) == 'n') pos += 'top:' + (m + top) + 'px;bottom:auto;';
+      else if (p.charAt(0) == 's') pos += 'bottom:' + (m + bottom) + 'px;top:auto;';
+      if      (p.charAt(1) == 'e') pos += 'right:' + (m + right) + 'px;left:auto;';
+      else if (p.charAt(1) == 'w') pos += 'left:' + (m + left) + 'px;right:auto;';
+
+    // Bars
+    } else if (s.bars.show) {
+        pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y/2) + this.canvasHeight) + 'px;top:auto;';
+        pos += 'left:' + (m + left + n.xaxis.d2p(n.x - options.bars.barWidth/2)) + 'px;right:auto;';
+
+    // Pie
+    } else if (s.pie.show) {
+      var center = {
+          x: (this.plotWidth)/2,
+          y: (this.plotHeight)/2
+        },
+        radius = (Math.min(this.canvasWidth, this.canvasHeight) * s.pie.sizeRatio) / 2,
+        bisection = n.sAngle<n.eAngle ? (n.sAngle + n.eAngle) / 2: (n.sAngle + n.eAngle + 2* Math.PI) / 2;
+      
+      pos += 'bottom:' + (m - top - center.y - Math.sin(bisection) * radius/2 + this.canvasHeight) + 'px;top:auto;';
+      pos += 'left:' + (m + left + center.x + Math.cos(bisection) * radius/2) + 'px;right:auto;';
+
+    // Default
+    } else {
+      if      (p.charAt(0) == 'n') pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
+      else if (p.charAt(0) == 's') pos += 'top:' + (m + top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
+      if      (p.charAt(1) == 'e') pos += 'left:' + (m + left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
+      else if (p.charAt(1) == 'w') pos += 'right:' + (m - left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
+    }
+
+    elStyle += pos;
+    mouseTrack.style.cssText = elStyle;
+
+    if (!decimals || decimals < 0) decimals = 0;
+    
+    mouseTrack.innerHTML = n.mouse.trackFormatter({
+      x: n.x.toFixed(decimals), 
+      y: n.y.toFixed(decimals), 
+      series: n.series, 
+      index: n.index,
+      nearest: n,
+      fraction: n.fraction
+    });
+
+    D.show(mouseTrack);
   }
+
 });
 })();
 
@@ -5669,7 +5849,7 @@ Flotr.addPlugin('labels', {
         isX     = axis.orientation === 1,
         isFirst = axis.n === 1,
         left, style, top,
-        offset = graph.plotOffset;
+        offset = graph.plotOffset, name;
 
       if (!isX && !isFirst) {
         ctx.save();
@@ -5690,14 +5870,22 @@ Flotr.addPlugin('labels', {
               ((isFirst ? 1 : -1 ) * (graph.plotHeight + options.grid.labelMargin)) :
               axis.d2p(tick.v) - axis.maxLabel.height / 2);
           left = isX ? (offset.left + axis.d2p(tick.v) - xBoxWidth / 2) : 0;
-          
+
+          if (i === 0) {
+            name = ' first';
+          } else if (i === axis.ticks.length - 1) {
+            name = ' last';
+          } else {
+            name = '';
+          }
+
           html += [
             '<div style="position:absolute; text-align:' + (isX ? 'center' : 'right') + '; ',
             'top:' + top + 'px; ',
             ((!isX && !isFirst) ? 'right:' : 'left:') + left + 'px; ',
             'width:' + (isX ? xBoxWidth : ((isFirst ? offset.left : offset.right) - options.grid.labelMargin)) + 'px; ',
             axis.options.color ? ('color:' + axis.options.color + '; ') : ' ',
-            ' class="flotr-grid-label">' + tick.label + '</div>'
+            '" class="flotr-grid-label' + name + '">' + tick.label + '</div>'
           ].join(' ');
           
           if (!isX && !isFirst) {
