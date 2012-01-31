@@ -118,7 +118,7 @@ Flotr.addType('candles', {
     }
   },
   extendXRange: function (axis, data, options) {
-    if (axis.options.max == null) {
+    if (axis.options.max === null) {
       axis.max = Math.max(axis.datamax + 0.5, axis.max);
       axis.min = Math.min(axis.datamin - 0.5, axis.min);
     }
