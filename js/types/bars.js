@@ -27,7 +27,7 @@ Flotr.addType('bars', {
     context.save();
     context.lineJoin = 'miter';
     // @TODO linewidth not interpreted the right way.
-    context.lineWidth = Math.min(options.lineWidth, options.barWidth);
+    context.lineWidth = options.lineWidth;
     context.strokeStyle = options.color;
     if (options.fill) context.fillStyle = options.fillStyle
     
@@ -85,6 +85,7 @@ Flotr.addType('bars', {
       barWidth      = options.barWidth,
       centered      = options.centered,
       stack         = options.stacked ? this.stack : false,
+      lineWidth     = options.lineWidth,
       bisection     = centered ? barWidth / 2 : 0,
       xScale        = horizontal ? options.yScale : options.xScale,
       yScale        = horizontal ? options.xScale : options.yScale,
@@ -117,8 +118,8 @@ Flotr.addType('bars', {
       xScale    : xScale,
       yScale    : yScale,
       top       : top,
-      left      : Math.min(left, right),
-      width     : Math.abs(right - left),
+      left      : Math.min(left, right) - lineWidth / 2,
+      width     : Math.abs(right - left) - lineWidth,
       height    : bottom - top
     };
   },
