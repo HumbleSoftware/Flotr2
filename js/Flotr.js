@@ -121,7 +121,7 @@ Flotr = {
         
     if(norm < 1.5) tickSize = 1;
     else if(norm < 2.25) tickSize = 2;
-    else if(norm < 3) tickSize = ((decimals == 0) ? 2 : 2.5);
+    else if(norm < 3) tickSize = ((decimals === 0) ? 2 : 2.5);
     else if(norm < 7.5) tickSize = 5;
     
     return tickSize * magn;
@@ -160,7 +160,7 @@ Flotr = {
     base = base || 1000;
     precision = Math.pow(10, precision || 2);
 
-    if (value == 0) return 0;
+    if (value === 0) return 0;
 
     if (value > 1) {
       while (total-- && (value >= base)) value /= base;
