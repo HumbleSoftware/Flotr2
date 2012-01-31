@@ -15,7 +15,7 @@ function Color (r, g, b, a) {
     this[this.rgba[x]] = arguments[x] || ((x==3) ? 1.0 : 0);
   }
   this.normalize();
-};
+}
 
 // Constants
 var COLOR_NAMES = {
