@@ -539,8 +539,10 @@ Graph.prototype = {
         D.insert(el, canvas);
       }
       _.each(size, function(size, attribute){
-        canvas.setAttribute(attribute, size*o.resolution);
-        canvas.style[attribute] = size+'px';
+        if (canvas.getAttribute(attribute) != size) {
+          canvas.setAttribute(attribute, size * o.resolution);
+          canvas.style[attribute] = size + 'px';
+        }
         D.show(canvas);
       });
       canvas.context_ = null; // Reset the ExCanvas context
