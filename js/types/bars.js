@@ -117,8 +117,8 @@ Flotr.addType('bars', {
       xScale    : xScale,
       yScale    : yScale,
       top       : top,
-      left      : left,
-      width     : right - left,
+      left      : Math.min(left, right),
+      width     : Math.abs(right - left),
       height    : bottom - top
     };
   },
@@ -132,7 +132,7 @@ Flotr.addType('bars', {
       x = mouse.x,
       y = mouse.y,
       hitGeometry = this.getBarGeometry(x, y, options),
-      width = Math.abs(hitGeometry.width / 2),
+      width = hitGeometry.width / 2,
       left = hitGeometry.left,
       geometry, i;
 
@@ -193,9 +193,9 @@ Flotr.addType('bars', {
     context.save();
     this.translate(context, options.horizontal);
     context.clearRect(
-      Math.min(left, left + width) - lineWidth,
+      left - lineWidth,
       Math.min(top, top + height) - lineWidth,
-      Math.abs(width) + 2 * lineWidth,
+      width + 2 * lineWidth,
       Math.abs(height) + 2 * lineWidth
     );
     context.restore();
