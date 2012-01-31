@@ -65,7 +65,7 @@ Flotr.addType('bars', {
         context.fillRect(left + shadowSize, top + shadowSize, width, height);
         context.restore();
       }
-      if (options.lineWidth != 0) {
+      if (options.lineWidth) {
         context.strokeRect(left, top, width, height);
       }
     }
