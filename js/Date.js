@@ -55,7 +55,7 @@ Flotr.Date = {
     var d = new Date(v);
 
     // first check global format
-    if (axis.options.timeFormat != null)
+    if (axis.options.timeFormat)
       return Flotr.Date.format(d, axis.options.timeFormat);
     
     var span = axis.max - axis.min,
