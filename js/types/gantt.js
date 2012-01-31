@@ -105,7 +105,7 @@ Flotr.addType('gantt', {
       /**
        * Draw bar outline/border.
        */
-      if(series.gantt.lineWidth != 0 && (drawLeft || drawRight || drawTop)){
+      if(series.gantt.lineWidth && (drawLeft || drawRight || drawTop)){
         ctx.beginPath();
         ctx.moveTo(xa.d2p(left), ya.d2p(bottom) + offset);
         
@@ -156,7 +156,7 @@ Flotr.addType('gantt', {
     }
   },
   extendXRange: function(axis) {
-    if(axis.options.max == null){
+    if(axis.options.max === null){
       var newmin = axis.min,
           newmax = axis.max,
           i, j, x, s, g,
@@ -187,7 +187,7 @@ Flotr.addType('gantt', {
     }
   },
   extendYRange: function(axis){
-    if(axis.options.max == null){
+    if(axis.options.max === null){
       var newmax = Number.MIN_VALUE,
           newmin = Number.MAX_VALUE,
           i, j, s, g,
