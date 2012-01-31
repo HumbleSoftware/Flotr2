@@ -52,6 +52,18 @@ Flotr.addType('markers', {
     context.strokeStyle = 'rgba(0,0,0,0.5)';
     context.fillStyle = options.fillStyle;
 
+    function stackPos (a, b) {
+      stackOffsetPos = stack.negative[a] || 0;
+      stackOffsetNeg = stack.positive[a] || 0;
+      if (b > 0) {
+        stack.positive[a] = stackOffsetPos + b;
+        return stackOffsetPos + b;
+      } else {
+        stack.negative[a] = stackOffsetNeg + b;
+        return stackOffsetNeg + b;
+      }
+    }
+
     for (i = 0; i < data.length; ++i) {
     
       x = data[i][0];
@@ -59,22 +71,8 @@ Flotr.addType('markers', {
         
       if (stack) {
         if (stackType == 'b') {
-
-          function stackPos (a, b) {
-            stackOffsetPos = stack.negative[a] || 0;
-            stackOffsetNeg = stack.positive[a] || 0;
-            if (b > 0) {
-              stack.positive[a] = stackOffsetPos + b;
-              return stackOffsetPos + b;
-            } else {
-              stack.negative[a] = stackOffsetNeg + b;
-              return stackOffsetNeg + b;
-            }
-          }
-
           if (options.horizontal) y = stackPos(y, x);
           else x = stackPos(x, y);
-
         } else if (stackType == 'a') {
           stackOffset = stack.values[x] || 0;
           stack.values[x] = stackOffset + y;
