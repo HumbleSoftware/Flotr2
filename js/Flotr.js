@@ -83,7 +83,7 @@ Flotr = {
         if (v.constructor === Array) {
           result[i] = this._.clone(v);
         } else if (v.constructor !== RegExp && !this._.isElement(v)) {
-          result[i] = Flotr.merge(v, (dest ? dest[i] : undefined))
+          result[i] = Flotr.merge(v, (dest ? dest[i] : undefined));
         } else {
           result[i] = v;
         }
