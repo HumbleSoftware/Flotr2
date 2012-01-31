@@ -59,7 +59,7 @@ Flotr.addPlugin('hit', {
     var octx = this.octx,
       s = n.series;
 
-    if(s.mouse.lineColor != null){
+    if (s.mouse.lineColor) {
       octx.save();
       octx.lineWidth = (s.points ? s.points.lineWidth : 1);
       octx.strokeStyle = s.mouse.lineColor;
