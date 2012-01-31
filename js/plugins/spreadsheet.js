@@ -114,6 +114,10 @@ Flotr.addPlugin('spreadsheet', {
     }
     html.push('</tr>');
     
+    function find (x) {
+      return x[0] == datagrid[j][i];
+    }
+
     // Data rows
     for (j = 0; j < datagrid.length; ++j) {
       html.push('<tr>');
@@ -125,9 +129,8 @@ Flotr.addPlugin('spreadsheet', {
           tag = 'th';
           var label;
           if(this.options.xaxis.ticks) {
-            var tick = this.options.xaxis.ticks.find(function (x) {
-              return x[0] == datagrid[j][i];
-            });
+            // TODO: sort this out
+            var tick = this.options.xaxis.ticks.find(find);
             if (tick) label = tick[1];
           } 
           else if (this.options.spreadsheet.tickFormatter){
@@ -271,14 +274,17 @@ Flotr.addPlugin('spreadsheet', {
     }
     csv += "%0D%0A"; // \r\n
     
+    function find (x) {
+      return x[0] == dg[i][0];
+    }
+
     // For each row
     for (i = 0; i < dg.length; ++i) {
       var rowLabel = '';
       // The first column
       if (options.xaxis.ticks) {
-        var tick = options.xaxis.ticks.find(function (x) {
-          return x[0] == dg[i][0];
-        });
+        // TODO Sort this out:
+        var tick = options.xaxis.ticks.find(find);
         if (tick) rowLabel = tick[1];
       }
       else if (options.spreadsheet.tickFormatter){
