@@ -2,7 +2,7 @@ Flotr.addType('timeline', {
   options: {
     show: false,
     lineWidth: 1,
-    barWidth: .2,
+    barWidth: 0.2,
     fill: true,
     fillColor: null,
     fillOpacity: 0.4,
@@ -66,10 +66,10 @@ Flotr.addType('timeline', {
       ya    = series.yaxis,
       w     = series.timeline.barWidth;
 
-    if (xa.options.min == null)
+    if (xa.options.min === null)
       xa.min = xa.datamin - w / 2;
 
-    if (xa.options.max == null) {
+    if (xa.options.max === null) {
 
       var
         max = xa.max;
@@ -81,9 +81,9 @@ Flotr.addType('timeline', {
       xa.max = max + w / 2;
     }
 
-    if (ya.options.min == null)
+    if (ya.options.min === null)
       ya.min = ya.datamin - w;
-    if (ya.options.min == null)
+    if (ya.options.min === null)
       ya.max = ya.datamax + w;
   }
 
