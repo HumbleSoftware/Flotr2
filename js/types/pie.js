@@ -154,7 +154,7 @@ Flotr.addType('pie', {
       slice     = this.slices[index],
       x         = mouse.relX - options.width / 2,
       y         = mouse.relY - options.height / 2,
-      r         = Math.sqrt(x * x + y * y);
+      r         = Math.sqrt(x * x + y * y),
       theta     = Math.atan(y / x),
       circle    = Math.PI * 2,
       explode   = slice.explode || options.explode,
@@ -168,8 +168,8 @@ Flotr.addType('pie', {
     }
 
     if (r < slice.radius + explode && r > explode) {
-      if ((start > end && (theta < end || theta > start))
-        || (theta > start && theta < end)) {
+      if ((start > end && (theta < end || theta > start)) ||
+        (theta > start && theta < end)) {
 
         // TODO Decouple this from hit plugin (chart shouldn't know what n means)
          n.x = data[0];
