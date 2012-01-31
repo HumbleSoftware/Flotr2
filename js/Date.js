@@ -87,7 +87,7 @@ Flotr.Date = {
     if (step >= tu.day * 4) d.setUTCDate(1);
     if (step >= tu.year)    d.setUTCMonth(0);
 
-    var carry = 0, v = Number.NaN, prev;
+    var carry = 0, v = NaN, prev;
     do {
       prev = v;
       v = d.getTime();
