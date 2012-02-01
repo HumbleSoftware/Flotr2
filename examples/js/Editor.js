@@ -79,6 +79,7 @@
       type      = o.type || 'javascript',
       example   = o.example || '',
       noRun     = o.noRun || false,
+      teardown  = o.teardown || false,
       controls  = $(T_CONTROLS),
       render    = $(T_RENDER),
       errors    = $(T_ERRORS),
@@ -152,6 +153,9 @@
 
     function execute () {
       errors.hide();
+      if (teardown) {
+        teardown.call();
+      }
       api.render({
         example : example,
         render : render
