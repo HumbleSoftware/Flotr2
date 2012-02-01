@@ -73,3 +73,10 @@ with [js-imagediff](https://github.com/HumbleSoftware/js-imagediff) to test.  Te
 [jasmine-headless-webkit](http://johnbintz.github.com/jasmine-headless-webkit/) with 
 `cd spec; jasmine-headless-webkit -j jasmine.yml -c` or by a browser by navigating to 
 `flotr2/spec/SpecRunner.html`.
+
+Shoutouts
+---------
+
+Thanks to Bas Wenneker, Fabien Ménager and others for all the work on the original Flotr.
+Thanks to Jochen Berger and Jordan Santell for their contributions to Flotr2.
+
