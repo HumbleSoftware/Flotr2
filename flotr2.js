@@ -2747,11 +2747,12 @@ Graph.prototype = {
         D.insert(el, canvas);
       }
       _.each(size, function(size, attribute){
-        if (canvas.getAttribute(attribute) != size) {
-          canvas.setAttribute(attribute, size * o.resolution);
-          canvas.style[attribute] = size + 'px';
-        }
         D.show(canvas);
+        if (name == 'canvas' && canvas.getAttribute(attribute) === size) {
+          return;
+        }
+        canvas.setAttribute(attribute, size * o.resolution);
+        canvas.style[attribute] = size + 'px';
       });
       canvas.context_ = null; // Reset the ExCanvas context
       return canvas;
