@@ -33,7 +33,8 @@ Example.prototype = {
   setExample : function (example) {
 
     var
-      source = this.getSource(example);
+      source = this.getSource(example),
+      editorNode = this._editorNode;
 
     this.example = example;
 
@@ -43,8 +44,15 @@ Example.prototype = {
     this._markupNode.html(example.description || '');
 
     if (!this._editor) {
-      this._editor = new Flotr.Examples.Editor(this._editorNode, {
-          example : source
+      this._editor = new Flotr.Examples.Editor(editorNode, {
+          example : source,
+          teardown : function () {
+            // Unbind event listeners from previous examples
+            Flotr.EventAdapter.stopObserving($(editorNode).find('.render')[0]);
+            $(editorNode).find('canvas').each(function (index, canvas) {
+              Flotr.EventAdapter.stopObserving(canvas);
+            });
+          }
       });
     } else {
       this._editor.setExample(source);
