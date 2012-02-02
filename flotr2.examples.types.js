@@ -572,7 +572,8 @@ function mouse_zoom (container) {
   }
       
   options = {
-    selection : { mode : 'x', fps : 30 }
+    selection : { mode : 'x', fps : 30 },
+    title : 'Mouse Zoom'
   };
     
   // Draw graph with default options, overwriting with passed options
@@ -636,7 +637,8 @@ function mouse_drag (container) {
   }
       
   options = {
-    xaxis: {min: 0, max: 20}
+    xaxis: {min: 0, max: 20},
+      title : 'Mouse Drag'
   };
 
   // Draw graph with default options, overwriting with passed options
@@ -668,7 +670,10 @@ function mouse_drag (container) {
       offset  = start.x - end.x;
 
     graph = drawGraph({
-      xaxis : { min : xaxis.min + offset, max : xaxis.max + offset }
+      xaxis : {
+        min : xaxis.min + offset,
+        max : xaxis.max + offset
+      },
     });
     // @todo: refector initEvents in order not to remove other observed events
     Flotr.EventAdapter.observe(graph.overlay, 'mousedown', initializeDrag);
@@ -689,7 +694,8 @@ function mouse_drag (container) {
 Flotr.ExampleList.add({
   key : 'basic-time',
   name : 'Basic Time',
-  callback : basic_time
+  callback : basic_time,
+  description : "<p>Select an area of the graph to zoom.  Click to reset the chart.</p>"
 });
 
 function basic_time (container) {
@@ -714,7 +720,8 @@ function basic_time (container) {
     selection : {
       mode : 'x'
     },
-    HtmlText : false
+    HtmlText : false,
+    title : 'Time'
   };
         
   // Draw graph with default options, overwriting with passed options
@@ -804,7 +811,8 @@ function negative_values (container) {
       { data : d2, label : 'y = ' + alpha.toFixed(2) + ' + ' + beta.toFixed(2) + '*x' }  // Regression
     ],
     {
-      legend : { position : 'se', backgroundColor : '#D2E8FF' }
+      legend : { position : 'se', backgroundColor : '#D2E8FF' },
+      title : 'Negative Values'
     }
   );
 };
@@ -831,7 +839,8 @@ function click_example (container) {
     yaxis: {min: 0, max: 15},
     lines: {show: true},
     points: {show: true},
-    mouse: {track:true}
+    mouse: {track:true},
+    title: 'Click Example'
   };
 
   graph = Flotr.draw(container, [d1], options);
