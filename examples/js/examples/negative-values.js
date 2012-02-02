@@ -55,7 +55,8 @@ function negative_values (container) {
       { data : d2, label : 'y = ' + alpha.toFixed(2) + ' + ' + beta.toFixed(2) + '*x' }  // Regression
     ],
     {
-      legend : { position : 'se', backgroundColor : '#D2E8FF' }
+      legend : { position : 'se', backgroundColor : '#D2E8FF' },
+      title : 'Negative Values'
     }
   );
 };

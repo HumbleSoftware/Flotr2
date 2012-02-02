@@ -3,7 +3,8 @@
 Flotr.ExampleList.add({
   key : 'basic-time',
   name : 'Basic Time',
-  callback : basic_time
+  callback : basic_time,
+  description : "<p>Select an area of the graph to zoom.  Click to reset the chart.</p>"
 });
 
 function basic_time (container) {
@@ -28,7 +29,8 @@ function basic_time (container) {
     selection : {
       mode : 'x'
     },
-    HtmlText : false
+    HtmlText : false,
+    title : 'Time'
   };
         
   // Draw graph with default options, overwriting with passed options

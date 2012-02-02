@@ -18,7 +18,8 @@ function click_example (container) {
     yaxis: {min: 0, max: 15},
     lines: {show: true},
     points: {show: true},
-    mouse: {track:true}
+    mouse: {track:true},
+    title: 'Click Example'
   };
 
   graph = Flotr.draw(container, [d1], options);

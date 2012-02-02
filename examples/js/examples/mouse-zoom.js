@@ -24,7 +24,8 @@ function mouse_zoom (container) {
   }
       
   options = {
-    selection : { mode : 'x', fps : 30 }
+    selection : { mode : 'x', fps : 30 },
+    title : 'Mouse Zoom'
   };
     
   // Draw graph with default options, overwriting with passed options

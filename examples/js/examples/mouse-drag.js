@@ -24,7 +24,8 @@ function mouse_drag (container) {
   }
       
   options = {
-    xaxis: {min: 0, max: 20}
+    xaxis: {min: 0, max: 20},
+      title : 'Mouse Drag'
   };
 
   // Draw graph with default options, overwriting with passed options
@@ -56,7 +57,10 @@ function mouse_drag (container) {
       offset  = start.x - end.x;
 
     graph = drawGraph({
-      xaxis : { min : xaxis.min + offset, max : xaxis.max + offset }
+      xaxis : {
+        min : xaxis.min + offset,
+        max : xaxis.max + offset
+      },
     });
     // @todo: refector initEvents in order not to remove other observed events
     Flotr.EventAdapter.observe(graph.overlay, 'mousedown', initializeDrag);
