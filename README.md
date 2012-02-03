@@ -45,7 +45,7 @@ The API consists of a primary draw method which accepts a configuration object, 
 ### Microlibs
 
 * [underscore.js](http://documentcloud.github.com/underscore/)
-* [bean.js](http://documentcloud.github.com/underscore/)
+* [bean.js](https://github.com/fat/bean)
 
 Extending
 ---------
