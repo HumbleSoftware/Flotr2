@@ -3,6 +3,11 @@ Flotr2
 
 The Canvas graphing library.
 
+![Google Groups](http://groups.google.com/intl/en/images/logos/groups_logo_sm.gif)
+
+http://groups.google.com/group/flotr2/
+
+
 API
 ---
 
