@@ -4542,15 +4542,16 @@ Flotr.addType('pie', {
     var
       context = options.context,
       slice = this.slices[options.args.seriesIndex],
-      radius = slice.radius + options.lineWidth;
+      padding = 2 * options.lineWidth,
+      radius = slice.radius + padding;
 
     context.save();
     context.translate(options.width / 2, options.height / 2);
     context.clearRect(
       slice.x - radius,
       slice.y - radius,
-      2 * radius,
-      2 * radius
+      2 * radius + padding,
+      2 * radius + padding 
     );
     context.restore();
   },
@@ -4672,7 +4673,7 @@ Flotr.addType('radar', {
 
     context.beginPath();
     for (i = 0; i < data.length; ++i) {
-      ratio = data[i][1] / 10;
+      ratio = data[i][1] / this.max;
 
       context[i === 0 ? 'moveTo' : 'lineTo'](
         Math.cos(i * step + angle) * radius * ratio + offset,
