@@ -43,7 +43,7 @@ Flotr.addType('radar', {
 
     context.beginPath();
     for (i = 0; i < data.length; ++i) {
-      ratio = data[i][1] / 10;
+      ratio = data[i][1] / this.max;
 
       context[i === 0 ? 'moveTo' : 'lineTo'](
         Math.cos(i * step + angle) * radius * ratio + offset,
