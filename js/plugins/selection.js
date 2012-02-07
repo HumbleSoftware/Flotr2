@@ -206,7 +206,10 @@ Flotr.addPlugin('selection', {
 
     this.selection.clearSelection();
     
-    if(this.selection.selectionIsSane()) this.selection.drawSelection();
+    if(this.selection.selectionIsSane()) {
+      this.selection.fireSelectEvent();
+      this.selection.drawSelection();
+    }
   },
 
   /**
