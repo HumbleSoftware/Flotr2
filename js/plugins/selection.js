@@ -14,7 +14,7 @@ function isLeftClick (e, type) {
 }
 
 function boundX(x, graph) {
-  return Math.min(Math.max(0, x), graph.plotWidth);
+  return Math.min(Math.max(0, x), graph.plotWidth - 1);
 }
 
 function boundY(y, graph) {
