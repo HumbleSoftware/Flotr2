@@ -3296,6 +3296,7 @@ Flotr.addType('lines', {
     show: false,           // => setting to true will show lines, false will hide
     lineWidth: 2,          // => line width in pixels
     fill: false,           // => true to fill the area from the line to the x axis, false for (transparent) no fill
+    fillBorder: false,     // => draw a border around the fill
     fillColor: null,       // => fill color
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
     stacked: false         // => setting to true will show stacked lines, false will show normal lines
@@ -3407,15 +3408,19 @@ Flotr.addType('lines', {
       context.lineTo(prevx, prevy);
     }
     
-    context.stroke();
+    if (!options.fill || options.fill && !options.fillBorder) context.stroke();
 
     // TODO stacked lines
     if(!shadowOffset && options.fill){
+      x1 = xScale(data[0][0]);
       context.fillStyle = options.fillStyle;
       context.lineTo(x2, zero);
-      context.lineTo(xScale(data[0][0]), zero);
-      context.lineTo(xScale(data[0][0]), yScale(data[0][1]));
+      context.lineTo(x1, zero);
+      context.lineTo(x1, yScale(data[0][1]));
       context.fill();
+      if (options.fillBorder) {
+        context.stroke();
+      }
     }
 
     context.closePath();
@@ -4865,7 +4870,7 @@ function getImage (type, canvas, width, height) {
   // TODO add scaling for w / h
   var
     mime = 'image/'+type,
-    data = toDataURL(mime),
+    data = canvas.toDataURL(mime),
     image = new Image();
   image.src = data;
   return image;
@@ -4880,9 +4885,9 @@ Flotr.addPlugin('download', {
       return window.open().document.write(image);
     }
 
-    if (type !== 'jpeg' || type !== 'png') return;
+    if (type !== 'jpeg' && type !== 'png') return;
 
-    image = getImage(type, this.canavs, width, height);
+    image = getImage(type, this.canvas, width, height);
 
     if (_.isElement(image) && replaceCanvas) {
       this.download.restoreCanvas();
@@ -4891,6 +4896,8 @@ Flotr.addPlugin('download', {
       D.setStyles({position: 'absolute'});
       D.insert(this.el, image);
       this.saveImageElement = image;
+    } else {
+      return window.open(image.src);
     }
   },
 
