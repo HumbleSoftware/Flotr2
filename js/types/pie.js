@@ -197,15 +197,16 @@ Flotr.addType('pie', {
     var
       context = options.context,
       slice = this.slices[options.args.seriesIndex],
-      radius = slice.radius + options.lineWidth;
+      padding = 2 * options.lineWidth,
+      radius = slice.radius + padding;
 
     context.save();
     context.translate(options.width / 2, options.height / 2);
     context.clearRect(
       slice.x - radius,
       slice.y - radius,
-      2 * radius,
-      2 * radius
+      2 * radius + padding,
+      2 * radius + padding 
     );
     context.restore();
   },
