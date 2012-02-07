@@ -5,14 +5,13 @@ Flotr.ExampleList.add({
   name : 'Download Image',
   callback : download_image,
   description : '' + 
-    '<form name="image-download" action="" onsubmit="return false">' +
+    '<form name="image-download" id="image-download" action="" onsubmit="return false">' +
       '<label><input type="radio" name="format" value="png" checked="checked" /> PNG</label>' +
       '<label><input type="radio" name="format" value="jpeg" /> JPEG</label>' +
-      '<label><input type="radio" name="format" value="bmp" /> BMP</label>' +
 
-      '<button name="to-image" onclick="Examples.current.download.saveImage(this.form.format.value, null, null, true)">To Image</button>' +
-      '<button name="download" onclick="Examples.current.download.saveImage(this.form.format.value)">Download</button>' +
-      '<button name="reset" onclick="Examples.current.download.restoreCanvas()">Reset</button>' +
+      '<button name="to-image" onclick="CurrentExample(\'to-image\')">To Image</button>' +
+      '<button name="download" onclick="CurrentExample(\'download\')">Download</button>' +
+      '<button name="reset" onclick="CurrentExample(\'reset\')">Reset</button>' +
     '</form>'
 });
 
@@ -71,13 +70,26 @@ function download_image (container) {
         position: 'nw'
       }
   });
-  
-  if (Flotr.isIE && Flotr.isIE < 9) {
-    alert(
-      "Your browser doesn't allow you to get a bitmap image from the plot, " +
-      "you can only get a VML image that you can use in Microsoft Office.<br />"
-    );
-  }
+
+  this.CurrentExample = function (operation) {
+
+    var
+      format = $('#image-download input:radio[name=format]:checked').val();
+    if (Flotr.isIE && Flotr.isIE < 9) {
+      alert(
+        "Your browser doesn't allow you to get a bitmap image from the plot, " +
+        "you can only get a VML image that you can use in Microsoft Office.<br />"
+      );
+    }
+
+    if (operation == 'to-image') {
+      graph.download.saveImage(format, null, null, true)
+    } else if (operation == 'download') {
+      graph.download.saveImage(format);
+    } else if (operation == 'reset') {
+      graph.download.restoreCanvas();
+    }
+  };
 
   return graph;
 };
