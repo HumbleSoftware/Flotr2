@@ -4,6 +4,7 @@ Flotr.addType('lines', {
     show: false,           // => setting to true will show lines, false will hide
     lineWidth: 2,          // => line width in pixels
     fill: false,           // => true to fill the area from the line to the x axis, false for (transparent) no fill
+    fillBorder: false,     // => draw a border around the fill
     fillColor: null,       // => fill color
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
     stacked: false         // => setting to true will show stacked lines, false will show normal lines
@@ -115,15 +116,19 @@ Flotr.addType('lines', {
       context.lineTo(prevx, prevy);
     }
     
-    context.stroke();
+    if (!options.fill || options.fill && !options.fillBorder) context.stroke();
 
     // TODO stacked lines
     if(!shadowOffset && options.fill){
+      x1 = xScale(data[0][0]);
       context.fillStyle = options.fillStyle;
       context.lineTo(x2, zero);
-      context.lineTo(xScale(data[0][0]), zero);
-      context.lineTo(xScale(data[0][0]), yScale(data[0][1]));
+      context.lineTo(x1, zero);
+      context.lineTo(x1, yScale(data[0][1]));
       context.fill();
+      if (options.fillBorder) {
+        context.stroke();
+      }
     }
 
     context.closePath();
