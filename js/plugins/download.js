@@ -9,7 +9,7 @@ function getImage (type, canvas, width, height) {
   // TODO add scaling for w / h
   var
     mime = 'image/'+type,
-    data = toDataURL(mime),
+    data = canvas.toDataURL(mime),
     image = new Image();
   image.src = data;
   return image;
@@ -24,9 +24,9 @@ Flotr.addPlugin('download', {
       return window.open().document.write(image);
     }
 
-    if (type !== 'jpeg' || type !== 'png') return;
+    if (type !== 'jpeg' && type !== 'png') return;
 
-    image = getImage(type, this.canavs, width, height);
+    image = getImage(type, this.canvas, width, height);
 
     if (_.isElement(image) && replaceCanvas) {
       this.download.restoreCanvas();
@@ -35,6 +35,8 @@ Flotr.addPlugin('download', {
       D.setStyles({position: 'absolute'});
       D.insert(this.el, image);
       this.saveImageElement = image;
+    } else {
+      return window.open(image.src);
     }
   },
 
