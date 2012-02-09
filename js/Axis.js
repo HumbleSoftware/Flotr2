@@ -311,7 +311,7 @@ function p2dLog (pointValue) {
 function log (value, base) {
   value = Math.log(Math.max(value, Number.MIN_VALUE));
   if (base !== Math.E) 
-    value /= Math.log(o.base);
+    value /= Math.log(base);
   return value;
 }
 
