@@ -673,7 +673,7 @@ function mouse_drag (container) {
       xaxis : {
         min : xaxis.min + offset,
         max : xaxis.max + offset
-      },
+      }
     });
     // @todo: refector initEvents in order not to remove other observed events
     Flotr.EventAdapter.observe(graph.overlay, 'mousedown', initializeDrag);
