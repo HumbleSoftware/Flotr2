@@ -582,8 +582,6 @@ Graph.prototype = {
     options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
     this.options = flotr.merge(opts || {}, options);
 
-    this.axes = flotr.Axis.getAxes(this.options);
-
     if (this.options.grid.minorVerticalLines === null &&
       this.options.xaxis.scaling === 'logarithmic') {
       this.options.grid.minorVerticalLines = true;
@@ -592,6 +590,10 @@ Graph.prototype = {
       this.options.yaxis.scaling === 'logarithmic') {
       this.options.grid.minorHorizontalLines = true;
     }
+
+    E.fire(this.el, 'flotr:afterinitoptions', [this]);
+
+    this.axes = flotr.Axis.getAxes(this.options);
 
     // Initialize some variables used throughout this function.
     var assignedColors = [],
