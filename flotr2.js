@@ -2790,8 +2790,6 @@ Graph.prototype = {
     options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
     this.options = flotr.merge(opts || {}, options);
 
-    this.axes = flotr.Axis.getAxes(this.options);
-
     if (this.options.grid.minorVerticalLines === null &&
       this.options.xaxis.scaling === 'logarithmic') {
       this.options.grid.minorVerticalLines = true;
@@ -2800,6 +2798,10 @@ Graph.prototype = {
       this.options.yaxis.scaling === 'logarithmic') {
       this.options.grid.minorHorizontalLines = true;
     }
+
+    E.fire(this.el, 'flotr:afterinitoptions', [this]);
+
+    this.axes = flotr.Axis.getAxes(this.options);
 
     // Initialize some variables used throughout this function.
     var assignedColors = [],
@@ -3203,7 +3205,7 @@ function p2dLog (pointValue) {
 function log (value, base) {
   value = Math.log(Math.max(value, Number.MIN_VALUE));
   if (base !== Math.E) 
-    value /= Math.log(o.base);
+    value /= Math.log(base);
   return value;
 }
 
@@ -3499,7 +3501,8 @@ Flotr.addType('bars', {
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
     horizontal: false,     // => horizontal bars (x and y inverted)
     stacked: false,        // => stacked bar charts
-    centered: true         // => center the bars to their x axis value
+    centered: true,        // => center the bars to their x axis value
+    topPadding: 0.1        // => top padding in percent
   },
 
   stack : { 
@@ -3708,27 +3711,22 @@ Flotr.addType('bars', {
     var
       newmin = axis.min,
       newmax = axis.max,
+      horizontal = options.horizontal,
       orientation = axis.orientation,
-      positiveSums = bars.positiveSums || {},
-      negativeSums = bars.negativeSums || {},
+      positiveSums = this.positiveSums || {},
+      negativeSums = this.negativeSums || {},
       value, datum, index, j;
 
     // Sides of bars
-    if ((orientation == 1 && !options.horizontal) || (orientation == -1 && options.horizontal)) {
+    if ((orientation == 1 && !horizontal) || (orientation == -1 && horizontal)) {
       if (options.centered) {
-        newmax = Math.max(axis.datamax + 0.5, newmax);
-        newmin = Math.min(axis.datamin - 0.5, newmin);
+        newmax = Math.max(axis.datamax + options.barWidth, newmax);
+        newmin = Math.min(axis.datamin - options.barWidth, newmin);
       }
     }
 
-    // End of bars
-    if ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal)) {
-      if (options.barWidth + axis.datamax >= newmax)
-        newmax = axis.max + (options.centered ? options.barWidth/2 : options.barWidth);
-    }
-
     if (options.stacked && 
-        ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal))){
+        ((orientation == 1 && horizontal) || (orientation == -1 && !horizontal))){
 
       for (j = data.length; j--;) {
         value = data[j][(orientation == 1 ? 1 : 0)]+'';
@@ -3748,8 +3746,17 @@ Flotr.addType('bars', {
       }
     }
 
-    bars.negativeSums = negativeSums;
-    bars.positiveSums = positiveSums;
+    // End of bars
+    if ((orientation == 1 && horizontal) || (orientation == -1 && !horizontal)) {
+      if (options.topPadding && (axis.max === axis.datamax || (options.stacked && this.stackMax !== newmax))) {
+        newmax += options.topPadding * (newmax - newmin);
+      }
+    }
+
+    this.stackMin = newmin;
+    this.stackMax = newmax;
+    this.negativeSums = negativeSums;
+    this.positiveSums = positiveSums;
 
     axis.max = newmax;
     axis.min = newmin;
