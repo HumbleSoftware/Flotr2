@@ -10,7 +10,8 @@ Flotr.addType('bars', {
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
     horizontal: false,     // => horizontal bars (x and y inverted)
     stacked: false,        // => stacked bar charts
-    centered: true         // => center the bars to their x axis value
+    centered: true,        // => center the bars to their x axis value
+    topPadding: 0.1        // => top padding in percent
   },
 
   stack : { 
@@ -219,27 +220,22 @@ Flotr.addType('bars', {
     var
       newmin = axis.min,
       newmax = axis.max,
+      horizontal = options.horizontal,
       orientation = axis.orientation,
-      positiveSums = bars.positiveSums || {},
-      negativeSums = bars.negativeSums || {},
+      positiveSums = this.positiveSums || {},
+      negativeSums = this.negativeSums || {},
       value, datum, index, j;
 
     // Sides of bars
-    if ((orientation == 1 && !options.horizontal) || (orientation == -1 && options.horizontal)) {
+    if ((orientation == 1 && !horizontal) || (orientation == -1 && horizontal)) {
       if (options.centered) {
-        newmax = Math.max(axis.datamax + 0.5, newmax);
-        newmin = Math.min(axis.datamin - 0.5, newmin);
+        newmax = Math.max(axis.datamax + options.barWidth, newmax);
+        newmin = Math.min(axis.datamin - options.barWidth, newmin);
       }
     }
 
-    // End of bars
-    if ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal)) {
-      if (options.barWidth + axis.datamax >= newmax)
-        newmax = axis.max + (options.centered ? options.barWidth/2 : options.barWidth);
-    }
-
     if (options.stacked && 
-        ((orientation == 1 && options.horizontal) || (orientation == -1 && !options.horizontal))){
+        ((orientation == 1 && horizontal) || (orientation == -1 && !horizontal))){
 
       for (j = data.length; j--;) {
         value = data[j][(orientation == 1 ? 1 : 0)]+'';
@@ -259,8 +255,17 @@ Flotr.addType('bars', {
       }
     }
 
-    bars.negativeSums = negativeSums;
-    bars.positiveSums = positiveSums;
+    // End of bars
+    if ((orientation == 1 && horizontal) || (orientation == -1 && !horizontal)) {
+      if (options.topPadding && (axis.max === axis.datamax || (options.stacked && this.stackMax !== newmax))) {
+        newmax += options.topPadding * (newmax - newmin);
+      }
+    }
+
+    this.stackMin = newmin;
+    this.stackMax = newmax;
+    this.negativeSums = negativeSums;
+    this.positiveSums = positiveSums;
 
     axis.max = newmax;
     axis.min = newmin;
