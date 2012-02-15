@@ -11,7 +11,6 @@
 (function () {
 
 var D = Flotr.DOM,
-  E = Flotr.EventAdapter,
   o, s, el, container, left, right, scroll, delta, X,
   moveHandler;
 
@@ -51,10 +50,10 @@ function init() {
     D.insert(container, right);
     D.insert(container, left);
 
-    E.observe(left, 'mousedown', function () {
+    this._observe(left, 'mousedown', function () {
       moveHandler = leftMoveHandler;
     });
-    E.observe(right, 'mousedown', function () {
+    this._observe(right, 'mousedown', function () {
       moveHandler = rightMoveHandler;
     });
   }
@@ -63,12 +62,12 @@ function init() {
   if (o.scroll) {
     scroll = D.node('<div class="flotr-handles-handle flotr-handles-scroll"></div>');
     D.insert(container, scroll);
-    E.observe(scroll, 'mousedown', function () {
+    this._observe(scroll, 'mousedown', function () {
       moveHandler = scrollMoveHandler;
     });
   }
 
-  E.observe(document, 'mouseup', function() {
+  this._observe(document, 'mouseup', function() {
     moveHandler = null;
   });
 
