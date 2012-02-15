@@ -77,25 +77,22 @@ Flotr.addPlugin('spreadsheet', {
     /* The data grid is a 2 dimensions array. There is a row for each X value.
      * Each row contains the x value and the corresponding y value for each serie ('undefined' if there isn't one)
     **/
+    _.each(s, function(serie, i){
+      _.each(serie.data, function (v) {
+        var x = v[0],
+            y = v[1],
+            r = _.detect(dg, function(row) {return row[0] === x;});
+        if (r) {
+          r[i+1] = y;
+        } else {
+          var newRow = [];
+          newRow[0] = x;
+          newRow[i+1] = y;
+          dg.push(newRow);
+        }
+      });
+    });
 
-    function iterator (v) {
-      var x = v[0],
-          y = v[1], 
-          r = _.detect(dg, function(row) {return row[0] == x;});
-      if (r) {
-        r[i+1] = y;
-      } else {
-        var newRow = [];
-        newRow[0] = x;
-        newRow[i+1] = y;
-        dg.push(newRow);
-      }
-    }
-
-    for(i = 0; i < s.length; ++i){
-      _.each(s[i].data, iterator);
-    }
-    
     // The data grid is sorted by x value
     return _.sortBy(dg, function (v) {
       return v[0];
@@ -110,8 +107,7 @@ Flotr.addPlugin('spreadsheet', {
     // If the data grid has already been built, nothing to do here
     if (this.spreadsheet.datagrid) return this.spreadsheet.datagrid;
     
-    var i, j, 
-        s = this.series,
+    var s = this.series,
         datagrid = this.spreadsheet.loadDataGrid(),
         colgroup = ['<colgroup><col />'],
         buttonDownload, buttonSelect, t;
@@ -119,19 +115,20 @@ Flotr.addPlugin('spreadsheet', {
     // First row : series' labels
     var html = ['<table class="flotr-datagrid"><tr class="first-row">'];
     html.push('<th>&nbsp;</th>');
-    for (i = 0; i < s.length; ++i) {
-      html.push('<th scope="col">'+(s[i].label || String.fromCharCode(65+i))+'</th>');
+    _.each(s, function(serie,i){
+      html.push('<th scope="col">'+(serie.label || String.fromCharCode(65+i))+'</th>');
       colgroup.push('<col />');
-    }
+    });
     html.push('</tr>');
-
     // Data rows
-    for (j = 0; j < datagrid.length; ++j) {
+    _.each(datagrid, function(row){
       html.push('<tr>');
-      for (i = 0; i < s.length+1; ++i) {
+      _.times(s.length+1, function(i){
         var tag = 'td',
-            content = (!_.isUndefined(datagrid[j][i]) ? Math.round(datagrid[j][i]*100000)/100000 : '');
-        
+            value = row[i],
+            // TODO: do we really want to handle problems with floating point
+            // precision here?
+            content = (!_.isUndefined(value) ? Math.round(value*100000)/100000 : '');
         if (i === 0) {
           tag = 'th';
           var label = getRowLabel.call(this, content);
@@ -139,9 +136,9 @@ Flotr.addPlugin('spreadsheet', {
         }
 
         html.push('<'+tag+(tag=='th'?' scope="row"':'')+'>'+content+'</'+tag+'>');
-      }
+      }, this);
       html.push('</tr>');
-    }
+    }, this);
     colgroup.push('</colgroup>');
     t = D.node(html.join(''));
 
@@ -251,7 +248,7 @@ Flotr.addPlugin('spreadsheet', {
    * Converts the data into CSV in order to download a file
    */
   downloadCSV: function(){
-    var i, csv = '',
+    var csv = '',
         series = this.series,
         options = this.options,
         dg = this.spreadsheet.loadDataGrid(),
@@ -262,21 +259,23 @@ Flotr.addPlugin('spreadsheet', {
     }
     
     // The first row
-    for (i = 0; i < series.length; ++i) {
-      csv += separator+'"'+(series[i].label || String.fromCharCode(65+i)).replace(/\"/g, '\\"')+'"';
-    }
+    _.each(series, function(serie, i){
+      csv += separator+'"'+(serie.label || String.fromCharCode(65+i)).replace(/\"/g, '\\"')+'"';
+    });
+
     csv += "%0D%0A"; // \r\n
     
     // For each row
-    for (i = 0; i < dg.length; ++i) {
-      var rowLabel = getRowLabel.call(this, dg[i][0]) || '';
+    csv += _.reduce(dg, function(memo, row){
+      var rowLabel = getRowLabel.call(this, row[0]) || '';
       rowLabel = '"'+(rowLabel+'').replace(/\"/g, '\\"')+'"';
-      var numbers = dg[i].slice(1).join(separator);
+      var numbers = row.slice(1).join(separator);
       if (options.spreadsheet.decimalSeparator !== '.') {
         numbers = numbers.replace(/\./g, options.spreadsheet.decimalSeparator);
       }
-      csv += rowLabel+separator+numbers+"%0D%0A"; // \t and \r\n
-    }
+      return memo + rowLabel+separator+numbers+"%0D%0A"; // \t and \r\n
+    }, '', this);
+
     if (Flotr.isIE && Flotr.isIE < 9) {
       csv = csv.replace(new RegExp(separator, 'g'), decodeURIComponent(separator)).replace(/%0A/g, '\n').replace(/%0D/g, '\r');
       window.open().document.write(csv);
