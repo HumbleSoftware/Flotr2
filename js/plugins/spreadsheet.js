@@ -69,9 +69,7 @@ Flotr.addPlugin('spreadsheet', {
    * X value => Y values from the axes
    * @return {Array} The data grid
    */
-  loadDataGrid: function(){
-    if (this.seriesData) return this.seriesData;
-
+  loadDataGrid: _.memoize(function(){
     var s = this.series,
         dg = [];
 
@@ -98,11 +96,10 @@ Flotr.addPlugin('spreadsheet', {
     }
     
     // The data grid is sorted by x value
-    this.seriesData = _.sortBy(dg, function (v) {
+    return _.sortBy(dg, function (v) {
       return v[0];
     });
-    return this.seriesData;
-  },
+  }),
   /**
    * Constructs the data table for the spreadsheet
    * @todo make a spreadsheet manager (Flotr.Spreadsheet)
