@@ -15,15 +15,16 @@ function download_data (container) {
     d4 = [],
     d5 = [],
     graph,
-    i;
+    i,x;
   
-  for (i = 0; i <= 10; i += 0.1) {
-    d1.push([i, 4 + Math.pow(i,1.5)]);
-    d2.push([i, Math.pow(i,3)]);
-    d3.push([i, i*5+3*Math.sin(i*4)]);
-    d4.push([i, i]);
-    if( i.toFixed(1)%1 == 0 ){
-      d5.push([i, 2*i]);
+  for (i = 0; i <= 100; i += 1) {
+    x = i / 10;
+    d1.push([x, 4 + Math.pow(x,1.5)]);
+    d2.push([x, Math.pow(x,3)]);
+    d3.push([x, i*5+3*Math.sin(x*4)]);
+    d4.push([x, x]);
+    if(x%1 === 0 ){
+      d5.push([x, 2*x]);
     }
   }
           
