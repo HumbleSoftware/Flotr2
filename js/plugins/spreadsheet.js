@@ -1,6 +1,19 @@
 /** Spreadsheet **/
 (function() {
 
+function getRowLabel(value){
+  if(this.options.xaxis.ticks) {
+    // TODO: sort this out
+    return _.find(this.options.xaxis.ticks, function(t){return t === value;});
+  }
+  else if (this.options.spreadsheet.tickFormatter){
+    return this.options.spreadsheet.tickFormatter(value);
+  }
+  else {
+    return this.options.xaxis.tickFormatter(value);
+  }
+}
+
 var
   D = Flotr.DOM,
   _ = Flotr._;
@@ -113,10 +126,6 @@ Flotr.addPlugin('spreadsheet', {
       colgroup.push('<col />');
     }
     html.push('</tr>');
-    
-    function find (x) {
-      return x[0] == datagrid[j][i];
-    }
 
     // Data rows
     for (j = 0; j < datagrid.length; ++j) {
@@ -127,19 +136,7 @@ Flotr.addPlugin('spreadsheet', {
         
         if (i === 0) {
           tag = 'th';
-          var label;
-          if(this.options.xaxis.ticks) {
-            // TODO: sort this out
-            var tick = this.options.xaxis.ticks.find(find);
-            if (tick) label = tick[1];
-          } 
-          else if (this.options.spreadsheet.tickFormatter){
-            label = this.options.spreadsheet.tickFormatter(content);
-          }
-          else {
-            label = this.options.xaxis.tickFormatter(content);
-          }
-          
+          var label = getRowLabel.call(this, content);
           if (label) content = label;
         }
 
@@ -272,25 +269,9 @@ Flotr.addPlugin('spreadsheet', {
     }
     csv += "%0D%0A"; // \r\n
     
-    function find (x) {
-      return x[0] == dg[i][0];
-    }
-
     // For each row
     for (i = 0; i < dg.length; ++i) {
-      var rowLabel = '';
-      // The first column
-      if (options.xaxis.ticks) {
-        // TODO Sort this out:
-        var tick = options.xaxis.ticks.find(find);
-        if (tick) rowLabel = tick[1];
-      }
-      else if (options.spreadsheet.tickFormatter){
-        rowLabel = options.spreadsheet.tickFormatter(dg[i][0]);
-      }
-      else {
-        rowLabel = options.xaxis.tickFormatter(dg[i][0]);
-      }
+      var rowLabel = getRowLabel.call(this, dg[i][0]) || '';
       rowLabel = '"'+(rowLabel+'').replace(/\"/g, '\\"')+'"';
       var numbers = dg[i].slice(1).join(separator);
       if (options.spreadsheet.decimalSeparator !== '.') {
