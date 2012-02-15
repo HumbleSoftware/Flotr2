@@ -2,15 +2,16 @@
 (function() {
 
 function getRowLabel(value){
-  if(this.options.xaxis.ticks) {
-    // TODO: sort this out
-    return _.find(this.options.xaxis.ticks, function(t){return t === value;});
-  }
-  else if (this.options.spreadsheet.tickFormatter){
+  if (this.options.spreadsheet.tickFormatter){
+    //TODO maybe pass the xaxis formatter to the custom tick formatter as an opt-out?
     return this.options.spreadsheet.tickFormatter(value);
   }
   else {
-    return this.options.xaxis.tickFormatter(value);
+    var t = _.find(this.axes.x.ticks, function(t){return t.v == value;});
+    if (t) {
+      return t.label;
+    }
+    return value;
   }
 }
 
