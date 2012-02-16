@@ -62,6 +62,7 @@ Flotr.addPlugin('spreadsheet', {
         observe(graph, 'click',  function(){ss.showTab('graph');}).
         observe(data, 'click', function(){ss.showTab('data');});
 
+      this.spreadsheet.activeTab = 'graph';
     }
   },
   /**
@@ -200,6 +201,9 @@ Flotr.addPlugin('spreadsheet', {
    * @param {String} tabName - The tab name
    */
   showTab: function(tabName){
+    if (this.spreadsheet.activeTab === tabName){
+      return;
+    }
     switch(tabName) {
       case 'graph':
         D.hide(this.spreadsheet.container);
@@ -214,6 +218,7 @@ Flotr.addPlugin('spreadsheet', {
         D.removeClass(this.spreadsheet.tabs.graph, 'selected');
       break;
     }
+    this.spreadsheet.activeTab = tabName;
   },
   /**
    * Selects the data table in the DOM for copy/paste
