@@ -62,7 +62,7 @@ Flotr.addPlugin('spreadsheet', {
         _observe(graph, 'click',  function(){ss.showTab('graph');}).
         _observe(data, 'click', function(){ss.showTab('data');});
 
-      return;
+      this.spreadsheet.activeTab = 'graph';
     }
   },
   /**
@@ -201,7 +201,9 @@ Flotr.addPlugin('spreadsheet', {
    * @param {String} tabName - The tab name
    */
   showTab: function(tabName){
-    var selector = 'canvas, .flotr-labels, .flotr-legend, .flotr-legend-bg, .flotr-title, .flotr-subtitle';
+    if (this.spreadsheet.activeTab === tabName){
+      return;
+    }
     switch(tabName) {
       case 'graph':
         D.hide(this.spreadsheet.container);
@@ -216,6 +218,7 @@ Flotr.addPlugin('spreadsheet', {
         D.removeClass(this.spreadsheet.tabs.graph, 'selected');
       break;
     }
+    this.spreadsheet.activeTab = tabName;
   },
   /**
    * Selects the data table in the DOM for copy/paste
