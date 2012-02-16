@@ -62,7 +62,6 @@ Flotr.addPlugin('spreadsheet', {
         observe(graph, 'click',  function(){ss.showTab('graph');}).
         observe(data, 'click', function(){ss.showTab('data');});
 
-      return;
     }
   },
   /**
@@ -201,7 +200,6 @@ Flotr.addPlugin('spreadsheet', {
    * @param {String} tabName - The tab name
    */
   showTab: function(tabName){
-    var selector = 'canvas, .flotr-labels, .flotr-legend, .flotr-legend-bg, .flotr-title, .flotr-subtitle';
     switch(tabName) {
       case 'graph':
         D.hide(this.spreadsheet.container);
