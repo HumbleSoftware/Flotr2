@@ -74,7 +74,7 @@ Flotr.addPlugin('spreadsheet', {
     if (this.seriesData) return this.seriesData;
 
     var s = this.series,
-        dg = [];
+        rows = {};
 
     /* The data grid is a 2 dimensions array. There is a row for each X value.
      * Each row contains the x value and the corresponding y value for each serie ('undefined' if there isn't one)
@@ -83,21 +83,21 @@ Flotr.addPlugin('spreadsheet', {
       _.each(serie.data, function (v) {
         var x = v[0],
             y = v[1],
-            r = _.detect(dg, function(row) {return row[0] === x;});
+            r = rows[x];
         if (r) {
           r[i+1] = y;
         } else {
           var newRow = [];
           newRow[0] = x;
           newRow[i+1] = y;
-          dg.push(newRow);
+          rows[x] = newRow;
         }
       });
     });
 
     // The data grid is sorted by x value
-    this.seriesData = _.sortBy(dg, function (v) {
-      return v[0];
+    this.seriesData = _.sortBy(rows, function(row, x){
+      return x;
     });
     return this.seriesData;
   },
