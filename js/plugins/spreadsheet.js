@@ -28,7 +28,8 @@ Flotr.addPlugin('spreadsheet', {
     toolbarSelectAll: 'Select all',
     csvFileSeparator: ',',
     decimalSeparator: '.',
-    tickFormatter: null
+    tickFormatter: null,
+    initialTab: 'graph'
   },
   /**
    * Builds the tabs in the DOM
@@ -61,8 +62,9 @@ Flotr.addPlugin('spreadsheet', {
       this.
         _observe(graph, 'click',  function(){ss.showTab('graph');}).
         _observe(data, 'click', function(){ss.showTab('data');});
-
-      this.spreadsheet.activeTab = 'graph';
+      if (this.options.spreadsheet.initialTab !== 'graph'){
+        ss.showTab(this.options.spreadsheet.initialTab);
+      }
     }
   },
   /**
