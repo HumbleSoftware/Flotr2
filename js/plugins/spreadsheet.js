@@ -219,6 +219,8 @@ Flotr.addPlugin('spreadsheet', {
         D.addClass(this.spreadsheet.tabs.data, 'selected');
         D.removeClass(this.spreadsheet.tabs.graph, 'selected');
       break;
+      default:
+        throw 'Illegal tab name: ' + tabName;
     }
     this.spreadsheet.activeTab = tabName;
   },
