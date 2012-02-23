@@ -99,7 +99,7 @@ Flotr.addPlugin('spreadsheet', {
 
     // The data grid is sorted by x value
     this.seriesData = _.sortBy(rows, function(row, x){
-      return x;
+      return parseInt(x, 10);
     });
     return this.seriesData;
   },
