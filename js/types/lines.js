@@ -7,6 +7,7 @@ Flotr.addType('lines', {
     fillBorder: false,     // => draw a border around the fill
     fillColor: null,       // => fill color
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
+    steps: false,          // => draw steps
     stacked: false         // => setting to true will show stacked lines, false will show normal lines
   },
 
@@ -50,7 +51,7 @@ Flotr.addType('lines', {
     context.restore();
   },
 
-  plot: function (options, shadowOffset, incStack){
+  plot : function (options, shadowOffset, incStack) {
 
     var
       context   = options.context,
@@ -113,7 +114,12 @@ Flotr.addType('lines', {
       
       prevx = x2;
       prevy = y2 + shadowOffset;
-      context.lineTo(prevx, prevy);
+      if (options.steps) {
+        context.lineTo(prevx + shadowOffset / 2, y1 + shadowOffset);
+        context.lineTo(prevx + shadowOffset / 2, prevy);
+      } else {
+        context.lineTo(prevx, prevy);
+      }
     }
     
     if (!options.fill || options.fill && !options.fillBorder) context.stroke();
@@ -190,6 +196,77 @@ Flotr.addType('lines', {
 
       axis.max = newmax;
       axis.min = newmin;
+    }
+
+    if (options.steps) {
+
+      this.hit = function (options) {
+        var
+          data = options.data,
+          args = options.args,
+          yScale = options.yScale,
+          mouse = args[0],
+          length = data.length,
+          n = args[1],
+          x = mouse.x,
+          relY = mouse.relY,
+          i;
+
+        for (i = 0; i < length - 1; i++) {
+          if (x >= data[i][0] && x <= data[i+1][0]) {
+            if (Math.abs(yScale(data[i][1]) - relY) < 8) {
+              n.x = data[i][0];
+              n.y = data[i][1];
+              n.index = i;
+              n.seriesIndex = options.index;
+            }
+            break;
+          }
+        }
+      };
+
+      this.drawHit = function (options) {
+        var
+          context = options.context,
+          args    = options.args,
+          data    = options.data,
+          xScale  = options.xScale,
+          index   = args.index,
+          x       = xScale(args.x),
+          y       = options.yScale(args.y),
+          x2;
+
+        if (data.length - 1 > index) {
+          x2 = options.xScale(data[index + 1][0]);
+          context.save();
+          context.strokeStyle = options.color;
+          context.lineWidth = options.lineWidth;
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x2, y);
+          context.stroke();
+          context.closePath();
+          context.restore();
+        }
+      };
+
+      this.clearHit = function (options) {
+        var
+          context = options.context,
+          args    = options.args,
+          data    = options.data,
+          xScale  = options.xScale,
+          width   = options.lineWidth,
+          index   = args.index,
+          x       = xScale(args.x),
+          y       = options.yScale(args.y),
+          x2;
+
+        if (data.length - 1 > index) {
+          x2 = options.xScale(data[index + 1][0]);
+          context.clearRect(x - width, y - width, x2 - x + 2 * width, 2 * width)
+        }
+      };
     }
   }
 
