@@ -11,6 +11,7 @@
       "./examples/js/ExampleList.js",
       "./examples/js/examples/basic.js",
       "./examples/js/examples/basic-stacked.js",
+      "./examples/js/examples/basic-stepped.js",
       "./examples/js/examples/basic-axis.js",
       "./examples/js/examples/basic-bars.js",
       "./examples/js/examples/basic-bars-stacked.js",
