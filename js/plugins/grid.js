@@ -48,21 +48,70 @@ Flotr.addPlugin('graphGrid', {
       }
     }
     function drawGridLines (ticks, callback) {
-      _.each(_.pluck(ticks, 'v'), function(v){
+      _.each(ticks, function(tick){
+          var v = tick.v;
         // Don't show lines on upper and lower bounds.
-        if ((v <= a.min || v >= a.max) || 
+        if ((v <= a.min || v >= a.max) ||
             (v == a.min || v == a.max) && grid.outlineWidth)
           return;
-        callback(Math.floor(a.d2p(v)) + ctx.lineWidth/2);
+        var value = Math.floor(a.d2p(v)) + ctx.lineWidth/2;
+        if(!isNaN(value)){
+          callback(value, tick.options);
+        }
       });
     }
-    function drawVerticalLines (x) {
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, plotHeight);
+    function drawVerticalLines (x, options) {
+      if(options === undefined){
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, plotHeight);
+      }
+      else if(options.type === 'dashed'){
+        dashedLineTo.call(ctx, x, 0, x, plotHeight, options.pattern);
+      }
     }
-    function drawHorizontalLines (y) {
-      ctx.moveTo(0, y);
-      ctx.lineTo(plotWidth, y);
+    function drawHorizontalLines (y, options) {
+      if(options === undefined){
+        ctx.moveTo(0, y);
+        ctx.lineTo(plotWidth, y);
+      }
+      else if(options.type === 'dashed'){
+        dashedLineTo.call(ctx, 0, y, plotWidth, y, options.pattern);
+      }
+    }
+    function dashedLineTo(fromX, fromY, toX, toY, pattern) {
+      var lt = function (a, b) { return a <= b; },
+          gt = function (a, b) { return a >= b; },
+          capmin = function (a, b) { return Math.min(a, b); },
+          capmax = function (a, b) { return Math.max(a, b); },
+          checkX = { thereYet: gt, cap: capmin },
+          checkY = { thereYet: gt, cap: capmin };
+
+      if (fromY - toY > 0) {
+          checkY.thereYet = lt;
+          checkY.cap = capmax;
+      }
+      if (fromX - toX > 0) {
+          checkX.thereYet = lt;
+          checkX.cap = capmax;
+      }
+
+      this.moveTo(fromX, fromY);
+      var offsetX = fromX,
+          offsetY = fromY,
+          idx = 0, dash = true;
+      while (!(checkX.thereYet(offsetX, toX) && checkY.thereYet(offsetY, toY))) {
+        var ang = Math.atan2(toY - fromY, toX - fromX);
+        var len = pattern[idx];
+
+        offsetX = checkX.cap(toX, offsetX + (Math.cos(ang) * len));
+        offsetY = checkY.cap(toY, offsetY + (Math.sin(ang) * len));
+
+        if (dash) this.lineTo(offsetX, offsetY);
+        else this.moveTo(offsetX, offsetY);
+
+        idx = (idx + 1) % pattern.length;
+        dash = !dash;
+      }
     }
 
     if (grid.circular) {
