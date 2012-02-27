@@ -45,10 +45,10 @@ Flotr.addPlugin('labels', {
     }
 
     if (!options.HtmlText && this.textEnabled) {
-      drawLabelNoHtmlText(this, a.x, a.x.options.labelAlign || 'center', 'top');
-      drawLabelNoHtmlText(this, a.x2, a.x2.options.labelAlign || 'center', 'bottom');
-      drawLabelNoHtmlText(this, a.y, a.y.options.labelAlign || 'right', 'middle');
-      drawLabelNoHtmlText(this, a.y2, a.y2.options.labelAlign || 'left', 'middle');
+      drawLabelNoHtmlText(this, a.x, a.x.options.labelsAlign || 'center', 'top');
+      drawLabelNoHtmlText(this, a.x2, a.x2.options.labelsAlign || 'center', 'bottom');
+      drawLabelNoHtmlText(this, a.y, a.y.options.labelsAlign || 'right', 'middle');
+      drawLabelNoHtmlText(this, a.y2, a.y2.options.labelsAlign || 'left', 'middle');
     
     } else if ((
         a.x.options.showLabels ||
