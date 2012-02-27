@@ -110,6 +110,14 @@ Flotr.addPlugin('graphGrid', {
       a = this.axes.y;
       if (horizontalLines)      drawGridLines(a.ticks, drawHorizontalLines);
       if (minorHorizontalLines) drawGridLines(a.minorTicks, drawHorizontalLines);
+      
+      a = this.axes.x2;
+      if (verticalLines)        drawGridLines(a.ticks, drawVerticalLines);
+      if (minorVerticalLines)   drawGridLines(a.minorTicks, drawVerticalLines);
+
+      a = this.axes.y2;
+      if (horizontalLines)      drawGridLines(a.ticks, drawHorizontalLines);
+      if (minorHorizontalLines) drawGridLines(a.minorTicks, drawHorizontalLines);
 
       ctx.stroke();
     }
