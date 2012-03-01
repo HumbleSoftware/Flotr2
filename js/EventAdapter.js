@@ -23,11 +23,20 @@ F.EventAdapter = {
   },
   eventPointer: function(e) {
     if (!F._.isUndefined(e.touches) && e.touches.length > 0) {
-      return {x: e.touches[0].pageX, y: e.touches[0].pageY};
+      return {
+        x : e.touches[0].pageX,
+        y : e.touches[0].pageY
+      };
     } else if (!F._.isUndefined(e.changedTouches) && e.changedTouches.length > 0) {
-      return {x: e.changedTouches[0].pageX, y: e.changedTouches[0].pageY};
+      return {
+        x : e.changedTouches[0].pageX,
+        y : e.changedTouches[0].pageY
+      };
     } else if (e.pageX || e.pageY) {
-      return {x: e.pageX, y: e.pageY};
+      return {
+        x : e.pageX,
+        y : e.pageY
+      };
     } else if (e.clientX || e.clientY) {
       var
         d = document,
