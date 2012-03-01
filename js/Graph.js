@@ -466,14 +466,15 @@ Graph.prototype = {
   _initEvents: function () {
 
     var
+      el = this.el,
       touchendHandler, movement, touchend;
 
-    if ('ontouchstart' in this.el) {
+    if ('ontouchstart' in el) {
 
       var touchendHandler = _.bind(function (e) {
         touchend = true;
         E.stopObserving(document, 'touchend', touchendHandler);
-        E.fire(this.el, 'flotr:mouseup', [event, this]);
+        E.fire(el, 'flotr:mouseup', [event, this]);
         if (!movement) {
           this.clickHandler(e);
         }
@@ -483,7 +484,7 @@ Graph.prototype = {
         movement = false;
         touchend = false;
         this.ignoreClick = false;
-        E.fire(this.el, 'flotr:mousedown', [event, this]);
+        E.fire(el, 'flotr:mousedown', [event, this]);
         this._observe(document, 'touchend', touchendHandler);
       }, this));
 
@@ -500,15 +501,18 @@ Graph.prototype = {
         this.lastMousePos.pageX = pageX;
         this.lastMousePos.pageY = pageY;
         if (!touchend) {
-          E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+          E.fire(el, 'flotr:mousemove', [event, pos, this]);
         }
       }, this));
 
     } else {
       this.
         _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
-        _observe(this.el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
-        _observe(this.overlay, 'click', _.bind(this.clickHandler, this));
+        _observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+        _observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
+        _observe(el, 'mouseout', function () {
+          E.fire(el, 'flotr:mouseout');
+        });
     }
   },
 
