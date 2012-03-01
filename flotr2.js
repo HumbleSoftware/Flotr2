@@ -1535,7 +1535,7 @@ Flotr = {
     return base * Math.floor(n / base);
   },
   drawText: function(ctx, text, x, y, style) {
-    if (!ctx.fillText || Flotr.isIphone) {
+    if (!ctx.fillText) {
       ctx.drawText(text, x, y, style);
       return;
     }
@@ -2110,13 +2110,29 @@ F.EventAdapter = {
   },
   eventPointer: function(e) {
     if (!F._.isUndefined(e.touches) && e.touches.length > 0) {
-      return {x: e.touches[0].pageX, y: e.touches[0].pageY};
+      return {
+        x : e.touches[0].pageX,
+        y : e.touches[0].pageY
+      };
     } else if (!F._.isUndefined(e.changedTouches) && e.changedTouches.length > 0) {
-      return {x: e.changedTouches[0].pageX, y: e.changedTouches[0].pageY};
-    } else if (F.isIE && F.isIE < 9) {
-      return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
-    } else {
-      return {x: e.pageX, y: e.pageY};
+      return {
+        x : e.changedTouches[0].pageX,
+        y : e.changedTouches[0].pageY
+      };
+    } else if (e.pageX || e.pageY) {
+      return {
+        x : e.pageX,
+        y : e.pageY
+      };
+    } else if (e.clientX || e.clientY) {
+      var
+        d = document,
+        b = d.body,
+        de = d.documentElement;
+      return {
+        x: e.clientX + b.scrollLeft + de.scrollLeft,
+        y: e.clientY + b.scrollTop + de.scrollTop
+      };
     }
   }
 };
@@ -2188,7 +2204,7 @@ Text.prototype = {
       context = this.o.ctx,
       metrics;
 
-    if (!context.fillText || F.isIphone) {
+    if (!context.fillText || (F.isIphone && context.measure)) {
       return { width : context.measure(text, style)};
     }
 
@@ -2511,19 +2527,33 @@ Graph.prototype = {
    */
   getEventPosition: function (e){
 
-    var d = document,
-        r = this.overlay.getBoundingClientRect(),
-        pointer = E.eventPointer(e),
-        rx = e.clientX - d.body.scrollLeft - d.documentElement.scrollLeft - r.left - this.plotOffset.left,
-        ry = e.clientY - d.body.scrollTop - d.documentElement.scrollTop - r.top - this.plotOffset.top,
-        dx = pointer.x - this.lastMousePos.pageX,
-        dy = pointer.y - this.lastMousePos.pageY;
+    var
+      d = document,
+      b = d.body,
+      de = d.documentElement,
+      axes = this.axes,
+      plotOffset = this.plotOffset,
+      lastMousePos = this.lastMousePos,
+      pointer = E.eventPointer(e),
+      dx = pointer.x - lastMousePos.pageX,
+      dy = pointer.y - lastMousePos.pageY,
+      r, rx, ry;
+
+    if ('ontouchstart' in this.el) {
+      r = D.position(this.overlay);
+      rx = pointer.x - r.left - plotOffset.left;
+      ry = pointer.y - r.top - plotOffset.top;
+    } else {
+      r = this.overlay.getBoundingClientRect();
+      rx = e.clientX - r.left - plotOffset.left - b.scrollLeft - de.scrollLeft;
+      ry = e.clientY - r.top - plotOffset.top - b.scrollTop - de.scrollTop;
+    }
 
     return {
-      x:  this.axes.x.p2d(rx),
-      x2: this.axes.x2.p2d(rx),
-      y:  this.axes.y.p2d(ry),
-      y2: this.axes.y2.p2d(ry),
+      x:  axes.x.p2d(rx),
+      x2: axes.x2.p2d(rx),
+      y:  axes.y.p2d(ry),
+      y2: axes.y2.p2d(ry),
       relX: rx,
       relY: ry,
       dX: dx,
@@ -2664,34 +2694,55 @@ Graph.prototype = {
 
   _initEvents: function () {
 
-    this.
-      _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
-      _observe(this.el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
-      _observe(this.overlay, 'click', _.bind(this.clickHandler, this));
+    var
+      el = this.el,
+      touchendHandler, movement, touchend;
 
+    if ('ontouchstart' in el) {
 
-    var touchEndHandler = _.bind(function (e) {
-      E.stopObserving(document, 'touchend', touchEndHandler);
-      E.fire(this.el, 'flotr:mouseup', [event, this]);
-    }, this);
+      var touchendHandler = _.bind(function (e) {
+        touchend = true;
+        E.stopObserving(document, 'touchend', touchendHandler);
+        E.fire(el, 'flotr:mouseup', [event, this]);
+        if (!movement) {
+          this.clickHandler(e);
+        }
+      }, this);
 
-    this._observe(this.overlay, 'touchstart', _.bind(function (e) {
-      E.fire(this.el, 'flotr:mousedown', [event, this]);
-      this._observe(document, 'touchend', touchEndHandler);
-    }, this));
+      this._observe(this.overlay, 'touchstart', _.bind(function (e) {
+        movement = false;
+        touchend = false;
+        this.ignoreClick = false;
+        E.fire(el, 'flotr:mousedown', [event, this]);
+        this._observe(document, 'touchend', touchendHandler);
+      }, this));
 
-    this._observe(this.overlay, 'touchmove', _.bind(function (e) {
+      this._observe(this.overlay, 'touchmove', _.bind(function (e) {
 
-      e.preventDefault();
+        e.preventDefault();
 
-      var pageX = e.touches[0].pageX,
-        pageY = e.touches[0].pageY,
-        pos = this.getEventPosition(e.touches[0]);
+        movement = true;
 
-      this.lastMousePos.pageX = pageX;
-      this.lastMousePos.pageY = pageY;
-      E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
-    }, this));
+        var pageX = e.touches[0].pageX,
+          pageY = e.touches[0].pageY,
+          pos = this.getEventPosition(e.touches[0]);
+
+        this.lastMousePos.pageX = pageX;
+        this.lastMousePos.pageY = pageY;
+        if (!touchend) {
+          E.fire(el, 'flotr:mousemove', [event, pos, this]);
+        }
+      }, this));
+
+    } else {
+      this.
+        _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
+        _observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+        _observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
+        _observe(el, 'mouseout', function () {
+          E.fire(el, 'flotr:mouseout');
+        });
+    }
   },
 
   /**
@@ -2744,7 +2795,7 @@ Graph.prototype = {
     function getCanvas(canvas, name){
       if(!canvas){
         canvas = D.create('canvas');
-        if (typeof FlashCanvas != "undefined") {
+        if (typeof FlashCanvas != "undefined" && typeof canvas.getContext === 'function') {
           FlashCanvas.initElement(canvas);
         }
         canvas.className = 'flotr-'+name;
@@ -5212,7 +5263,7 @@ Flotr.addPlugin('hit', {
       if (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;}))
         this.hit.hit(pos);
     },
-    'mouseout': function() {
+    'flotr:mouseout': function() {
       this.hit.clearHit();
     }
   },
