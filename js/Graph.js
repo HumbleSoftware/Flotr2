@@ -298,19 +298,33 @@ Graph.prototype = {
    */
   getEventPosition: function (e){
 
-    var d = document,
-        r = this.overlay.getBoundingClientRect(),
-        pointer = E.eventPointer(e),
-        rx = e.clientX - d.body.scrollLeft - d.documentElement.scrollLeft - r.left - this.plotOffset.left,
-        ry = e.clientY - d.body.scrollTop - d.documentElement.scrollTop - r.top - this.plotOffset.top,
-        dx = pointer.x - this.lastMousePos.pageX,
-        dy = pointer.y - this.lastMousePos.pageY;
+    var
+      d = document,
+      b = d.body,
+      de = d.documentElement,
+      axes = this.axes,
+      plotOffset = this.plotOffset,
+      lastMousePos = this.lastMousePos,
+      pointer = E.eventPointer(e),
+      dx = pointer.x - lastMousePos.pageX,
+      dy = pointer.y - lastMousePos.pageY,
+      r, rx, ry;
+
+    if ('ontouchstart' in this.el) {
+      r = D.position(this.overlay);
+      rx = pointer.x - r.left - plotOffset.left;
+      ry = pointer.y - r.top - plotOffset.top;
+    } else {
+      r = this.overlay.getBoundingClientRect();
+      rx = e.clientX - r.left - plotOffset.left - b.scrollLeft - de.scrollLeft;
+      ry = e.clientY - r.top - plotOffset.top - b.scrollTop - de.scrollTop;
+    }
 
     return {
-      x:  this.axes.x.p2d(rx),
-      x2: this.axes.x2.p2d(rx),
-      y:  this.axes.y.p2d(ry),
-      y2: this.axes.y2.p2d(ry),
+      x:  axes.x.p2d(rx),
+      x2: axes.x2.p2d(rx),
+      y:  axes.y.p2d(ry),
+      y2: axes.y2.p2d(ry),
       relX: rx,
       relY: ry,
       dX: dx,
