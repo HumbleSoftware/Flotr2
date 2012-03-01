@@ -451,34 +451,51 @@ Graph.prototype = {
 
   _initEvents: function () {
 
-    this.
-      _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
-      _observe(this.el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
-      _observe(this.overlay, 'click', _.bind(this.clickHandler, this));
+    var
+      touchendHandler, movement, touchend;
 
+    if ('ontouchstart' in this.el) {
 
-    var touchEndHandler = _.bind(function (e) {
-      E.stopObserving(document, 'touchend', touchEndHandler);
-      E.fire(this.el, 'flotr:mouseup', [event, this]);
-    }, this);
+      var touchendHandler = _.bind(function (e) {
+        touchend = true;
+        E.stopObserving(document, 'touchend', touchendHandler);
+        E.fire(this.el, 'flotr:mouseup', [event, this]);
+        if (!movement) {
+          this.clickHandler(e);
+        }
+      }, this);
 
-    this._observe(this.overlay, 'touchstart', _.bind(function (e) {
-      E.fire(this.el, 'flotr:mousedown', [event, this]);
-      this._observe(document, 'touchend', touchEndHandler);
-    }, this));
+      this._observe(this.overlay, 'touchstart', _.bind(function (e) {
+        movement = false;
+        touchend = false;
+        this.ignoreClick = false;
+        E.fire(this.el, 'flotr:mousedown', [event, this]);
+        this._observe(document, 'touchend', touchendHandler);
+      }, this));
 
-    this._observe(this.overlay, 'touchmove', _.bind(function (e) {
+      this._observe(this.overlay, 'touchmove', _.bind(function (e) {
 
-      e.preventDefault();
+        e.preventDefault();
 
-      var pageX = e.touches[0].pageX,
-        pageY = e.touches[0].pageY,
-        pos = this.getEventPosition(e.touches[0]);
+        movement = true;
 
-      this.lastMousePos.pageX = pageX;
-      this.lastMousePos.pageY = pageY;
-      E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
-    }, this));
+        var pageX = e.touches[0].pageX,
+          pageY = e.touches[0].pageY,
+          pos = this.getEventPosition(e.touches[0]);
+
+        this.lastMousePos.pageX = pageX;
+        this.lastMousePos.pageY = pageY;
+        if (!touchend) {
+          E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+        }
+      }, this));
+
+    } else {
+      this.
+        _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
+        _observe(this.el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+        _observe(this.overlay, 'click', _.bind(this.clickHandler, this));
+    }
   },
 
   /**
