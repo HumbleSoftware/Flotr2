@@ -1535,7 +1535,7 @@ Flotr = {
     return base * Math.floor(n / base);
   },
   drawText: function(ctx, text, x, y, style) {
-    if (!ctx.fillText || Flotr.isIphone) {
+    if (!ctx.fillText) {
       ctx.drawText(text, x, y, style);
       return;
     }
@@ -1762,6 +1762,11 @@ Color.prototype = {
   },
   toString: function(){
     return (this.a >= 1.0) ? 'rgb('+[this.r,this.g,this.b].join(',')+')' : 'rgba('+[this.r,this.g,this.b,this.a].join(',')+')';
+  },
+  contrast: function () {
+    var
+      test = 1 - ( 0.299 * this.r + 0.587 * this.g + 0.114 * this.b) / 255;
+    return (test < 0.5 ? '#000000' : '#ffffff');
   }
 };
 
@@ -2105,13 +2110,29 @@ F.EventAdapter = {
   },
   eventPointer: function(e) {
     if (!F._.isUndefined(e.touches) && e.touches.length > 0) {
-      return {x: e.touches[0].pageX, y: e.touches[0].pageY};
+      return {
+        x : e.touches[0].pageX,
+        y : e.touches[0].pageY
+      };
     } else if (!F._.isUndefined(e.changedTouches) && e.changedTouches.length > 0) {
-      return {x: e.changedTouches[0].pageX, y: e.changedTouches[0].pageY};
-    } else if (F.isIE && F.isIE < 9) {
-      return {x: e.clientX + document.body.scrollLeft, y: e.clientY + document.body.scrollTop};
-    } else {
-      return {x: e.pageX, y: e.pageY};
+      return {
+        x : e.changedTouches[0].pageX,
+        y : e.changedTouches[0].pageY
+      };
+    } else if (e.pageX || e.pageY) {
+      return {
+        x : e.pageX,
+        y : e.pageY
+      };
+    } else if (e.clientX || e.clientY) {
+      var
+        d = document,
+        b = d.body,
+        de = d.documentElement;
+      return {
+        x: e.clientX + b.scrollLeft + de.scrollLeft,
+        y: e.clientY + b.scrollTop + de.scrollTop
+      };
     }
   }
 };
@@ -2183,7 +2204,7 @@ Text.prototype = {
       context = this.o.ctx,
       metrics;
 
-    if (!context.fillText || F.isIphone) {
+    if (!context.fillText || (F.isIphone && context.measure)) {
       return { width : context.measure(text, style)};
     }
 
@@ -2506,19 +2527,33 @@ Graph.prototype = {
    */
   getEventPosition: function (e){
 
-    var d = document,
-        r = this.overlay.getBoundingClientRect(),
-        pointer = E.eventPointer(e),
-        rx = e.clientX - d.body.scrollLeft - d.documentElement.scrollLeft - r.left - this.plotOffset.left,
-        ry = e.clientY - d.body.scrollTop - d.documentElement.scrollTop - r.top - this.plotOffset.top,
-        dx = pointer.x - this.lastMousePos.pageX,
-        dy = pointer.y - this.lastMousePos.pageY;
+    var
+      d = document,
+      b = d.body,
+      de = d.documentElement,
+      axes = this.axes,
+      plotOffset = this.plotOffset,
+      lastMousePos = this.lastMousePos,
+      pointer = E.eventPointer(e),
+      dx = pointer.x - lastMousePos.pageX,
+      dy = pointer.y - lastMousePos.pageY,
+      r, rx, ry;
+
+    if ('ontouchstart' in this.el) {
+      r = D.position(this.overlay);
+      rx = pointer.x - r.left - plotOffset.left;
+      ry = pointer.y - r.top - plotOffset.top;
+    } else {
+      r = this.overlay.getBoundingClientRect();
+      rx = e.clientX - r.left - plotOffset.left - b.scrollLeft - de.scrollLeft;
+      ry = e.clientY - r.top - plotOffset.top - b.scrollTop - de.scrollTop;
+    }
 
     return {
-      x:  this.axes.x.p2d(rx),
-      x2: this.axes.x2.p2d(rx),
-      y:  this.axes.y.p2d(ry),
-      y2: this.axes.y2.p2d(ry),
+      x:  axes.x.p2d(rx),
+      x2: axes.x2.p2d(rx),
+      y:  axes.y.p2d(ry),
+      y2: axes.y2.p2d(ry),
       relX: rx,
       relY: ry,
       dX: dx,
@@ -2659,34 +2694,55 @@ Graph.prototype = {
 
   _initEvents: function () {
 
-    this.
-      _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
-      _observe(this.el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
-      _observe(this.overlay, 'click', _.bind(this.clickHandler, this));
+    var
+      el = this.el,
+      touchendHandler, movement, touchend;
 
+    if ('ontouchstart' in el) {
 
-    var touchEndHandler = _.bind(function (e) {
-      E.stopObserving(document, 'touchend', touchEndHandler);
-      E.fire(this.el, 'flotr:mouseup', [event, this]);
-    }, this);
+      var touchendHandler = _.bind(function (e) {
+        touchend = true;
+        E.stopObserving(document, 'touchend', touchendHandler);
+        E.fire(el, 'flotr:mouseup', [event, this]);
+        if (!movement) {
+          this.clickHandler(e);
+        }
+      }, this);
 
-    this._observe(this.overlay, 'touchstart', _.bind(function (e) {
-      E.fire(this.el, 'flotr:mousedown', [event, this]);
-      this._observe(document, 'touchend', touchEndHandler);
-    }, this));
+      this._observe(this.overlay, 'touchstart', _.bind(function (e) {
+        movement = false;
+        touchend = false;
+        this.ignoreClick = false;
+        E.fire(el, 'flotr:mousedown', [event, this]);
+        this._observe(document, 'touchend', touchendHandler);
+      }, this));
 
-    this._observe(this.overlay, 'touchmove', _.bind(function (e) {
+      this._observe(this.overlay, 'touchmove', _.bind(function (e) {
 
-      e.preventDefault();
+        e.preventDefault();
 
-      var pageX = e.touches[0].pageX,
-        pageY = e.touches[0].pageY,
-        pos = this.getEventPosition(e.touches[0]);
+        movement = true;
 
-      this.lastMousePos.pageX = pageX;
-      this.lastMousePos.pageY = pageY;
-      E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
-    }, this));
+        var pageX = e.touches[0].pageX,
+          pageY = e.touches[0].pageY,
+          pos = this.getEventPosition(e.touches[0]);
+
+        this.lastMousePos.pageX = pageX;
+        this.lastMousePos.pageY = pageY;
+        if (!touchend) {
+          E.fire(el, 'flotr:mousemove', [event, pos, this]);
+        }
+      }, this));
+
+    } else {
+      this.
+        _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
+        _observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+        _observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
+        _observe(el, 'mouseout', function () {
+          E.fire(el, 'flotr:mouseout');
+        });
+    }
   },
 
   /**
@@ -2739,7 +2795,7 @@ Graph.prototype = {
     function getCanvas(canvas, name){
       if(!canvas){
         canvas = D.create('canvas');
-        if (typeof FlashCanvas != "undefined") {
+        if (typeof FlashCanvas != "undefined" && typeof canvas.getContext === 'function') {
           FlashCanvas.initElement(canvas);
         }
         canvas.className = 'flotr-'+name;
@@ -3301,6 +3357,7 @@ Flotr.addType('lines', {
     fillBorder: false,     // => draw a border around the fill
     fillColor: null,       // => fill color
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
+    steps: false,          // => draw steps
     stacked: false         // => setting to true will show stacked lines, false will show normal lines
   },
 
@@ -3344,7 +3401,7 @@ Flotr.addType('lines', {
     context.restore();
   },
 
-  plot: function (options, shadowOffset, incStack){
+  plot : function (options, shadowOffset, incStack) {
 
     var
       context   = options.context,
@@ -3407,7 +3464,12 @@ Flotr.addType('lines', {
       
       prevx = x2;
       prevy = y2 + shadowOffset;
-      context.lineTo(prevx, prevy);
+      if (options.steps) {
+        context.lineTo(prevx + shadowOffset / 2, y1 + shadowOffset);
+        context.lineTo(prevx + shadowOffset / 2, prevy);
+      } else {
+        context.lineTo(prevx, prevy);
+      }
     }
     
     if (!options.fill || options.fill && !options.fillBorder) context.stroke();
@@ -3484,6 +3546,77 @@ Flotr.addType('lines', {
 
       axis.max = newmax;
       axis.min = newmin;
+    }
+
+    if (options.steps) {
+
+      this.hit = function (options) {
+        var
+          data = options.data,
+          args = options.args,
+          yScale = options.yScale,
+          mouse = args[0],
+          length = data.length,
+          n = args[1],
+          x = mouse.x,
+          relY = mouse.relY,
+          i;
+
+        for (i = 0; i < length - 1; i++) {
+          if (x >= data[i][0] && x <= data[i+1][0]) {
+            if (Math.abs(yScale(data[i][1]) - relY) < 8) {
+              n.x = data[i][0];
+              n.y = data[i][1];
+              n.index = i;
+              n.seriesIndex = options.index;
+            }
+            break;
+          }
+        }
+      };
+
+      this.drawHit = function (options) {
+        var
+          context = options.context,
+          args    = options.args,
+          data    = options.data,
+          xScale  = options.xScale,
+          index   = args.index,
+          x       = xScale(args.x),
+          y       = options.yScale(args.y),
+          x2;
+
+        if (data.length - 1 > index) {
+          x2 = options.xScale(data[index + 1][0]);
+          context.save();
+          context.strokeStyle = options.color;
+          context.lineWidth = options.lineWidth;
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x2, y);
+          context.stroke();
+          context.closePath();
+          context.restore();
+        }
+      };
+
+      this.clearHit = function (options) {
+        var
+          context = options.context,
+          args    = options.args,
+          data    = options.data,
+          xScale  = options.xScale,
+          width   = options.lineWidth,
+          index   = args.index,
+          x       = xScale(args.x),
+          y       = options.yScale(args.y),
+          x2;
+
+        if (data.length - 1 > index) {
+          x2 = options.xScale(data[index + 1][0]);
+          context.clearRect(x - width, y - width, x2 - x + 2 * width, 2 * width)
+        }
+      };
     }
   }
 
@@ -5130,7 +5263,7 @@ Flotr.addPlugin('hit', {
       if (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;}))
         this.hit.hit(pos);
     },
-    'mouseout': function() {
+    'flotr:mouseout': function() {
       this.hit.clearHit();
     }
   },
@@ -6106,6 +6239,20 @@ Flotr.addPlugin('legend', {
 /** Spreadsheet **/
 (function() {
 
+function getRowLabel(value){
+  if (this.options.spreadsheet.tickFormatter){
+    //TODO maybe pass the xaxis formatter to the custom tick formatter as an opt-out?
+    return this.options.spreadsheet.tickFormatter(value);
+  }
+  else {
+    var t = _.find(this.axes.x.ticks, function(t){return t.v == value;});
+    if (t) {
+      return t.label;
+    }
+    return value;
+  }
+}
+
 var
   D = Flotr.DOM,
   _ = Flotr._;
@@ -6119,7 +6266,8 @@ Flotr.addPlugin('spreadsheet', {
     toolbarSelectAll: 'Select all',
     csvFileSeparator: ',',
     decimalSeparator: '.',
-    tickFormatter: null
+    tickFormatter: null,
+    initialTab: 'graph'
   },
   /**
    * Builds the tabs in the DOM
@@ -6149,11 +6297,12 @@ Flotr.addPlugin('spreadsheet', {
 
       D.setStyles(container, {top: this.canvasHeight-offset+'px'});
 
-      Flotr.EventAdapter.
-        observe(graph, 'click',  function(){ss.showTab('graph');}).
-        observe(data, 'click', function(){ss.showTab('data');});
-
-      return;
+      this.
+        _observe(graph, 'click',  function(){ss.showTab('graph');}).
+        _observe(data, 'click', function(){ss.showTab('data');});
+      if (this.options.spreadsheet.initialTab !== 'graph'){
+        ss.showTab(this.options.spreadsheet.initialTab);
+      }
     }
   },
   /**
@@ -6165,33 +6314,30 @@ Flotr.addPlugin('spreadsheet', {
     if (this.seriesData) return this.seriesData;
 
     var s = this.series,
-        dg = [];
+        rows = {};
 
     /* The data grid is a 2 dimensions array. There is a row for each X value.
      * Each row contains the x value and the corresponding y value for each serie ('undefined' if there isn't one)
     **/
+    _.each(s, function(serie, i){
+      _.each(serie.data, function (v) {
+        var x = v[0],
+            y = v[1],
+            r = rows[x];
+        if (r) {
+          r[i+1] = y;
+        } else {
+          var newRow = [];
+          newRow[0] = x;
+          newRow[i+1] = y;
+          rows[x] = newRow;
+        }
+      });
+    });
 
-    function iterator (v) {
-      var x = v[0],
-          y = v[1], 
-          r = _.detect(dg, function(row) {return row[0] == x;});
-      if (r) {
-        r[i+1] = y;
-      } else {
-        var newRow = [];
-        newRow[0] = x;
-        newRow[i+1] = y;
-        dg.push(newRow);
-      }
-    }
-
-    for(i = 0; i < s.length; ++i){
-      _.each(s[i].data, iterator);
-    }
-    
     // The data grid is sorted by x value
-    this.seriesData = _.sortBy(dg, function (v) {
-      return v[0];
+    this.seriesData = _.sortBy(rows, function(row, x){
+      return parseInt(x, 10);
     });
     return this.seriesData;
   },
@@ -6204,8 +6350,7 @@ Flotr.addPlugin('spreadsheet', {
     // If the data grid has already been built, nothing to do here
     if (this.spreadsheet.datagrid) return this.spreadsheet.datagrid;
     
-    var i, j, 
-        s = this.series,
+    var s = this.series,
         datagrid = this.spreadsheet.loadDataGrid(),
         colgroup = ['<colgroup><col />'],
         buttonDownload, buttonSelect, t;
@@ -6213,45 +6358,30 @@ Flotr.addPlugin('spreadsheet', {
     // First row : series' labels
     var html = ['<table class="flotr-datagrid"><tr class="first-row">'];
     html.push('<th>&nbsp;</th>');
-    for (i = 0; i < s.length; ++i) {
-      html.push('<th scope="col">'+(s[i].label || String.fromCharCode(65+i))+'</th>');
+    _.each(s, function(serie,i){
+      html.push('<th scope="col">'+(serie.label || String.fromCharCode(65+i))+'</th>');
       colgroup.push('<col />');
-    }
+    });
     html.push('</tr>');
-    
-    function find (x) {
-      return x[0] == datagrid[j][i];
-    }
-
     // Data rows
-    for (j = 0; j < datagrid.length; ++j) {
+    _.each(datagrid, function(row){
       html.push('<tr>');
-      for (i = 0; i < s.length+1; ++i) {
+      _.times(s.length+1, function(i){
         var tag = 'td',
-            content = (datagrid[j][i] !== null ? Math.round(datagrid[j][i]*100000)/100000 : '');
-        
+            value = row[i],
+            // TODO: do we really want to handle problems with floating point
+            // precision here?
+            content = (!_.isUndefined(value) ? Math.round(value*100000)/100000 : '');
         if (i === 0) {
           tag = 'th';
-          var label;
-          if(this.options.xaxis.ticks) {
-            // TODO: sort this out
-            var tick = this.options.xaxis.ticks.find(find);
-            if (tick) label = tick[1];
-          } 
-          else if (this.options.spreadsheet.tickFormatter){
-            label = this.options.spreadsheet.tickFormatter(content);
-          }
-          else {
-            label = this.options.xaxis.tickFormatter(content);
-          }
-          
+          var label = getRowLabel.call(this, content);
           if (label) content = label;
         }
 
         html.push('<'+tag+(tag=='th'?' scope="row"':'')+'>'+content+'</'+tag+'>');
-      }
+      }, this);
       html.push('</tr>');
-    }
+    }, this);
     colgroup.push('</colgroup>');
     t = D.node(html.join(''));
 
@@ -6285,9 +6415,9 @@ Flotr.addPlugin('spreadsheet', {
       this.options.spreadsheet.toolbarSelectAll+
       '</button>');
 
-    Flotr.EventAdapter.
-      observe(buttonDownload, 'click', _.bind(this.spreadsheet.downloadCSV, this)).
-      observe(buttonSelect, 'click', _.bind(this.spreadsheet.selectAllData, this));
+    this.
+      _observe(buttonDownload, 'click', _.bind(this.spreadsheet.downloadCSV, this)).
+      _observe(buttonSelect, 'click', _.bind(this.spreadsheet.selectAllData, this));
 
     var toolbar = D.node('<div class="flotr-datagrid-toolbar"></div>');
     D.insert(toolbar, buttonDownload);
@@ -6311,7 +6441,9 @@ Flotr.addPlugin('spreadsheet', {
    * @param {String} tabName - The tab name
    */
   showTab: function(tabName){
-    var selector = 'canvas, .flotr-labels, .flotr-legend, .flotr-legend-bg, .flotr-title, .flotr-subtitle';
+    if (this.spreadsheet.activeTab === tabName){
+      return;
+    }
     switch(tabName) {
       case 'graph':
         D.hide(this.spreadsheet.container);
@@ -6325,7 +6457,10 @@ Flotr.addPlugin('spreadsheet', {
         D.addClass(this.spreadsheet.tabs.data, 'selected');
         D.removeClass(this.spreadsheet.tabs.graph, 'selected');
       break;
+      default:
+        throw 'Illegal tab name: ' + tabName;
     }
+    this.spreadsheet.activeTab = tabName;
   },
   /**
    * Selects the data table in the DOM for copy/paste
@@ -6361,7 +6496,7 @@ Flotr.addPlugin('spreadsheet', {
    * Converts the data into CSV in order to download a file
    */
   downloadCSV: function(){
-    var i, csv = '',
+    var csv = '',
         series = this.series,
         options = this.options,
         dg = this.spreadsheet.loadDataGrid(),
@@ -6372,37 +6507,23 @@ Flotr.addPlugin('spreadsheet', {
     }
     
     // The first row
-    for (i = 0; i < series.length; ++i) {
-      csv += separator+'"'+(series[i].label || String.fromCharCode(65+i)).replace(/\"/g, '\\"')+'"';
-    }
+    _.each(series, function(serie, i){
+      csv += separator+'"'+(serie.label || String.fromCharCode(65+i)).replace(/\"/g, '\\"')+'"';
+    });
+
     csv += "%0D%0A"; // \r\n
     
-    function find (x) {
-      return x[0] == dg[i][0];
-    }
-
     // For each row
-    for (i = 0; i < dg.length; ++i) {
-      var rowLabel = '';
-      // The first column
-      if (options.xaxis.ticks) {
-        // TODO Sort this out:
-        var tick = options.xaxis.ticks.find(find);
-        if (tick) rowLabel = tick[1];
-      }
-      else if (options.spreadsheet.tickFormatter){
-        rowLabel = options.spreadsheet.tickFormatter(dg[i][0]);
-      }
-      else {
-        rowLabel = options.xaxis.tickFormatter(dg[i][0]);
-      }
+    csv += _.reduce(dg, function(memo, row){
+      var rowLabel = getRowLabel.call(this, row[0]) || '';
       rowLabel = '"'+(rowLabel+'').replace(/\"/g, '\\"')+'"';
-      var numbers = dg[i].slice(1).join(separator);
+      var numbers = row.slice(1).join(separator);
       if (options.spreadsheet.decimalSeparator !== '.') {
         numbers = numbers.replace(/\./g, options.spreadsheet.decimalSeparator);
       }
-      csv += rowLabel+separator+numbers+"%0D%0A"; // \t and \r\n
-    }
+      return memo + rowLabel+separator+numbers+"%0D%0A"; // \t and \r\n
+    }, '', this);
+
     if (Flotr.isIE && Flotr.isIE < 9) {
       csv = csv.replace(new RegExp(separator, 'g'), decodeURIComponent(separator)).replace(/%0A/g, '\n').replace(/%0D/g, '\r');
       window.open().document.write(csv);
