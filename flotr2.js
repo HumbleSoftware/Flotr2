@@ -4556,9 +4556,6 @@ Flotr.addType('pie', {
     context.translate(options.width / 2, options.height / 2);
     context.scale(1, vScale);
 
-    // TODO wtf is this for?
-    if (startAngle == endAngle) return;
-
     x = Math.cos(bisection) * explode;
     y = Math.sin(bisection) * explode;
 
