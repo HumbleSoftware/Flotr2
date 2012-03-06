@@ -69,6 +69,11 @@ Color.prototype = {
   },
   toString: function(){
     return (this.a >= 1.0) ? 'rgb('+[this.r,this.g,this.b].join(',')+')' : 'rgba('+[this.r,this.g,this.b,this.a].join(',')+')';
+  },
+  contrast: function () {
+    var
+      test = 1 - ( 0.299 * this.r + 0.587 * this.g + 0.114 * this.b) / 255;
+    return (test < 0.5 ? '#000000' : '#ffffff');
   }
 };
 

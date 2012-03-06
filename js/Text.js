@@ -64,7 +64,7 @@ Text.prototype = {
       context = this.o.ctx,
       metrics;
 
-    if (!context.fillText || F.isIphone) {
+    if (!context.fillText || (F.isIphone && context.measure)) {
       return { width : context.measure(text, style)};
     }
 

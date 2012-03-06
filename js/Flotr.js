@@ -192,7 +192,7 @@ Flotr = {
     return base * Math.floor(n / base);
   },
   drawText: function(ctx, text, x, y, style) {
-    if (!ctx.fillText || Flotr.isIphone) {
+    if (!ctx.fillText) {
       ctx.drawText(text, x, y, style);
       return;
     }

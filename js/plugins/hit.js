@@ -13,7 +13,7 @@ Flotr.addPlugin('hit', {
       if (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;}))
         this.hit.hit(pos);
     },
-    'mouseout': function() {
+    'flotr:mouseout': function() {
       this.hit.clearHit();
     }
   },
