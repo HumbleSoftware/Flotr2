@@ -2,7 +2,6 @@
 
   var
     ONERROR   = window.onerror,
-    EXAMPLES  = Flotr.ExampleList.examples,
     COUNT     = 0,
     TYPES     = {},
 
