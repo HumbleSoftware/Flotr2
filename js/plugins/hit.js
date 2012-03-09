@@ -9,12 +9,18 @@ var
 Flotr.addPlugin('hit', {
   callbacks: {
     'flotr:mousemove': function(e, pos) {
-      //if(this.selectionInterval == null && 
-      if (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;}))
-        this.hit.hit(pos);
+      this.hit.track(pos);
+    },
+    'flotr:click': function(pos) {
+      this.hit.track(pos);
     },
     'flotr:mouseout': function() {
       this.hit.clearHit();
+    }
+  },
+  track : function (pos) {
+    if (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;})) {
+      this.hit.hit(pos);
     }
   },
   /**

@@ -4556,9 +4556,6 @@ Flotr.addType('pie', {
     context.translate(options.width / 2, options.height / 2);
     context.scale(1, vScale);
 
-    // TODO wtf is this for?
-    if (startAngle == endAngle) return;
-
     x = Math.cos(bisection) * explode;
     y = Math.sin(bisection) * explode;
 
@@ -5259,12 +5256,18 @@ var
 Flotr.addPlugin('hit', {
   callbacks: {
     'flotr:mousemove': function(e, pos) {
-      //if(this.selectionInterval == null && 
-      if (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;}))
-        this.hit.hit(pos);
+      this.hit.track(pos);
+    },
+    'flotr:click': function(pos) {
+      this.hit.track(pos);
     },
     'flotr:mouseout': function() {
       this.hit.clearHit();
+    }
+  },
+  track : function (pos) {
+    if (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;})) {
+      this.hit.hit(pos);
     }
   },
   /**
