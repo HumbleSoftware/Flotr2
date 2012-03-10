@@ -5776,7 +5776,7 @@ Flotr.addPlugin('selection', {
         y = Math.min(s.first.y, s.second.y),
         w = Math.abs(s.second.x - s.first.x),
         h = Math.abs(s.second.y - s.first.y);
-    
+
     octx.fillRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
     octx.strokeRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
     octx.restore();
@@ -5804,17 +5804,17 @@ Flotr.addPlugin('selection', {
     if (!this.selection.prevSelection) return;
       
     var prevSelection = this.selection.prevSelection,
-      lw = this.octx.lineWidth,
+      lw = 1,
       plotOffset = this.plotOffset,
       x = Math.min(prevSelection.first.x, prevSelection.second.x),
       y = Math.min(prevSelection.first.y, prevSelection.second.y),
       w = Math.abs(prevSelection.second.x - prevSelection.first.x),
       h = Math.abs(prevSelection.second.y - prevSelection.first.y);
     
-    this.octx.clearRect(x + plotOffset.left - lw/2+0.5,
-                        y + plotOffset.top - lw/2+0.5,
-                        w + lw,
-                        h + lw);
+    this.octx.clearRect(x + plotOffset.left - lw + 0.5,
+                        y + plotOffset.top - lw,
+                        w + 2 * lw + 0.5,
+                        h + 2 * lw + 0.5);
     
     this.selection.prevSelection = null;
   },
