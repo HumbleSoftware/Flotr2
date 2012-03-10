@@ -44,7 +44,7 @@ Flotr.addPlugin('selection', {
       this.selection.setSelectionPos(this.selection.selection.second, {pageX:pointer.x, pageY:pointer.y});
       this.selection.clearSelection();
 
-      if(this.selection.selectionIsSane()){
+      if(this.selection.selecting && this.selection.selectionIsSane()){
         this.selection.drawSelection();
         this.selection.fireSelectEvent();
         this.ignoreClick = true;
@@ -61,6 +61,7 @@ Flotr.addPlugin('selection', {
       if (this.selection.interval) clearInterval(this.selection.interval);
 
       this.lastMousePos.pageX = null;
+      this.selection.selecting = false;
       this.selection.interval = setInterval(
         _.bind(this.selection.updateSelection, this),
         1000/this.options.selection.fps
@@ -206,6 +207,7 @@ Flotr.addPlugin('selection', {
   updateSelection: function(){
     if (!this.lastMousePos.pageX) return;
 
+    this.selection.selecting = true;
     this.selection.setSelectionPos(this.selection.selection.second, this.lastMousePos);
 
     this.selection.clearSelection();
