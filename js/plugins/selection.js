@@ -242,7 +242,7 @@ Flotr.addPlugin('selection', {
    */
   selectionIsSane: function(){
     var s = this.selection.selection;
-    return Math.abs(s.second.x - s.first.x) >= 5 &&
+    return Math.abs(s.second.x - s.first.x) >= 5 || 
            Math.abs(s.second.y - s.first.y) >= 5;
   }
 
