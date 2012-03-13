@@ -501,7 +501,6 @@
 
   return bean
 });
-
 //     Underscore.js 1.1.7
 //     (c) 2011 Jeremy Ashkenas, DocumentCloud Inc.
 //     Underscore is freely distributable under the MIT license.
@@ -1341,13 +1340,14 @@
   };
 
 })();
-(function () {
-/** 
- * @projectDescription Flotr is a javascript plotting library based on the Prototype Javascript Framework.
- * @author Bas Wenneker
- * @license MIT License <http://www.opensource.org/licenses/mit-license.php>
- * @version 0.2.0
+/**
+ * Flotr2 (c) 2012 Carl Sutherland
+ * MIT License
+ * Special thanks to:
+ * Flotr: http://code.google.com/p/flotr/ (fork)
+ * Flot: https://github.com/flot/flot (original fork)
  */
+(function () {
 
 var
   global = this,
@@ -2227,9 +2227,13 @@ Flotr.Text = Text;
 
 })();
 
-/**
- * Flotr Graph class that plots a graph on creation.
- */
+/*!
+  * Flotr2 (c) 2012 Carl Sutherland
+  * MIT License
+  * Special thanks to:
+  * Flotr: http://code.google.com/p/flotr/ (fork)
+  * Flot: https://github.com/flot/flot (original fork)
+  */
 (function () {
 
 var
@@ -2606,21 +2610,18 @@ Graph.prototype = {
     }
     */
 
-    // @TODO why?
-    this.mouseUpHandler = _.bind(this.mouseUpHandler, this);
+
+    if (this.mouseUpHandler) return;
+    this.mouseUpHandler = _.bind(function (e) {
+      E.stopObserving(document, 'mouseup', this.mouseUpHandler);
+      this.mouseUpHandler = null;
+      // @TODO why?
+      //e.stop();
+      E.fire(this.el, 'flotr:mouseup', [e, this]);
+    }, this);
     E.observe(document, 'mouseup', this.mouseUpHandler);
     E.fire(this.el, 'flotr:mousedown', [event, this]);
     this.ignoreClick = false;
-  },
-  /**
-   * Observes the mouseup event for the document.
-   * @param {Event} event - 'mouseup' Event object.
-   */
-  mouseUpHandler: function(event){
-    E.stopObserving(document, 'mouseup', this.mouseUpHandler);
-    // @TODO why?
-    //event.stop();
-    E.fire(this.el, 'flotr:mouseup', [event, this]);
   },
   drawTooltip: function(content, x, y, options) {
     var mt = this.getMouseTrack(),
