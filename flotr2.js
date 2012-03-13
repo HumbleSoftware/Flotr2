@@ -2227,13 +2227,9 @@ Flotr.Text = Text;
 
 })();
 
-/*!
-  * Flotr2 (c) 2012 Carl Sutherland
-  * MIT License
-  * Special thanks to:
-  * Flotr: http://code.google.com/p/flotr/ (fork)
-  * Flot: https://github.com/flot/flot (original fork)
-  */
+/**
+ * Flotr Graph class that plots a graph on creation.
+ */
 (function () {
 
 var
