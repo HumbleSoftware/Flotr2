@@ -468,7 +468,7 @@ Graph.prototype = {
 
     if ('ontouchstart' in el) {
 
-      var touchendHandler = _.bind(function (e) {
+      touchendHandler = _.bind(function (e) {
         touchend = true;
         E.stopObserving(document, 'touchend', touchendHandler);
         E.fire(el, 'flotr:mouseup', [event, this]);
