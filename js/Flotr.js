@@ -1,10 +1,11 @@
-(function () {
-/** 
- * @projectDescription Flotr is a javascript plotting library based on the Prototype Javascript Framework.
- * @author Bas Wenneker
- * @license MIT License <http://www.opensource.org/licenses/mit-license.php>
- * @version 0.2.0
+/**
+ * Flotr2 (c) 2012 Carl Sutherland
+ * MIT License
+ * Special thanks to:
+ * Flotr: http://code.google.com/p/flotr/ (fork)
+ * Flot: https://github.com/flot/flot (original fork)
  */
+(function () {
 
 var
   global = this,

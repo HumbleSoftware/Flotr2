@@ -377,21 +377,18 @@ Graph.prototype = {
     }
     */
 
-    // @TODO why?
-    this.mouseUpHandler = _.bind(this.mouseUpHandler, this);
+
+    if (this.mouseUpHandler) return;
+    this.mouseUpHandler = _.bind(function (e) {
+      E.stopObserving(document, 'mouseup', this.mouseUpHandler);
+      this.mouseUpHandler = null;
+      // @TODO why?
+      //e.stop();
+      E.fire(this.el, 'flotr:mouseup', [e, this]);
+    }, this);
     E.observe(document, 'mouseup', this.mouseUpHandler);
     E.fire(this.el, 'flotr:mousedown', [event, this]);
     this.ignoreClick = false;
-  },
-  /**
-   * Observes the mouseup event for the document.
-   * @param {Event} event - 'mouseup' Event object.
-   */
-  mouseUpHandler: function(event){
-    E.stopObserving(document, 'mouseup', this.mouseUpHandler);
-    // @TODO why?
-    //event.stop();
-    E.fire(this.el, 'flotr:mouseup', [event, this]);
   },
   drawTooltip: function(content, x, y, options) {
     var mt = this.getMouseTrack(),

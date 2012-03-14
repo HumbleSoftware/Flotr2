@@ -501,7 +501,6 @@
 
   return bean
 });
-
 //     Underscore.js 1.1.7
 //     (c) 2011 Jeremy Ashkenas, DocumentCloud Inc.
 //     Underscore is freely distributable under the MIT license.
@@ -1341,13 +1340,14 @@
   };
 
 })();
-(function () {
-/** 
- * @projectDescription Flotr is a javascript plotting library based on the Prototype Javascript Framework.
- * @author Bas Wenneker
- * @license MIT License <http://www.opensource.org/licenses/mit-license.php>
- * @version 0.2.0
+/**
+ * Flotr2 (c) 2012 Carl Sutherland
+ * MIT License
+ * Special thanks to:
+ * Flotr: http://code.google.com/p/flotr/ (fork)
+ * Flot: https://github.com/flot/flot (original fork)
  */
+(function () {
 
 var
   global = this,
@@ -2606,21 +2606,18 @@ Graph.prototype = {
     }
     */
 
-    // @TODO why?
-    this.mouseUpHandler = _.bind(this.mouseUpHandler, this);
+
+    if (this.mouseUpHandler) return;
+    this.mouseUpHandler = _.bind(function (e) {
+      E.stopObserving(document, 'mouseup', this.mouseUpHandler);
+      this.mouseUpHandler = null;
+      // @TODO why?
+      //e.stop();
+      E.fire(this.el, 'flotr:mouseup', [e, this]);
+    }, this);
     E.observe(document, 'mouseup', this.mouseUpHandler);
     E.fire(this.el, 'flotr:mousedown', [event, this]);
     this.ignoreClick = false;
-  },
-  /**
-   * Observes the mouseup event for the document.
-   * @param {Event} event - 'mouseup' Event object.
-   */
-  mouseUpHandler: function(event){
-    E.stopObserving(document, 'mouseup', this.mouseUpHandler);
-    // @TODO why?
-    //event.stop();
-    E.fire(this.el, 'flotr:mouseup', [event, this]);
   },
   drawTooltip: function(content, x, y, options) {
     var mt = this.getMouseTrack(),
@@ -5626,7 +5623,7 @@ Flotr.addPlugin('selection', {
       this.selection.setSelectionPos(this.selection.selection.second, {pageX:pointer.x, pageY:pointer.y});
       this.selection.clearSelection();
 
-      if(this.selection.selectionIsSane()){
+      if(this.selection.selecting && this.selection.selectionIsSane()){
         this.selection.drawSelection();
         this.selection.fireSelectEvent();
         this.ignoreClick = true;
@@ -5643,6 +5640,7 @@ Flotr.addPlugin('selection', {
       if (this.selection.interval) clearInterval(this.selection.interval);
 
       this.lastMousePos.pageX = null;
+      this.selection.selecting = false;
       this.selection.interval = setInterval(
         _.bind(this.selection.updateSelection, this),
         1000/this.options.selection.fps
@@ -5776,7 +5774,7 @@ Flotr.addPlugin('selection', {
         y = Math.min(s.first.y, s.second.y),
         w = Math.abs(s.second.x - s.first.x),
         h = Math.abs(s.second.y - s.first.y);
-    
+
     octx.fillRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
     octx.strokeRect(x + plotOffset.left+0.5, y + plotOffset.top+0.5, w, h);
     octx.restore();
@@ -5788,6 +5786,7 @@ Flotr.addPlugin('selection', {
   updateSelection: function(){
     if (!this.lastMousePos.pageX) return;
 
+    this.selection.selecting = true;
     this.selection.setSelectionPos(this.selection.selection.second, this.lastMousePos);
 
     this.selection.clearSelection();
@@ -5804,17 +5803,17 @@ Flotr.addPlugin('selection', {
     if (!this.selection.prevSelection) return;
       
     var prevSelection = this.selection.prevSelection,
-      lw = this.octx.lineWidth,
+      lw = 1,
       plotOffset = this.plotOffset,
       x = Math.min(prevSelection.first.x, prevSelection.second.x),
       y = Math.min(prevSelection.first.y, prevSelection.second.y),
       w = Math.abs(prevSelection.second.x - prevSelection.first.x),
       h = Math.abs(prevSelection.second.y - prevSelection.first.y);
     
-    this.octx.clearRect(x + plotOffset.left - lw/2+0.5,
-                        y + plotOffset.top - lw/2+0.5,
-                        w + lw,
-                        h + lw);
+    this.octx.clearRect(x + plotOffset.left - lw + 0.5,
+                        y + plotOffset.top - lw,
+                        w + 2 * lw + 0.5,
+                        h + 2 * lw + 0.5);
     
     this.selection.prevSelection = null;
   },
@@ -5824,7 +5823,7 @@ Flotr.addPlugin('selection', {
    */
   selectionIsSane: function(){
     var s = this.selection.selection;
-    return Math.abs(s.second.x - s.first.x) >= 5 &&
+    return Math.abs(s.second.x - s.first.x) >= 5 || 
            Math.abs(s.second.y - s.first.y) >= 5;
   }
 
