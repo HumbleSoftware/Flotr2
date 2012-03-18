@@ -36,7 +36,7 @@ function init() {
 
   var graph = this;
 
-  if (!graph.options.selection.mode || !graph.options.handles.show) return;
+  if (!graph.options.selection.mode || !graph.options.handles.show || 'ontouchstart' in graph.el) return;
 
   el = graph.el;
   o = graph.options.handles;
