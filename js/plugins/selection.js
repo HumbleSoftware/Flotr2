@@ -69,6 +69,7 @@ Flotr.addPlugin('selection', {
     }
   },
 
+  // TODO This isn't used.  Maybe it belongs in the draw area and fire select event methods?
   getArea: function() {
 
     var s = this.selection.selection,

@@ -2697,7 +2697,7 @@ Graph.prototype = {
 
     if ('ontouchstart' in el) {
 
-      var touchendHandler = _.bind(function (e) {
+      touchendHandler = _.bind(function (e) {
         touchend = true;
         E.stopObserving(document, 'touchend', touchendHandler);
         E.fire(el, 'flotr:mouseup', [event, this]);
@@ -2770,7 +2770,7 @@ Graph.prototype = {
       el.removeChild(removedChildren[i]);
     }
 
-    D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
+    D.setStyles(el, {position: 'relative'}); // For positioning labels and overlay.
     size = D.size(el);
 
     if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
@@ -3611,7 +3611,7 @@ Flotr.addType('lines', {
 
         if (data.length - 1 > index) {
           x2 = options.xScale(data[index + 1][0]);
-          context.clearRect(x - width, y - width, x2 - x + 2 * width, 2 * width)
+          context.clearRect(x - width, y - width, x2 - x + 2 * width, 2 * width);
         }
       };
     }

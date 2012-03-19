@@ -541,7 +541,7 @@ Graph.prototype = {
       el.removeChild(removedChildren[i]);
     }
 
-    D.setStyles(el, {position: 'relative', cursor: el.style.cursor || 'default'}); // For positioning labels and overlay.
+    D.setStyles(el, {position: 'relative'}); // For positioning labels and overlay.
     size = D.size(el);
 
     if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
