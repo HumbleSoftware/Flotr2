@@ -1357,10 +1357,6 @@ var
 Flotr = {
   _: _,
   bean: bean,
-  version: "0.2.0-alpha",
-  revision: ('$Revision: 192 $'.match(/(\d+)/) || [null,null])[1],
-  author: ['Bas Wenneker', 'Fabien Ménager'],
-  website: 'http://www.solutoire.com',
   isIphone: /iphone/i.test(navigator.userAgent),
   isIE: (navigator.appVersion.indexOf("MSIE") != -1 ? parseFloat(navigator.appVersion.split("MSIE")[1]) : false),
   
