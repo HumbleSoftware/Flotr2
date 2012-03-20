@@ -2825,7 +2825,7 @@ Graph.prototype = {
       _.each(plugin.callbacks, function(fn, c){
         this._observe(this.el, c, _.bind(fn, this));
       }, this);
-      this[name] = _.clone(plugin);
+      this[name] = flotr.clone(plugin);
       _.each(this[name], function(fn, p){
         if (_.isFunction(fn))
           this[name][p] = _.bind(fn, this);
@@ -5648,6 +5648,7 @@ Flotr.addPlugin('selection', {
     }
   },
 
+  // TODO This isn't used.  Maybe it belongs in the draw area and fire select event methods?
   getArea: function() {
 
     var s = this.selection.selection,
