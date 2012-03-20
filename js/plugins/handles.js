@@ -162,22 +162,24 @@ function mouseMoveHandler(e, position) {
   var
     delta = position.dX,
     selection = this.selection.selection,
-    area = this.selection.getArea();
+    area = this.selection.getArea(),
+    handles = this.handles;
 
-  moveHandler = this.handles.moveHandler;
-  moveHandler(area, delta);
-  checkSwap(area);
+  handles.moveHandler(area, delta);
+  checkSwap(area, handles);
 
   this.selection.setSelection(area);
 }
 
-function checkSwap (area) {
+function checkSwap (area, handles) {
+  var moveHandler = handles.moveHandler;
   if (area.x1 > area.x2) {
     if (moveHandler == leftMoveHandler) {
       moveHandler = rightMoveHandler;
     } else if (moveHandler == rightMoveHandler) {
       moveHandler = leftMoveHandler;
     }
+    handles.moveHandler = moveHandler;
   }
 }
 
