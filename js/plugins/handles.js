@@ -36,7 +36,7 @@ function init() {
     options = this.options,
     handles = this.handles,
     el = this.el,
-    left, right;
+    scroll, left, right;
 
   if (!options.selection.mode || !options.handles.show || 'ontouchstart' in el) return;
 
