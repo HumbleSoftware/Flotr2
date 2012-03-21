@@ -330,7 +330,9 @@ Graph.prototype = {
       dX: dx,
       dY: dy,
       absX: pointer.x,
-      absY: pointer.y
+      absY: pointer.y,
+      pageX: pointer.x,
+      pageY: pointer.y
     };
   },
   /**
@@ -349,9 +351,9 @@ Graph.prototype = {
    * @param {Event} event - 'mousemove' Event object.
    */
   mouseMoveHandler: function(event){
+    if (this.mouseDownMoveHandler) return;
     var pos = this.getEventPosition(event);
-    this.lastMousePos.pageX = pos.absX;
-    this.lastMousePos.pageY = pos.absY;
+    this.lastMousePos = pos;
     E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
   },
   /**
@@ -377,16 +379,23 @@ Graph.prototype = {
     }
     */
 
-
     if (this.mouseUpHandler) return;
     this.mouseUpHandler = _.bind(function (e) {
       E.stopObserving(document, 'mouseup', this.mouseUpHandler);
+      E.stopObserving(document, 'mousemove', this.mouseDownMoveHandler);
+      this.mouseDownMoveHandler = null;
       this.mouseUpHandler = null;
       // @TODO why?
       //e.stop();
       E.fire(this.el, 'flotr:mouseup', [e, this]);
     }, this);
+    this.mouseDownMoveHandler = _.bind(function (e) {
+        var pos = this.getEventPosition(e);
+        this.lastMousePos = pos;
+        E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+    }, this);
     E.observe(document, 'mouseup', this.mouseUpHandler);
+    E.observe(document, 'mousemove', this.mouseDownMoveHandler);
     E.fire(this.el, 'flotr:mousedown', [event, this]);
     this.ignoreClick = false;
   },
