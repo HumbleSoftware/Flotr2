@@ -1668,6 +1668,7 @@ Flotr.defaultOptions = {
     horizontalLines: true, // => whether to show gridlines in horizontal direction
     minorHorizontalLines: null, // => whether to show gridlines for minor ticks in horizontal dir.
     outlineWidth: 1,       // => width of the grid outline/border in pixels
+    outline : 'nsew',      // => walls of the outline to display
     circular: false        // => if set to true, the grid will be circular, must be used when radars are drawn
   },
   mouse: {
@@ -2555,7 +2556,9 @@ Graph.prototype = {
       dX: dx,
       dY: dy,
       absX: pointer.x,
-      absY: pointer.y
+      absY: pointer.y,
+      pageX: pointer.x,
+      pageY: pointer.y
     };
   },
   /**
@@ -2574,9 +2577,9 @@ Graph.prototype = {
    * @param {Event} event - 'mousemove' Event object.
    */
   mouseMoveHandler: function(event){
+    if (this.mouseDownMoveHandler) return;
     var pos = this.getEventPosition(event);
-    this.lastMousePos.pageX = pos.absX;
-    this.lastMousePos.pageY = pos.absY;
+    this.lastMousePos = pos;
     E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
   },
   /**
@@ -2602,16 +2605,23 @@ Graph.prototype = {
     }
     */
 
-
     if (this.mouseUpHandler) return;
     this.mouseUpHandler = _.bind(function (e) {
       E.stopObserving(document, 'mouseup', this.mouseUpHandler);
+      E.stopObserving(document, 'mousemove', this.mouseDownMoveHandler);
+      this.mouseDownMoveHandler = null;
       this.mouseUpHandler = null;
       // @TODO why?
       //e.stop();
       E.fire(this.el, 'flotr:mouseup', [e, this]);
     }, this);
+    this.mouseDownMoveHandler = _.bind(function (e) {
+        var pos = this.getEventPosition(e);
+        this.lastMousePos = pos;
+        E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+    }, this);
     E.observe(document, 'mouseup', this.mouseUpHandler);
+    E.observe(document, 'mousemove', this.mouseDownMoveHandler);
     E.fire(this.el, 'flotr:mousedown', [event, this]);
     this.ignoreClick = false;
   },
@@ -5169,6 +5179,7 @@ Flotr.addPlugin('graphGrid', {
       that = this,
       options = that.options,
       grid = options.grid,
+      outline = grid.outline,
       ctx = that.ctx,
       backgroundImage = grid.backgroundImage,
       plotOffset = that.plotOffset,
@@ -5207,11 +5218,22 @@ Flotr.addPlugin('graphGrid', {
       
       // Draw axis/grid border.
       var lw = grid.outlineWidth,
-          orig = 0.5-lw+((lw+1)%2/2);
+          orig = 0.5-lw+((lw+1)%2/2),
+          lineTo = 'lineTo',
+          moveTo = 'moveTo';
       ctx.lineWidth = lw;
       ctx.strokeStyle = grid.color;
       ctx.lineJoin = 'miter';
-      ctx.strokeRect(orig, orig, plotWidth, plotHeight);
+      ctx.beginPath();
+      ctx.moveTo(orig, orig);
+      plotWidth = plotWidth - (lw / 2) % 1;
+      plotHeight = plotHeight - (lw / 2) % 1;
+      ctx[outline.indexOf('n') !== -1 ? lineTo : moveTo](plotWidth, orig);
+      ctx[outline.indexOf('e') !== -1 ? lineTo : moveTo](plotWidth, plotHeight);
+      ctx[outline.indexOf('s') !== -1 ? lineTo : moveTo](orig, plotHeight);
+      ctx[outline.indexOf('w') !== -1 ? lineTo : moveTo](orig, orig);
+      ctx.stroke();
+      ctx.closePath();
     }
     
     ctx.restore();

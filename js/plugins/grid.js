@@ -126,6 +126,7 @@ Flotr.addPlugin('graphGrid', {
       that = this,
       options = that.options,
       grid = options.grid,
+      outline = grid.outline,
       ctx = that.ctx,
       backgroundImage = grid.backgroundImage,
       plotOffset = that.plotOffset,
@@ -164,11 +165,22 @@ Flotr.addPlugin('graphGrid', {
       
       // Draw axis/grid border.
       var lw = grid.outlineWidth,
-          orig = 0.5-lw+((lw+1)%2/2);
+          orig = 0.5-lw+((lw+1)%2/2),
+          lineTo = 'lineTo',
+          moveTo = 'moveTo';
       ctx.lineWidth = lw;
       ctx.strokeStyle = grid.color;
       ctx.lineJoin = 'miter';
-      ctx.strokeRect(orig, orig, plotWidth, plotHeight);
+      ctx.beginPath();
+      ctx.moveTo(orig, orig);
+      plotWidth = plotWidth - (lw / 2) % 1;
+      plotHeight = plotHeight - (lw / 2) % 1;
+      ctx[outline.indexOf('n') !== -1 ? lineTo : moveTo](plotWidth, orig);
+      ctx[outline.indexOf('e') !== -1 ? lineTo : moveTo](plotWidth, plotHeight);
+      ctx[outline.indexOf('s') !== -1 ? lineTo : moveTo](orig, plotHeight);
+      ctx[outline.indexOf('w') !== -1 ? lineTo : moveTo](orig, orig);
+      ctx.stroke();
+      ctx.closePath();
     }
     
     ctx.restore();
