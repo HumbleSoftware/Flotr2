@@ -4,11 +4,13 @@ test:
 	cd spec; jasmine-headless-webkit -j jasmine.yml -c
 
 libraries:
-	cat ./lib/bean.js > build/lib.js
-	cat ./lib/underscore.js >> build/lib.js
-	cat ./lib/bean-min.js > build/lib.min.js
+	smoosh make/lib.json
+	cat ./build/bean.js > build/lib.js
+	cat ./build/underscore.js >> build/lib.js
+	cat ./build/bean.min.js > build/lib.min.js
 	echo ";" >> build/lib.min.js
-	cat ./lib/underscore-min.js >> build/lib.min.js
+	cat ./build/underscore.min.js >> build/lib.min.js
+	echo ";" >> build/lib.min.js
 
 ie:
 	smoosh make/ie.json
