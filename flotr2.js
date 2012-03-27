@@ -2281,6 +2281,7 @@ Graph = function(el, data, options){
 Graph.prototype = {
 
   destroy: function () {
+    E.fire(this.el, 'flotr:destroy');
     _.each(this._handles, function (handle) {
       E.stopObserving.apply(this, handle);
     });
@@ -5663,6 +5664,9 @@ Flotr.addPlugin('selection', {
         _.bind(this.selection.updateSelection, this),
         1000/this.options.selection.fps
       );
+    },
+    'flotr:destroy' : function (event) {
+      clearInterval(this.selection.interval);
     }
   },
 
