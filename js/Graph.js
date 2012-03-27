@@ -55,6 +55,7 @@ Graph = function(el, data, options){
 Graph.prototype = {
 
   destroy: function () {
+    E.fire(this.el, 'flotr:destroy');
     _.each(this._handles, function (handle) {
       E.stopObserving.apply(this, handle);
     });

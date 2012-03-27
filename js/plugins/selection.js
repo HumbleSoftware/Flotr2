@@ -66,6 +66,9 @@ Flotr.addPlugin('selection', {
         _.bind(this.selection.updateSelection, this),
         1000/this.options.selection.fps
       );
+    },
+    'flotr:destroy' : function (event) {
+      clearInterval(this.selection.interval);
     }
   },
 
