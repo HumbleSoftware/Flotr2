@@ -2278,9 +2278,16 @@ Graph = function(el, data, options){
   }*/
 };
 
+function observe (object, name, callback) {
+  E.observe.apply(this, arguments);
+  this._handles.push(arguments);
+  return this;
+}
+
 Graph.prototype = {
 
   destroy: function () {
+    E.fire(this.el, 'flotr:destroy');
     _.each(this._handles, function (handle) {
       E.stopObserving.apply(this, handle);
     });
@@ -2288,11 +2295,13 @@ Graph.prototype = {
     this.el.graph = null;
   },
 
-  _observe: function (object, name, callback) {
-    E.observe.apply(this, arguments);
-    this._handles.push(arguments);
-    return this;
-  },
+  observe : observe,
+
+  /**
+   * @deprecated
+   */
+  _observe : observe,
+
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
@@ -2579,8 +2588,8 @@ Graph.prototype = {
   mouseMoveHandler: function(event){
     if (this.mouseDownMoveHandler) return;
     var pos = this.getEventPosition(event);
-    this.lastMousePos = pos;
     E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+    this.lastMousePos = pos;
   },
   /**
    * Observes the 'mousedown' event.
@@ -2617,8 +2626,8 @@ Graph.prototype = {
     }, this);
     this.mouseDownMoveHandler = _.bind(function (e) {
         var pos = this.getEventPosition(e);
-        this.lastMousePos = pos;
         E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+        this.lastMousePos = pos;
     }, this);
     E.observe(document, 'mouseup', this.mouseUpHandler);
     E.observe(document, 'mousemove', this.mouseDownMoveHandler);
@@ -2712,15 +2721,15 @@ Graph.prototype = {
         }
       }, this);
 
-      this._observe(this.overlay, 'touchstart', _.bind(function (e) {
+      this.observe(this.overlay, 'touchstart', _.bind(function (e) {
         movement = false;
         touchend = false;
         this.ignoreClick = false;
         E.fire(el, 'flotr:mousedown', [event, this]);
-        this._observe(document, 'touchend', touchendHandler);
+        this.observe(document, 'touchend', touchendHandler);
       }, this));
 
-      this._observe(this.overlay, 'touchmove', _.bind(function (e) {
+      this.observe(this.overlay, 'touchmove', _.bind(function (e) {
 
         e.preventDefault();
 
@@ -2730,19 +2739,18 @@ Graph.prototype = {
           pageY = e.touches[0].pageY,
           pos = this.getEventPosition(e.touches[0]);
 
-        this.lastMousePos.pageX = pageX;
-        this.lastMousePos.pageY = pageY;
         if (!touchend) {
           E.fire(el, 'flotr:mousemove', [event, pos, this]);
         }
+        this.lastMousePos = pos;
       }, this));
 
     } else {
       this.
-        _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
-        _observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
-        _observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
-        _observe(el, 'mouseout', function () {
+        observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
+        observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+        observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
+        observe(el, 'mouseout', function () {
           E.fire(el, 'flotr:mouseout');
         });
     }
@@ -2829,7 +2837,7 @@ Graph.prototype = {
     // TODO Should be moved to flotr and mixed in.
     _.each(flotr.plugins, function(plugin, name){
       _.each(plugin.callbacks, function(fn, c){
-        this._observe(this.el, c, _.bind(fn, this));
+        this.observe(this.el, c, _.bind(fn, this));
       }, this);
       this[name] = flotr.clone(plugin);
       _.each(this[name], function(fn, p){
@@ -3030,8 +3038,8 @@ Axis.prototype = {
 
     if (max == min) {
       var widen = max ? 0.01 : 1.00;
-      min -= widen;
-      max += widen;
+      if (o.min === null) min -= widen;
+      if (o.max === null) max += widen;
     }
 
     if (o.scaling === 'logarithmic') {
@@ -3215,7 +3223,7 @@ Axis.prototype = {
 
       if (o.minorTickFreq) {
         for (j = 0; j < o.minorTickFreq && (i * tickSize + j * minorTickSize) < max; ++j) {
-          v = (v2 + j * minorTickSize).toFixed(decimals);
+          v = v2 + j * minorTickSize;
           axis.minorTicks.push({ v: v, label: o.tickFormatter(v, {min : axis.min, max : axis.max}) });
         }
       }
@@ -3408,8 +3416,8 @@ Flotr.addType('lines', {
 
     var
       context   = options.context,
-      width     = options.plotWidth, 
-      height    = options.plotHeight,
+      width     = options.width, 
+      height    = options.height,
       xScale    = options.xScale,
       yScale    = options.yScale,
       data      = options.data, 
@@ -3457,10 +3465,12 @@ Flotr.addType('lines', {
         y2 = yScale(data[i+1][1]);
       }
 
-      if ((y1 >= height && y2 >= width) || 
-        (y1 <= 0 && y2 <= 0) ||
-        (x1 <= 0 && x2 <= 0) ||
-        (x1 >= width && x2 >= width)) continue;
+      if (
+        (y1 > height && y2 > height) ||
+        (y1 < 0 && y2 < 0) ||
+        (x1 < 0 && x2 < 0) ||
+        (x1 > width && x2 > width)
+      ) continue;
 
       if((prevx != x1) || (prevy != y1 + shadowOffset))
         context.moveTo(x1, y1 + shadowOffset);
@@ -4937,10 +4947,10 @@ Flotr.addPlugin('crosshair', {
   },
   callbacks: {
     'flotr:mousemove': function(e, pos) {
-      if (this.options.crosshair.mode)
+      if (this.options.crosshair.mode) {
         this.crosshair.clearCrosshair();
-      if (this.options.crosshair.mode)
         this.crosshair.drawCrosshair(pos);
+      }
     }
   },
   /**   
@@ -4950,17 +4960,14 @@ Flotr.addPlugin('crosshair', {
     var octx = this.octx,
       options = this.options.crosshair,
       plotOffset = this.plotOffset,
-      x = plotOffset.left+pos.relX+0.5,
-      y = plotOffset.top+pos.relY+0.5;
+      x = plotOffset.left + pos.relX + 0.5,
+      y = plotOffset.top + pos.relY + 0.5;
     
     if (pos.relX < 0 || pos.relY < 0 || pos.relX > this.plotWidth || pos.relY > this.plotHeight) {
       this.el.style.cursor = null;
       D.removeClass(this.el, 'flotr-crosshair');
       return; 
     }
-    
-    this.lastMousePos.relX = null;
-    this.lastMousePos.relY = null;
     
     if (options.hideCursor) {
       this.el.style.cursor = 'none';
@@ -4975,13 +4982,11 @@ Flotr.addPlugin('crosshair', {
     if (options.mode.indexOf('x') != -1) {
       octx.moveTo(x, plotOffset.top);
       octx.lineTo(x, plotOffset.top + this.plotHeight);
-      this.lastMousePos.relX = x;
     }
     
     if (options.mode.indexOf('y') != -1) {
       octx.moveTo(plotOffset.left, y);
       octx.lineTo(plotOffset.left + this.plotWidth, y);
-      this.lastMousePos.relY = y;
     }
     
     octx.stroke();
@@ -4991,10 +4996,26 @@ Flotr.addPlugin('crosshair', {
    * Removes the selection box from the overlay canvas.
    */
   clearCrosshair: function() {
-    if (this.lastMousePos.relX)
-      this.octx.clearRect(this.lastMousePos.relX-0.5, this.plotOffset.top, 1,this.plotHeight+1);
-    if (this.lastMousePos.relY)
-      this.octx.clearRect(this.plotOffset.left, this.lastMousePos.relY-0.5, this.plotWidth+1, 1);    
+
+    var
+      plotOffset = this.plotOffset,
+      position = this.lastMousePos,
+      context = this.octx;
+
+    if (position) {
+      context.clearRect(
+        position.relX + plotOffset.left,
+        plotOffset.top,
+        1,
+        this.plotHeight + 1
+      );
+      context.clearRect(
+        plotOffset.left,
+        position.relY + plotOffset.top,
+        this.plotWidth + 1,
+        1
+      );    
+    }
   }
 });
 })();
@@ -5227,7 +5248,7 @@ Flotr.addPlugin('graphGrid', {
       ctx.beginPath();
       ctx.moveTo(orig, orig);
       plotWidth = plotWidth - (lw / 2) % 1;
-      plotHeight = plotHeight - (lw / 2) % 1;
+      plotHeight = plotHeight + lw / 2;
       ctx[outline.indexOf('n') !== -1 ? lineTo : moveTo](plotWidth, orig);
       ctx[outline.indexOf('e') !== -1 ? lineTo : moveTo](plotWidth, plotHeight);
       ctx[outline.indexOf('s') !== -1 ? lineTo : moveTo](orig, plotHeight);
@@ -5637,8 +5658,8 @@ Flotr.addPlugin('selection', {
       if (!this.options.selection || !this.options.selection.mode) return;
       if (this.selection.interval) clearInterval(this.selection.interval);
 
-      var pointer = E.eventPointer(event);
-      this.selection.setSelectionPos(this.selection.selection.second, {pageX:pointer.x, pageY:pointer.y});
+      var pointer = this.getEventPosition(event);
+      this.selection.setSelectionPos(this.selection.selection.second, pointer);
       this.selection.clearSelection();
 
       if(this.selection.selecting && this.selection.selectionIsSane()){
@@ -5651,9 +5672,8 @@ Flotr.addPlugin('selection', {
       if (!this.options.selection || !this.options.selection.mode) return;
       if (!this.options.selection.mode || (!isLeftClick(event) && _.isUndefined(event.touches))) return;
 
-      var pointer = E.eventPointer(event);
-
-      this.selection.setSelectionPos(this.selection.selection.first, {pageX:pointer.x, pageY:pointer.y});
+      var pointer = this.getEventPosition(event);
+      this.selection.setSelectionPos(this.selection.selection.first, pointer);
 
       if (this.selection.interval) clearInterval(this.selection.interval);
 
@@ -5663,6 +5683,9 @@ Flotr.addPlugin('selection', {
         _.bind(this.selection.updateSelection, this),
         1000/this.options.selection.fps
       );
+    },
+    'flotr:destroy' : function (event) {
+      clearInterval(this.selection.interval);
     }
   },
 
@@ -5741,20 +5764,19 @@ Flotr.addPlugin('selection', {
    * @param {Event} event - Event object.
    */
   setSelectionPos: function(pos, pointer) {
-    var options = this.options,
-        offset = D.position(this.overlay),
-        s = this.selection.selection;
+    var mode = this.options.selection.mode,
+        selection = this.selection.selection;
 
-    if(options.selection.mode.indexOf('x') == -1){
-      pos.x = (pos == s.first) ? 0 : this.plotWidth;         
+    if(mode.indexOf('x') == -1) {
+      pos.x = (pos == selection.first) ? 0 : this.plotWidth;         
     }else{
-      pos.x = boundX(pointer.pageX - offset.left - this.plotOffset.left, this);
+      pos.x = boundX(pointer.relX, this);
     }
 
-    if (options.selection.mode.indexOf('y') == -1){
-      pos.y = (pos == s.first) ? 0 : this.plotHeight - 1;
+    if (mode.indexOf('y') == -1) {
+      pos.y = (pos == selection.first) ? 0 : this.plotHeight - 1;
     }else{
-      pos.y = boundY(pointer.pageY - offset.top - this.plotOffset.top, this);
+      pos.y = boundY(pointer.relY, this);
     }
   },
   /**
@@ -6319,8 +6341,8 @@ Flotr.addPlugin('spreadsheet', {
       D.setStyles(container, {top: this.canvasHeight-offset+'px'});
 
       this.
-        _observe(graph, 'click',  function(){ss.showTab('graph');}).
-        _observe(data, 'click', function(){ss.showTab('data');});
+        observe(graph, 'click',  function(){ss.showTab('graph');}).
+        observe(data, 'click', function(){ss.showTab('data');});
       if (this.options.spreadsheet.initialTab !== 'graph'){
         ss.showTab(this.options.spreadsheet.initialTab);
       }
@@ -6437,8 +6459,8 @@ Flotr.addPlugin('spreadsheet', {
       '</button>');
 
     this.
-      _observe(buttonDownload, 'click', _.bind(this.spreadsheet.downloadCSV, this)).
-      _observe(buttonSelect, 'click', _.bind(this.spreadsheet.selectAllData, this));
+      observe(buttonDownload, 'click', _.bind(this.spreadsheet.downloadCSV, this)).
+      observe(buttonSelect, 'click', _.bind(this.spreadsheet.selectAllData, this));
 
     var toolbar = D.node('<div class="flotr-datagrid-toolbar"></div>');
     D.insert(toolbar, buttonDownload);

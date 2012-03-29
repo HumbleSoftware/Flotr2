@@ -55,8 +55,8 @@ Flotr.addType('lines', {
 
     var
       context   = options.context,
-      width     = options.plotWidth, 
-      height    = options.plotHeight,
+      width     = options.width, 
+      height    = options.height,
       xScale    = options.xScale,
       yScale    = options.yScale,
       data      = options.data, 
@@ -104,10 +104,12 @@ Flotr.addType('lines', {
         y2 = yScale(data[i+1][1]);
       }
 
-      if ((y1 >= height && y2 >= width) || 
-        (y1 <= 0 && y2 <= 0) ||
-        (x1 <= 0 && x2 <= 0) ||
-        (x1 >= width && x2 >= width)) continue;
+      if (
+        (y1 > height && y2 > height) ||
+        (y1 < 0 && y2 < 0) ||
+        (x1 < 0 && x2 < 0) ||
+        (x1 > width && x2 > width)
+      ) continue;
 
       if((prevx != x1) || (prevy != y1 + shadowOffset))
         context.moveTo(x1, y1 + shadowOffset);

@@ -60,8 +60,8 @@ Flotr.addPlugin('spreadsheet', {
       D.setStyles(container, {top: this.canvasHeight-offset+'px'});
 
       this.
-        _observe(graph, 'click',  function(){ss.showTab('graph');}).
-        _observe(data, 'click', function(){ss.showTab('data');});
+        observe(graph, 'click',  function(){ss.showTab('graph');}).
+        observe(data, 'click', function(){ss.showTab('data');});
       if (this.options.spreadsheet.initialTab !== 'graph'){
         ss.showTab(this.options.spreadsheet.initialTab);
       }
@@ -178,8 +178,8 @@ Flotr.addPlugin('spreadsheet', {
       '</button>');
 
     this.
-      _observe(buttonDownload, 'click', _.bind(this.spreadsheet.downloadCSV, this)).
-      _observe(buttonSelect, 'click', _.bind(this.spreadsheet.selectAllData, this));
+      observe(buttonDownload, 'click', _.bind(this.spreadsheet.downloadCSV, this)).
+      observe(buttonSelect, 'click', _.bind(this.spreadsheet.selectAllData, this));
 
     var toolbar = D.node('<div class="flotr-datagrid-toolbar"></div>');
     D.insert(toolbar, buttonDownload);
