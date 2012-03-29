@@ -10,10 +10,10 @@ Flotr.addPlugin('crosshair', {
   },
   callbacks: {
     'flotr:mousemove': function(e, pos) {
-      if (this.options.crosshair.mode)
+      if (this.options.crosshair.mode) {
         this.crosshair.clearCrosshair();
-      if (this.options.crosshair.mode)
         this.crosshair.drawCrosshair(pos);
+      }
     }
   },
   /**   
@@ -23,17 +23,14 @@ Flotr.addPlugin('crosshair', {
     var octx = this.octx,
       options = this.options.crosshair,
       plotOffset = this.plotOffset,
-      x = plotOffset.left+pos.relX+0.5,
-      y = plotOffset.top+pos.relY+0.5;
+      x = plotOffset.left + pos.relX + 0.5,
+      y = plotOffset.top + pos.relY + 0.5;
     
     if (pos.relX < 0 || pos.relY < 0 || pos.relX > this.plotWidth || pos.relY > this.plotHeight) {
       this.el.style.cursor = null;
       D.removeClass(this.el, 'flotr-crosshair');
       return; 
     }
-    
-    this.lastMousePos.relX = null;
-    this.lastMousePos.relY = null;
     
     if (options.hideCursor) {
       this.el.style.cursor = 'none';
@@ -48,13 +45,11 @@ Flotr.addPlugin('crosshair', {
     if (options.mode.indexOf('x') != -1) {
       octx.moveTo(x, plotOffset.top);
       octx.lineTo(x, plotOffset.top + this.plotHeight);
-      this.lastMousePos.relX = x;
     }
     
     if (options.mode.indexOf('y') != -1) {
       octx.moveTo(plotOffset.left, y);
       octx.lineTo(plotOffset.left + this.plotWidth, y);
-      this.lastMousePos.relY = y;
     }
     
     octx.stroke();
@@ -64,10 +59,26 @@ Flotr.addPlugin('crosshair', {
    * Removes the selection box from the overlay canvas.
    */
   clearCrosshair: function() {
-    if (this.lastMousePos.relX)
-      this.octx.clearRect(this.lastMousePos.relX-0.5, this.plotOffset.top, 1,this.plotHeight+1);
-    if (this.lastMousePos.relY)
-      this.octx.clearRect(this.plotOffset.left, this.lastMousePos.relY-0.5, this.plotWidth+1, 1);    
+
+    var
+      plotOffset = this.plotOffset,
+      position = this.lastMousePos,
+      context = this.octx;
+
+    if (position) {
+      context.clearRect(
+        position.relX + plotOffset.left,
+        plotOffset.top,
+        1,
+        this.plotHeight + 1
+      );
+      context.clearRect(
+        plotOffset.left,
+        position.relY + plotOffset.top,
+        this.plotWidth + 1,
+        1
+      );    
+    }
   }
 });
 })();
