@@ -173,8 +173,9 @@ Flotr.addPlugin('labels', {
       var
         isX     = axis.orientation === 1,
         isFirst = axis.n === 1,
+        name = '',
         left, style, top,
-        offset = graph.plotOffset, name;
+        offset = graph.plotOffset;
 
       if (!isX && !isFirst) {
         ctx.save();
@@ -200,9 +201,8 @@ Flotr.addPlugin('labels', {
             name = ' first';
           } else if (i === axis.ticks.length - 1) {
             name = ' last';
-          } else {
-            name = '';
           }
+          name += isX ? ' flotr-grid-label-x' : ' flotr-grid-label-y';
 
           html += [
             '<div style="position:absolute; text-align:' + (isX ? 'center' : 'right') + '; ',
