@@ -77,8 +77,8 @@ Axis.prototype = {
 
     if (max == min) {
       var widen = max ? 0.01 : 1.00;
-      min -= widen;
-      max += widen;
+      if (o.min === null) min -= widen;
+      if (o.max === null) max += widen;
     }
 
     if (o.scaling === 'logarithmic') {
