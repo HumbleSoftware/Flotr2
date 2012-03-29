@@ -354,8 +354,8 @@ Graph.prototype = {
   mouseMoveHandler: function(event){
     if (this.mouseDownMoveHandler) return;
     var pos = this.getEventPosition(event);
-    this.lastMousePos = pos;
     E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+    this.lastMousePos = pos;
   },
   /**
    * Observes the 'mousedown' event.
@@ -392,8 +392,8 @@ Graph.prototype = {
     }, this);
     this.mouseDownMoveHandler = _.bind(function (e) {
         var pos = this.getEventPosition(e);
-        this.lastMousePos = pos;
         E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+        this.lastMousePos = pos;
     }, this);
     E.observe(document, 'mouseup', this.mouseUpHandler);
     E.observe(document, 'mousemove', this.mouseDownMoveHandler);
@@ -505,11 +505,10 @@ Graph.prototype = {
           pageY = e.touches[0].pageY,
           pos = this.getEventPosition(e.touches[0]);
 
-        this.lastMousePos.pageX = pageX;
-        this.lastMousePos.pageY = pageY;
         if (!touchend) {
           E.fire(el, 'flotr:mousemove', [event, pos, this]);
         }
+        this.lastMousePos = pos;
       }, this));
 
     } else {
