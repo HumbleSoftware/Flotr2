@@ -551,7 +551,9 @@ Graph.prototype = {
     }
 
     D.setStyles(el, {position: 'relative'}); // For positioning labels and overlay.
-    size = D.size(el);
+    size = {};
+    size.width = el.clientWidth;
+    size.height = el.clientHeight;
 
     if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
       throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
