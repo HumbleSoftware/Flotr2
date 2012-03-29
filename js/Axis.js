@@ -262,7 +262,7 @@ Axis.prototype = {
 
       if (o.minorTickFreq) {
         for (j = 0; j < o.minorTickFreq && (i * tickSize + j * minorTickSize) < max; ++j) {
-          v = (v2 + j * minorTickSize).toFixed(decimals);
+          v = v2 + j * minorTickSize;
           axis.minorTicks.push({ v: v, label: o.tickFormatter(v, {min : axis.min, max : axis.max}) });
         }
       }
