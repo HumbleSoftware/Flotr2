@@ -2785,7 +2785,9 @@ Graph.prototype = {
     }
 
     D.setStyles(el, {position: 'relative'}); // For positioning labels and overlay.
-    size = D.size(el);
+    size = {};
+    size.width = el.clientWidth;
+    size.height = el.clientHeight;
 
     if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
       throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
@@ -6047,8 +6049,9 @@ Flotr.addPlugin('labels', {
       var
         isX     = axis.orientation === 1,
         isFirst = axis.n === 1,
+        name = '',
         left, style, top,
-        offset = graph.plotOffset, name;
+        offset = graph.plotOffset;
 
       if (!isX && !isFirst) {
         ctx.save();
@@ -6074,9 +6077,8 @@ Flotr.addPlugin('labels', {
             name = ' first';
           } else if (i === axis.ticks.length - 1) {
             name = ' last';
-          } else {
-            name = '';
           }
+          name += isX ? ' flotr-grid-label-x' : ' flotr-grid-label-y';
 
           html += [
             '<div style="position:absolute; text-align:' + (isX ? 'center' : 'right') + '; ',
