@@ -75,6 +75,7 @@ Flotr.defaultOptions = {
     horizontalLines: true, // => whether to show gridlines in horizontal direction
     minorHorizontalLines: null, // => whether to show gridlines for minor ticks in horizontal dir.
     outlineWidth: 1,       // => width of the grid outline/border in pixels
+    outline : 'nsew',      // => walls of the outline to display
     circular: false        // => if set to true, the grid will be circular, must be used when radars are drawn
   },
   mouse: {

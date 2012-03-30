@@ -40,8 +40,8 @@ Flotr.addPlugin('selection', {
       if (!this.options.selection || !this.options.selection.mode) return;
       if (this.selection.interval) clearInterval(this.selection.interval);
 
-      var pointer = E.eventPointer(event);
-      this.selection.setSelectionPos(this.selection.selection.second, {pageX:pointer.x, pageY:pointer.y});
+      var pointer = this.getEventPosition(event);
+      this.selection.setSelectionPos(this.selection.selection.second, pointer);
       this.selection.clearSelection();
 
       if(this.selection.selecting && this.selection.selectionIsSane()){
@@ -54,9 +54,8 @@ Flotr.addPlugin('selection', {
       if (!this.options.selection || !this.options.selection.mode) return;
       if (!this.options.selection.mode || (!isLeftClick(event) && _.isUndefined(event.touches))) return;
 
-      var pointer = E.eventPointer(event);
-
-      this.selection.setSelectionPos(this.selection.selection.first, {pageX:pointer.x, pageY:pointer.y});
+      var pointer = this.getEventPosition(event);
+      this.selection.setSelectionPos(this.selection.selection.first, pointer);
 
       if (this.selection.interval) clearInterval(this.selection.interval);
 
@@ -66,6 +65,9 @@ Flotr.addPlugin('selection', {
         _.bind(this.selection.updateSelection, this),
         1000/this.options.selection.fps
       );
+    },
+    'flotr:destroy' : function (event) {
+      clearInterval(this.selection.interval);
     }
   },
 
@@ -144,20 +146,19 @@ Flotr.addPlugin('selection', {
    * @param {Event} event - Event object.
    */
   setSelectionPos: function(pos, pointer) {
-    var options = this.options,
-        offset = D.position(this.overlay),
-        s = this.selection.selection;
+    var mode = this.options.selection.mode,
+        selection = this.selection.selection;
 
-    if(options.selection.mode.indexOf('x') == -1){
-      pos.x = (pos == s.first) ? 0 : this.plotWidth;         
+    if(mode.indexOf('x') == -1) {
+      pos.x = (pos == selection.first) ? 0 : this.plotWidth;         
     }else{
-      pos.x = boundX(pointer.pageX - offset.left - this.plotOffset.left, this);
+      pos.x = boundX(pointer.relX, this);
     }
 
-    if (options.selection.mode.indexOf('y') == -1){
-      pos.y = (pos == s.first) ? 0 : this.plotHeight - 1;
+    if (mode.indexOf('y') == -1) {
+      pos.y = (pos == selection.first) ? 0 : this.plotHeight - 1;
     }else{
-      pos.y = boundY(pointer.pageY - offset.top - this.plotOffset.top, this);
+      pos.y = boundY(pointer.relY, this);
     }
   },
   /**

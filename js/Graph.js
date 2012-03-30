@@ -52,9 +52,16 @@ Graph = function(el, data, options){
   }*/
 };
 
+function observe (object, name, callback) {
+  E.observe.apply(this, arguments);
+  this._handles.push(arguments);
+  return this;
+}
+
 Graph.prototype = {
 
   destroy: function () {
+    E.fire(this.el, 'flotr:destroy');
     _.each(this._handles, function (handle) {
       E.stopObserving.apply(this, handle);
     });
@@ -62,11 +69,13 @@ Graph.prototype = {
     this.el.graph = null;
   },
 
-  _observe: function (object, name, callback) {
-    E.observe.apply(this, arguments);
-    this._handles.push(arguments);
-    return this;
-  },
+  observe : observe,
+
+  /**
+   * @deprecated
+   */
+  _observe : observe,
+
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
@@ -330,7 +339,9 @@ Graph.prototype = {
       dX: dx,
       dY: dy,
       absX: pointer.x,
-      absY: pointer.y
+      absY: pointer.y,
+      pageX: pointer.x,
+      pageY: pointer.y
     };
   },
   /**
@@ -349,10 +360,10 @@ Graph.prototype = {
    * @param {Event} event - 'mousemove' Event object.
    */
   mouseMoveHandler: function(event){
+    if (this.mouseDownMoveHandler) return;
     var pos = this.getEventPosition(event);
-    this.lastMousePos.pageX = pos.absX;
-    this.lastMousePos.pageY = pos.absY;
     E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+    this.lastMousePos = pos;
   },
   /**
    * Observes the 'mousedown' event.
@@ -377,16 +388,23 @@ Graph.prototype = {
     }
     */
 
-
     if (this.mouseUpHandler) return;
     this.mouseUpHandler = _.bind(function (e) {
       E.stopObserving(document, 'mouseup', this.mouseUpHandler);
+      E.stopObserving(document, 'mousemove', this.mouseDownMoveHandler);
+      this.mouseDownMoveHandler = null;
       this.mouseUpHandler = null;
       // @TODO why?
       //e.stop();
       E.fire(this.el, 'flotr:mouseup', [e, this]);
     }, this);
+    this.mouseDownMoveHandler = _.bind(function (e) {
+        var pos = this.getEventPosition(e);
+        E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+        this.lastMousePos = pos;
+    }, this);
     E.observe(document, 'mouseup', this.mouseUpHandler);
+    E.observe(document, 'mousemove', this.mouseDownMoveHandler);
     E.fire(this.el, 'flotr:mousedown', [event, this]);
     this.ignoreClick = false;
   },
@@ -477,15 +495,15 @@ Graph.prototype = {
         }
       }, this);
 
-      this._observe(this.overlay, 'touchstart', _.bind(function (e) {
+      this.observe(this.overlay, 'touchstart', _.bind(function (e) {
         movement = false;
         touchend = false;
         this.ignoreClick = false;
         E.fire(el, 'flotr:mousedown', [event, this]);
-        this._observe(document, 'touchend', touchendHandler);
+        this.observe(document, 'touchend', touchendHandler);
       }, this));
 
-      this._observe(this.overlay, 'touchmove', _.bind(function (e) {
+      this.observe(this.overlay, 'touchmove', _.bind(function (e) {
 
         e.preventDefault();
 
@@ -495,19 +513,18 @@ Graph.prototype = {
           pageY = e.touches[0].pageY,
           pos = this.getEventPosition(e.touches[0]);
 
-        this.lastMousePos.pageX = pageX;
-        this.lastMousePos.pageY = pageY;
         if (!touchend) {
           E.fire(el, 'flotr:mousemove', [event, pos, this]);
         }
+        this.lastMousePos = pos;
       }, this));
 
     } else {
       this.
-        _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
-        _observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
-        _observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
-        _observe(el, 'mouseout', function () {
+        observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
+        observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+        observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
+        observe(el, 'mouseout', function () {
           E.fire(el, 'flotr:mouseout');
         });
     }
@@ -542,7 +559,9 @@ Graph.prototype = {
     }
 
     D.setStyles(el, {position: 'relative'}); // For positioning labels and overlay.
-    size = D.size(el);
+    size = {};
+    size.width = el.clientWidth;
+    size.height = el.clientHeight;
 
     if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
       throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
@@ -594,9 +613,9 @@ Graph.prototype = {
     // TODO Should be moved to flotr and mixed in.
     _.each(flotr.plugins, function(plugin, name){
       _.each(plugin.callbacks, function(fn, c){
-        this._observe(this.el, c, _.bind(fn, this));
+        this.observe(this.el, c, _.bind(fn, this));
       }, this);
-      this[name] = _.clone(plugin);
+      this[name] = flotr.clone(plugin);
       _.each(this[name], function(fn, p){
         if (_.isFunction(fn))
           this[name][p] = _.bind(fn, this);

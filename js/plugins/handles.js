@@ -36,7 +36,7 @@ function init() {
     options = this.options,
     handles = this.handles,
     el = this.el,
-    left, right;
+    scroll, left, right, container;
 
   if (!options.selection.mode || !options.handles.show || 'ontouchstart' in el) return;
 
@@ -56,10 +56,10 @@ function init() {
     handles.left = left;
     handles.right = right;
 
-    this._observe(left, 'mousedown', function () {
+    this.observe(left, 'mousedown', function () {
       handles.moveHandler = leftMoveHandler;
     });
-    this._observe(right, 'mousedown', function () {
+    this.observe(right, 'mousedown', function () {
       handles.moveHandler = rightMoveHandler;
     });
   }
@@ -70,12 +70,12 @@ function init() {
     D.insert(container, scroll);
     D.hide(scroll);
     handles.scroll = scroll;
-    this._observe(scroll, 'mousedown', function () {
+    this.observe(scroll, 'mousedown', function () {
       handles.moveHandler = scrollMoveHandler;
     });
   }
 
-  this._observe(document, 'mouseup', function() {
+  this.observe(document, 'mouseup', function() {
     handles.moveHandler = null;
   });
 
@@ -162,22 +162,24 @@ function mouseMoveHandler(e, position) {
   var
     delta = position.dX,
     selection = this.selection.selection,
-    area = this.selection.getArea();
+    area = this.selection.getArea(),
+    handles = this.handles;
 
-  moveHandler = this.handles.moveHandler;
-  moveHandler(area, delta);
-  checkSwap(area);
+  handles.moveHandler(area, delta);
+  checkSwap(area, handles);
 
   this.selection.setSelection(area);
 }
 
-function checkSwap (area) {
+function checkSwap (area, handles) {
+  var moveHandler = handles.moveHandler;
   if (area.x1 > area.x2) {
     if (moveHandler == leftMoveHandler) {
       moveHandler = rightMoveHandler;
     } else if (moveHandler == rightMoveHandler) {
       moveHandler = leftMoveHandler;
     }
+    handles.moveHandler = moveHandler;
   }
 }
 

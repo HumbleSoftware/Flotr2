@@ -1,8 +1,10 @@
 {
   "JAVASCRIPT": {
     "DIST_DIR": "./build",
-    "lib": [
-      { "src": "./lib/bean.js", "jshint": false },
+    "bean": [
+      { "src": "./lib/bean.js", "jshint": false }
+    ],
+    "underscore": [
       { "src": "./lib/underscore.js", "jshint": false }
     ]
   }
