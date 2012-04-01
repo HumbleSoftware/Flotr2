@@ -52,68 +52,105 @@ Flotr.Date = {
     else                       return "%y";
   },
   formatter: function (v, axis) {
-    var d = new Date(v);
+    var
+      options = axis.options,
+      timeScale = options.timeScale,
+      d = new Date(v * timeScale);
 
     // first check global format
     if (axis.options.timeFormat)
       return Flotr.Date.format(d, axis.options.timeFormat);
     
-    var span = axis.max - axis.min,
+    var span = (axis.max - axis.min) * timeScale,
         t = axis.tickSize * Flotr.Date.timeUnits[axis.tickUnit];
-        
+
     return Flotr.Date.format(d, Flotr.Date.getFormat(t, span));
   },
   generator: function(axis) {
-    var ticks = [],
-      d = new Date(axis.min),
-      tu = Flotr.Date.timeUnits;
-    
-    var step = axis.tickSize * tu[axis.tickUnit];
 
-    switch (axis.tickUnit) {
-      case "millisecond": d.setUTCMilliseconds(Flotr.floorInBase(d.getUTCMilliseconds(), axis.tickSize)); break;
-      case "second": d.setUTCSeconds(Flotr.floorInBase(d.getUTCSeconds(), axis.tickSize)); break;
-      case "minute": d.setUTCMinutes(Flotr.floorInBase(d.getUTCMinutes(), axis.tickSize)); break;
-      case "hour":   d.setUTCHours(Flotr.floorInBase(d.getUTCHours(), axis.tickSize)); break;
-      case "month":  d.setUTCMonth(Flotr.floorInBase(d.getUTCMonth(), axis.tickSize)); break;
-      case "year":   d.setUTCFullYear(Flotr.floorInBase(d.getUTCFullYear(), axis.tickSize));break;
+     var
+      timeUnits = this.timeUnits,
+      spec      = this.spec,
+      options   = axis.options,
+      scale     = options.timeScale,
+      min       = axis.min * scale,
+      max       = axis.max * scale,
+      delta     = (max - min) / options.noTicks,
+      ticks     = [],
+      tickSize  = axis.tickSize,
+      tickUnit,
+      formatter, i;
+
+    // Use custom formatter or time tick formatter
+    formatter = (options.tickFormatter === Flotr.defaultTickFormatter ?
+      this.formatter : options.tickFormatter
+    );
+
+    for (i = 0; i < spec.length - 1; ++i) {
+      var d = spec[i][0] * timeUnits[spec[i][1]];
+      if (delta < (d + spec[i+1][0] * timeUnits[spec[i+1][1]]) / 2 && d >= tickSize)
+        break;
+    }
+    tickSize = spec[i][0];
+    tickUnit = spec[i][1];
+
+    // special-case the possibility of several years
+    if (tickUnit == "year") {
+      tickSize = Flotr.getTickSize(options.noTicks*timeUnits.year, min, max, 0);
+    }
+
+    axis.tickUnit = tickUnit;
+    axis.tickSize = tickSize;
+
+    var
+      d = new Date(min);
+
+    var step = tickSize * timeUnits[tickUnit];
+
+    switch (tickUnit) {
+      case "millisecond": d.setUTCMilliseconds(Flotr.floorInBase(d.getUTCMilliseconds(), tickSize)); break;
+      case "second": d.setUTCSeconds(Flotr.floorInBase(d.getUTCSeconds(), tickSize)); break;
+      case "minute": d.setUTCMinutes(Flotr.floorInBase(d.getUTCMinutes(), tickSize)); break;
+      case "hour":   d.setUTCHours(Flotr.floorInBase(d.getUTCHours(), tickSize)); break;
+      case "month":  d.setUTCMonth(Flotr.floorInBase(d.getUTCMonth(), tickSize)); break;
+      case "year":   d.setUTCFullYear(Flotr.floorInBase(d.getUTCFullYear(), tickSize));break;
     }
     
     // reset smaller components
-    if (step >= tu.second)  d.setUTCMilliseconds(0);
-    if (step >= tu.minute)  d.setUTCSeconds(0);
-    if (step >= tu.hour)    d.setUTCMinutes(0);
-    if (step >= tu.day)     d.setUTCHours(0);
-    if (step >= tu.day * 4) d.setUTCDate(1);
-    if (step >= tu.year)    d.setUTCMonth(0);
+    if (step >= timeUnits.second)  d.setUTCMilliseconds(0);
+    if (step >= timeUnits.minute)  d.setUTCSeconds(0);
+    if (step >= timeUnits.hour)    d.setUTCMinutes(0);
+    if (step >= timeUnits.day)     d.setUTCHours(0);
+    if (step >= timeUnits.day * 4) d.setUTCDate(1);
+    if (step >= timeUnits.year)    d.setUTCMonth(0);
 
     var carry = 0, v = NaN, prev;
     do {
       prev = v;
       v = d.getTime();
-      ticks.push({ v:v, label:Flotr.Date.formatter(v, axis) });
-      if (axis.tickUnit == "month") {
-        if (axis.tickSize < 1) {
+      ticks.push({ v: v / scale, label: formatter(v / scale, axis) });
+      if (tickUnit == "month") {
+        if (tickSize < 1) {
           /* a bit complicated - we'll divide the month up but we need to take care of fractions
            so we don't end up in the middle of a day */
           d.setUTCDate(1);
           var start = d.getTime();
           d.setUTCMonth(d.getUTCMonth() + 1);
           var end = d.getTime();
-          d.setTime(v + carry * tu.hour + (end - start) * axis.tickSize);
+          d.setTime(v + carry * timeUnits.hour + (end - start) * tickSize);
           carry = d.getUTCHours();
           d.setUTCHours(0);
         }
         else
-          d.setUTCMonth(d.getUTCMonth() + axis.tickSize);
+          d.setUTCMonth(d.getUTCMonth() + tickSize);
       }
-      else if (axis.tickUnit == "year") {
-        d.setUTCFullYear(d.getUTCFullYear() + axis.tickSize);
+      else if (tickUnit == "year") {
+        d.setUTCFullYear(d.getUTCFullYear() + tickSize);
       }
       else
         d.setTime(v + step);
 
-    } while (v < axis.max && v != prev);
+    } while (v < max && v != prev);
     
     return ticks;
   },
