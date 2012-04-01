@@ -115,6 +115,12 @@ Flotr.Date = {
     // special-case the possibility of several years
     if (tickUnit == "year") {
       tickSize = Flotr.getTickSize(options.noTicks*timeUnits.year, min, max, 0);
+
+      // Fix for 0.5 year case
+      if (tickSize == 0.5) {
+        tickUnit = "month";
+        tickSize = 6;
+      }
     }
 
     axis.tickUnit = tickUnit;
