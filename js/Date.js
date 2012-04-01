@@ -54,14 +54,14 @@ Flotr.Date = {
   formatter: function (v, axis) {
     var
       options = axis.options,
-      timeScale = options.timeScale,
-      d = new Date(v * timeScale);
+      scale = Flotr.Date.timeUnits[options.timeUnit],
+      d = new Date(v * scale);
 
     // first check global format
     if (axis.options.timeFormat)
       return Flotr.Date.format(d, axis.options.timeFormat);
     
-    var span = (axis.max - axis.min) * timeScale,
+    var span = (axis.max - axis.min) * scale,
         t = axis.tickSize * Flotr.Date.timeUnits[axis.tickUnit];
 
     return Flotr.Date.format(d, Flotr.Date.getFormat(t, span));
@@ -72,7 +72,7 @@ Flotr.Date = {
       timeUnits = this.timeUnits,
       spec      = this.spec,
       options   = axis.options,
-      scale     = options.timeScale,
+      scale     = timeUnits[options.timeUnit],
       min       = axis.min * scale,
       max       = axis.max * scale,
       delta     = (max - min) / options.noTicks,

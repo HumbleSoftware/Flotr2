@@ -32,7 +32,7 @@ Flotr.defaultOptions = {
     color: null,           // => color of the ticks
     mode: 'normal',        // => can be 'time' or 'normal'
     timeFormat: null,
-    timeScale: 1,          // => Scale for time (ms per unit)
+    timeUnit:'millisecond',// => Unit for time (millisecond, second, minute, hour, day, month, year)
     scaling: 'linear',     // => Scaling, can be 'linear' or 'logarithmic'
     base: Math.E,
     titleAlign: 'center',
