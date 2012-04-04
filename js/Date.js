@@ -2,23 +2,38 @@
  * Flotr Date
  */
 Flotr.Date = {
-  format: function(d, format) {
+
+  set : function (date, name, mode, value) {
+    mode = mode || 'UTC';
+    name = 'set' + (mode === 'UTC' ? 'UTC' : '') + name;
+    date[name](value);
+  },
+
+  get : function (date, name, mode) {
+    mode = mode || 'UTC';
+    name = 'get' + (mode === 'UTC' ? 'UTC' : '') + name;
+    return date[name]();
+  },
+
+  format: function(d, format, mode) {
     if (!d) return;
-    
+
     // We should maybe use an "official" date format spec, like PHP date() or ColdFusion 
     // http://fr.php.net/manual/en/function.date.php
     // http://livedocs.adobe.com/coldfusion/8/htmldocs/help.html?content=functions_c-d_29.html
-    var tokens = {
-      h: d.getUTCHours().toString(),
-      H: leftPad(d.getUTCHours()),
-      M: leftPad(d.getUTCMinutes()),
-      S: leftPad(d.getUTCSeconds()),
-      s: d.getUTCMilliseconds(),
-      d: d.getUTCDate().toString(),
-      m: (d.getUTCMonth() + 1).toString(),
-      y: d.getUTCFullYear().toString(),
-      b: Flotr.Date.monthNames[d.getUTCMonth()]
-    };
+    var
+      get = this.get,
+      tokens = {
+        h: get(d, 'Hours', mode).toString(),
+        H: leftPad(get(d, 'Hours', mode)),
+        M: leftPad(get(d, 'Minutes', mode)),
+        S: leftPad(get(d, 'Seconds', mode)),
+        s: get(d, 'Milliseconds', mode),
+        d: get(d, 'Date', mode).toString(),
+        m: (get(d, 'Month') + 1).toString(),
+        y: get(d, 'FullYear').toString(),
+        b: Flotr.Date.monthNames[get(d, 'Month', mode)]
+      };
 
     function leftPad(n){
       n += '';
@@ -52,69 +67,121 @@ Flotr.Date = {
     else                       return "%y";
   },
   formatter: function (v, axis) {
-    var d = new Date(v);
+    var
+      options = axis.options,
+      scale = Flotr.Date.timeUnits[options.timeUnit],
+      d = new Date(v * scale);
 
     // first check global format
     if (axis.options.timeFormat)
-      return Flotr.Date.format(d, axis.options.timeFormat);
+      return Flotr.Date.format(d, options.timeFormat, options.timeMode);
     
-    var span = axis.max - axis.min,
+    var span = (axis.max - axis.min) * scale,
         t = axis.tickSize * Flotr.Date.timeUnits[axis.tickUnit];
-        
-    return Flotr.Date.format(d, Flotr.Date.getFormat(t, span));
+
+    return Flotr.Date.format(d, Flotr.Date.getFormat(t, span), options.timeMode);
   },
   generator: function(axis) {
-    var ticks = [],
-      d = new Date(axis.min),
-      tu = Flotr.Date.timeUnits;
-    
-    var step = axis.tickSize * tu[axis.tickUnit];
 
-    switch (axis.tickUnit) {
-      case "millisecond": d.setUTCMilliseconds(Flotr.floorInBase(d.getUTCMilliseconds(), axis.tickSize)); break;
-      case "second": d.setUTCSeconds(Flotr.floorInBase(d.getUTCSeconds(), axis.tickSize)); break;
-      case "minute": d.setUTCMinutes(Flotr.floorInBase(d.getUTCMinutes(), axis.tickSize)); break;
-      case "hour":   d.setUTCHours(Flotr.floorInBase(d.getUTCHours(), axis.tickSize)); break;
-      case "month":  d.setUTCMonth(Flotr.floorInBase(d.getUTCMonth(), axis.tickSize)); break;
-      case "year":   d.setUTCFullYear(Flotr.floorInBase(d.getUTCFullYear(), axis.tickSize));break;
+     var
+      set       = this.set,
+      get       = this.get,
+      timeUnits = this.timeUnits,
+      spec      = this.spec,
+      options   = axis.options,
+      mode      = options.timeMode,
+      scale     = timeUnits[options.timeUnit],
+      min       = axis.min * scale,
+      max       = axis.max * scale,
+      delta     = (max - min) / options.noTicks,
+      ticks     = [],
+      tickSize  = axis.tickSize,
+      tickUnit,
+      formatter, i;
+
+    // Use custom formatter or time tick formatter
+    formatter = (options.tickFormatter === Flotr.defaultTickFormatter ?
+      this.formatter : options.tickFormatter
+    );
+
+    for (i = 0; i < spec.length - 1; ++i) {
+      var d = spec[i][0] * timeUnits[spec[i][1]];
+      if (delta < (d + spec[i+1][0] * timeUnits[spec[i+1][1]]) / 2 && d >= tickSize)
+        break;
+    }
+    tickSize = spec[i][0];
+    tickUnit = spec[i][1];
+
+    // special-case the possibility of several years
+    if (tickUnit == "year") {
+      tickSize = Flotr.getTickSize(options.noTicks*timeUnits.year, min, max, 0);
+
+      // Fix for 0.5 year case
+      if (tickSize == 0.5) {
+        tickUnit = "month";
+        tickSize = 6;
+      }
+    }
+
+    axis.tickUnit = tickUnit;
+    axis.tickSize = tickSize;
+
+    var
+      d = new Date(min);
+
+    var step = tickSize * timeUnits[tickUnit];
+
+    function setTick (name) {
+      set(d, name, mode, Flotr.floorInBase(
+        get(d, name, mode), tickSize
+      ));
+    }
+
+    switch (tickUnit) {
+      case "millisecond": setTick('Milliseconds'); break;
+      case "second": setTick('Seconds'); break;
+      case "minute": setTick('Minutes'); break;
+      case "hour": setTick('Hours'); break;
+      case "month": setTick('Month'); break;
+      case "year": setTick('FullYear'); break;
     }
     
     // reset smaller components
-    if (step >= tu.second)  d.setUTCMilliseconds(0);
-    if (step >= tu.minute)  d.setUTCSeconds(0);
-    if (step >= tu.hour)    d.setUTCMinutes(0);
-    if (step >= tu.day)     d.setUTCHours(0);
-    if (step >= tu.day * 4) d.setUTCDate(1);
-    if (step >= tu.year)    d.setUTCMonth(0);
+    if (step >= timeUnits.second)  set(d, 'Milliseconds', mode, 0);
+    if (step >= timeUnits.minute)  set(d, 'Seconds', mode, 0);
+    if (step >= timeUnits.hour)    set(d, 'Minutes', mode, 0);
+    if (step >= timeUnits.day)     set(d, 'Hours', mode, 0);
+    if (step >= timeUnits.day * 4) set(d, 'Date', mode, 1);
+    if (step >= timeUnits.year)    set(d, 'Month', mode, 0);
 
     var carry = 0, v = NaN, prev;
     do {
       prev = v;
       v = d.getTime();
-      ticks.push({ v:v, label:Flotr.Date.formatter(v, axis) });
-      if (axis.tickUnit == "month") {
-        if (axis.tickSize < 1) {
+      ticks.push({ v: v / scale, label: formatter(v / scale, axis) });
+      if (tickUnit == "month") {
+        if (tickSize < 1) {
           /* a bit complicated - we'll divide the month up but we need to take care of fractions
            so we don't end up in the middle of a day */
-          d.setUTCDate(1);
+          set(d, 'Date', mode, 1);
           var start = d.getTime();
-          d.setUTCMonth(d.getUTCMonth() + 1);
+          set(d, 'Month', mode, get(d, 'Month', mode) + 1)
           var end = d.getTime();
-          d.setTime(v + carry * tu.hour + (end - start) * axis.tickSize);
-          carry = d.getUTCHours();
-          d.setUTCHours(0);
+          d.setTime(v + carry * timeUnits.hour + (end - start) * tickSize);
+          carry = get(d, 'Hours', mode)
+          set(d, 'Hours', mode, 0);
         }
         else
-          d.setUTCMonth(d.getUTCMonth() + axis.tickSize);
+          set(d, 'Month', mode, get(d, 'Month', mode) + tickSize);
       }
-      else if (axis.tickUnit == "year") {
-        d.setUTCFullYear(d.getUTCFullYear() + axis.tickSize);
+      else if (tickUnit == "year") {
+        set(d, 'FullYear', mode, get(d, 'FullYear', mode) + tickSize);
       }
       else
         d.setTime(v + step);
 
-    } while (v < axis.max && v != prev);
-    
+    } while (v < max && v != prev);
+
     return ticks;
   },
   timeUnits: {
