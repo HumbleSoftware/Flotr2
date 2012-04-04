@@ -41,6 +41,7 @@ Flotr.addType('pie', {
       shadowSize    = options.shadowSize,
       sizeRatio     = options.sizeRatio,
       height        = options.height,
+      width         = options.width,
       explode       = options.explode,
       color         = options.color,
       fill          = options.fill,
@@ -55,15 +56,17 @@ Flotr.addType('pie', {
       bisection     = startAngle + measure / 2,
       label         = options.labelFormatter(this.total, value),
       //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
-      alignRight    = (Math.cos(bisection) < 0),
-      alignTop      = (Math.sin(bisection) > 0),
       explodeCoeff  = explode + radius + 4,
+      distX         = Math.cos(bisection) * explodeCoeff,
+      distY         = Math.sin(bisection) * explodeCoeff,
+      textAlign     = distX < 0 ? 'right' : 'left',
+      textBaseline  = distY > 0 ? 'top' : 'bottom',
       style,
       x, y,
       distX, distY;
     
     context.save();
-    context.translate(options.width / 2, options.height / 2);
+    context.translate(width / 2, height / 2);
     context.scale(1, vScale);
 
     x = Math.cos(bisection) * explode;
@@ -87,8 +90,6 @@ Flotr.addType('pie', {
     context.strokeStyle = color;
     context.stroke();
 
-    distX = Math.cos(bisection) * explodeCoeff;
-    distY = Math.sin(bisection) * explodeCoeff;
     style = {
       size : options.fontSize * 1.2,
       color : options.fontColor,
@@ -97,18 +98,13 @@ Flotr.addType('pie', {
 
     if (label) {
       if (options.htmlText || !options.textEnabled) {
-        // TODO HTML text is broken here.
-        var yAlignDist = textAlignTop ? (distY - 5) : (height - distY + 5),
-            divStyle = 'position:absolute;' + (textAlignTop ? 'top' : 'bottom') + ':' + yAlignDist + 'px;'; //@todo: change
-        if (textAlignRight)
-          divStyle += 'right:'+(this.canvasWidth - distX)+'px;text-align:right;';
-        else 
-          divStyle += 'left:'+distX+'px;text-align:left;';
+        divStyle = 'position:absolute;' + textBaseline + ':' + (height / 2 + (textBaseline === 'top' ? distY : -distY)) + 'px;';
+        divStyle += textAlign + ':' + (width / 2 + (textAlign === 'right' ? -distX : distX)) + 'px;';
         html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
       }
       else {
-        style.textAlign = alignRight ? 'right' : 'left';
-        style.textBaseline = alignTop ? 'top' : 'bottom';
+        style.textAlign = textAlign;
+        style.textBaseline = textBaseline;
         Flotr.drawText(context, label, distX, distY, style);
       }
     }
@@ -116,7 +112,7 @@ Flotr.addType('pie', {
     if (options.htmlText || !options.textEnabled) {
       var div = Flotr.DOM.node('<div style="color:' + options.fontColor + '" class="flotr-labels"></div>');
       Flotr.DOM.insert(div, html.join(''));
-      Flotr.DOM.insert(this.el, div);
+      Flotr.DOM.insert(options.element, div);
     }
     
     context.restore();
