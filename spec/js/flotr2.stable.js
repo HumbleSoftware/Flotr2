@@ -1625,6 +1625,8 @@ Flotr.defaultOptions = {
     color: null,           // => color of the ticks
     mode: 'normal',        // => can be 'time' or 'normal'
     timeFormat: null,
+    timeMode:'UTC',        // => For UTC time ('local' for local time).
+    timeUnit:'millisecond',// => Unit for time (millisecond, second, minute, hour, day, month, year)
     scaling: 'linear',     // => Scaling, can be 'linear' or 'logarithmic'
     base: Math.E,
     titleAlign: 'center',
@@ -1856,23 +1858,38 @@ Flotr.Color = Color;
  * Flotr Date
  */
 Flotr.Date = {
-  format: function(d, format) {
+
+  set : function (date, name, mode, value) {
+    mode = mode || 'UTC';
+    name = 'set' + (mode === 'UTC' ? 'UTC' : '') + name;
+    date[name](value);
+  },
+
+  get : function (date, name, mode) {
+    mode = mode || 'UTC';
+    name = 'get' + (mode === 'UTC' ? 'UTC' : '') + name;
+    return date[name]();
+  },
+
+  format: function(d, format, mode) {
     if (!d) return;
-    
+
     // We should maybe use an "official" date format spec, like PHP date() or ColdFusion 
     // http://fr.php.net/manual/en/function.date.php
     // http://livedocs.adobe.com/coldfusion/8/htmldocs/help.html?content=functions_c-d_29.html
-    var tokens = {
-      h: d.getUTCHours().toString(),
-      H: leftPad(d.getUTCHours()),
-      M: leftPad(d.getUTCMinutes()),
-      S: leftPad(d.getUTCSeconds()),
-      s: d.getUTCMilliseconds(),
-      d: d.getUTCDate().toString(),
-      m: (d.getUTCMonth() + 1).toString(),
-      y: d.getUTCFullYear().toString(),
-      b: Flotr.Date.monthNames[d.getUTCMonth()]
-    };
+    var
+      get = this.get,
+      tokens = {
+        h: get(d, 'Hours', mode).toString(),
+        H: leftPad(get(d, 'Hours', mode)),
+        M: leftPad(get(d, 'Minutes', mode)),
+        S: leftPad(get(d, 'Seconds', mode)),
+        s: get(d, 'Milliseconds', mode),
+        d: get(d, 'Date', mode).toString(),
+        m: (get(d, 'Month') + 1).toString(),
+        y: get(d, 'FullYear').toString(),
+        b: Flotr.Date.monthNames[get(d, 'Month', mode)]
+      };
 
     function leftPad(n){
       n += '';
@@ -1906,69 +1923,121 @@ Flotr.Date = {
     else                       return "%y";
   },
   formatter: function (v, axis) {
-    var d = new Date(v);
+    var
+      options = axis.options,
+      scale = Flotr.Date.timeUnits[options.timeUnit],
+      d = new Date(v * scale);
 
     // first check global format
     if (axis.options.timeFormat)
-      return Flotr.Date.format(d, axis.options.timeFormat);
+      return Flotr.Date.format(d, options.timeFormat, options.timeMode);
     
-    var span = axis.max - axis.min,
+    var span = (axis.max - axis.min) * scale,
         t = axis.tickSize * Flotr.Date.timeUnits[axis.tickUnit];
-        
-    return Flotr.Date.format(d, Flotr.Date.getFormat(t, span));
+
+    return Flotr.Date.format(d, Flotr.Date.getFormat(t, span), options.timeMode);
   },
   generator: function(axis) {
-    var ticks = [],
-      d = new Date(axis.min),
-      tu = Flotr.Date.timeUnits;
-    
-    var step = axis.tickSize * tu[axis.tickUnit];
 
-    switch (axis.tickUnit) {
-      case "millisecond": d.setUTCMilliseconds(Flotr.floorInBase(d.getUTCMilliseconds(), axis.tickSize)); break;
-      case "second": d.setUTCSeconds(Flotr.floorInBase(d.getUTCSeconds(), axis.tickSize)); break;
-      case "minute": d.setUTCMinutes(Flotr.floorInBase(d.getUTCMinutes(), axis.tickSize)); break;
-      case "hour":   d.setUTCHours(Flotr.floorInBase(d.getUTCHours(), axis.tickSize)); break;
-      case "month":  d.setUTCMonth(Flotr.floorInBase(d.getUTCMonth(), axis.tickSize)); break;
-      case "year":   d.setUTCFullYear(Flotr.floorInBase(d.getUTCFullYear(), axis.tickSize));break;
+     var
+      set       = this.set,
+      get       = this.get,
+      timeUnits = this.timeUnits,
+      spec      = this.spec,
+      options   = axis.options,
+      mode      = options.timeMode,
+      scale     = timeUnits[options.timeUnit],
+      min       = axis.min * scale,
+      max       = axis.max * scale,
+      delta     = (max - min) / options.noTicks,
+      ticks     = [],
+      tickSize  = axis.tickSize,
+      tickUnit,
+      formatter, i;
+
+    // Use custom formatter or time tick formatter
+    formatter = (options.tickFormatter === Flotr.defaultTickFormatter ?
+      this.formatter : options.tickFormatter
+    );
+
+    for (i = 0; i < spec.length - 1; ++i) {
+      var d = spec[i][0] * timeUnits[spec[i][1]];
+      if (delta < (d + spec[i+1][0] * timeUnits[spec[i+1][1]]) / 2 && d >= tickSize)
+        break;
+    }
+    tickSize = spec[i][0];
+    tickUnit = spec[i][1];
+
+    // special-case the possibility of several years
+    if (tickUnit == "year") {
+      tickSize = Flotr.getTickSize(options.noTicks*timeUnits.year, min, max, 0);
+
+      // Fix for 0.5 year case
+      if (tickSize == 0.5) {
+        tickUnit = "month";
+        tickSize = 6;
+      }
+    }
+
+    axis.tickUnit = tickUnit;
+    axis.tickSize = tickSize;
+
+    var
+      d = new Date(min);
+
+    var step = tickSize * timeUnits[tickUnit];
+
+    function setTick (name) {
+      set(d, name, mode, Flotr.floorInBase(
+        get(d, name, mode), tickSize
+      ));
+    }
+
+    switch (tickUnit) {
+      case "millisecond": setTick('Milliseconds'); break;
+      case "second": setTick('Seconds'); break;
+      case "minute": setTick('Minutes'); break;
+      case "hour": setTick('Hours'); break;
+      case "month": setTick('Month'); break;
+      case "year": setTick('FullYear'); break;
     }
     
     // reset smaller components
-    if (step >= tu.second)  d.setUTCMilliseconds(0);
-    if (step >= tu.minute)  d.setUTCSeconds(0);
-    if (step >= tu.hour)    d.setUTCMinutes(0);
-    if (step >= tu.day)     d.setUTCHours(0);
-    if (step >= tu.day * 4) d.setUTCDate(1);
-    if (step >= tu.year)    d.setUTCMonth(0);
+    if (step >= timeUnits.second)  set(d, 'Milliseconds', mode, 0);
+    if (step >= timeUnits.minute)  set(d, 'Seconds', mode, 0);
+    if (step >= timeUnits.hour)    set(d, 'Minutes', mode, 0);
+    if (step >= timeUnits.day)     set(d, 'Hours', mode, 0);
+    if (step >= timeUnits.day * 4) set(d, 'Date', mode, 1);
+    if (step >= timeUnits.year)    set(d, 'Month', mode, 0);
 
     var carry = 0, v = NaN, prev;
     do {
       prev = v;
       v = d.getTime();
-      ticks.push({ v:v, label:Flotr.Date.formatter(v, axis) });
-      if (axis.tickUnit == "month") {
-        if (axis.tickSize < 1) {
+      ticks.push({ v: v / scale, label: formatter(v / scale, axis) });
+      if (tickUnit == "month") {
+        if (tickSize < 1) {
           /* a bit complicated - we'll divide the month up but we need to take care of fractions
            so we don't end up in the middle of a day */
-          d.setUTCDate(1);
+          set(d, 'Date', mode, 1);
           var start = d.getTime();
-          d.setUTCMonth(d.getUTCMonth() + 1);
+          set(d, 'Month', mode, get(d, 'Month', mode) + 1)
           var end = d.getTime();
-          d.setTime(v + carry * tu.hour + (end - start) * axis.tickSize);
-          carry = d.getUTCHours();
-          d.setUTCHours(0);
+          d.setTime(v + carry * timeUnits.hour + (end - start) * tickSize);
+          carry = get(d, 'Hours', mode)
+          set(d, 'Hours', mode, 0);
         }
         else
-          d.setUTCMonth(d.getUTCMonth() + axis.tickSize);
+          set(d, 'Month', mode, get(d, 'Month', mode) + tickSize);
       }
-      else if (axis.tickUnit == "year") {
-        d.setUTCFullYear(d.getUTCFullYear() + axis.tickSize);
+      else if (tickUnit == "year") {
+        set(d, 'FullYear', mode, get(d, 'FullYear', mode) + tickSize);
       }
       else
         d.setTime(v + step);
 
-    } while (v < axis.max && v != prev);
-    
+    } while (v < max && v != prev);
+
     return ticks;
   },
   timeUnits: {
@@ -2509,6 +2578,7 @@ Graph.prototype = {
         textEnabled : this.textEnabled,
         htmlText    : this.options.HtmlText,
         text        : this._text, // TODO Is this necessary?
+        element     : this.el,
         data        : series.data,
         color       : series.color,
         shadowSize  : series.shadowSize,
@@ -2785,7 +2855,9 @@ Graph.prototype = {
     }
 
     D.setStyles(el, {position: 'relative'}); // For positioning labels and overlay.
-    size = D.size(el);
+    size = {};
+    size.width = el.clientWidth;
+    size.height = el.clientHeight;
 
     if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
       throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
@@ -2946,12 +3018,11 @@ Graph.prototype = {
 
   _setEl: function(el) {
     if (!el) throw 'The target container doesn\'t exist';
-    if (!el.clientWidth) throw 'The target container must be visible';
+    else if (el.graph instanceof Graph) el.graph.destroy();
+    else if (!el.clientWidth) throw 'The target container must be visible';
+
+    el.graph = this;
     this.el = el;
-
-    if (this.el.graph) this.el.graph.destroy();
-
-    this.el.graph = this;
   }
 };
 
@@ -3139,28 +3210,7 @@ Axis.prototype = {
   },
 
   _calculateTimeTicks : function () {
-    var axis = this,
-        tu = Flotr.Date.timeUnits,
-        spec = Flotr.Date.spec,
-        delta = (axis.max - axis.min) / axis.options.noTicks,
-        size, unit, i;
-
-    for (i = 0; i < spec.length - 1; ++i) {
-      var d = spec[i][0] * tu[spec[i][1]];
-      if (delta < (d + spec[i+1][0] * tu[spec[i+1][1]]) / 2 && d >= axis.tickSize)
-        break;
-    }
-    size = spec[i][0];
-    unit = spec[i][1];
-    
-    // special-case the possibility of several years
-    if (unit == "year") {
-      size = Flotr.getTickSize(axis.options.noTicks*tu.year, axis.min, axis.max, 0);
-    }
-    
-    axis.tickSize = size;
-    axis.tickUnit = unit;
-    axis.ticks = Flotr.Date.generator(axis);
+    this.ticks = Flotr.Date.generator(this);
   },
 
   _calculateLogTicks : function () {
@@ -4045,6 +4095,7 @@ Flotr.addType('candles', {
       yScale        = options.yScale,
       width         = options.candleWidth / 2,
       shadowSize    = options.shadowSize,
+      lineWidth     = options.lineWidth,
       wickLineWidth = options.wickLineWidth,
       pixelOffset   = (wickLineWidth % 2) / 2,
       color,
@@ -4085,12 +4136,12 @@ Flotr.addType('candles', {
         context.save();
         context.globalAlpha = options.fillOpacity;
         context.fillStyle = color;
-        context.fillRect(left, top2 + width, right - left, bottom2 - top2);
+        context.fillRect(left, top2 + lineWidth, right - left, bottom2 - top2);
         context.restore();
       }
 
       // Draw candle outline/border, high, low.
-      if (options.lineWidth || wickLineWidth) {
+      if (lineWidth || wickLineWidth) {
 
         x = Math.floor((left + right) / 2) + pixelOffset;
 
@@ -4111,12 +4162,12 @@ Flotr.addType('candles', {
           context.moveTo(Math.floor(right) + pixelOffset, y);
           context.lineTo(x, y);
         } else {
-          context.strokeRect(left, top2 + width, right - left, bottom2 - top2);
+          context.strokeRect(left, top2 + lineWidth, right - left, bottom2 - top2);
 
-          context.moveTo(x, Math.floor(top2 + width));
-          context.lineTo(x, Math.floor(top + width));
-          context.moveTo(x, Math.floor(bottom2 + width));
-          context.lineTo(x, Math.floor(bottom + width));
+          context.moveTo(x, Math.floor(top2 + lineWidth));
+          context.lineTo(x, Math.floor(top + lineWidth));
+          context.moveTo(x, Math.floor(bottom2 + lineWidth));
+          context.lineTo(x, Math.floor(bottom + lineWidth));
         }
         
         context.closePath();
@@ -4544,6 +4595,7 @@ Flotr.addType('pie', {
       shadowSize    = options.shadowSize,
       sizeRatio     = options.sizeRatio,
       height        = options.height,
+      width         = options.width,
       explode       = options.explode,
       color         = options.color,
       fill          = options.fill,
@@ -4558,15 +4610,17 @@ Flotr.addType('pie', {
       bisection     = startAngle + measure / 2,
       label         = options.labelFormatter(this.total, value),
       //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
-      alignRight    = (Math.cos(bisection) < 0),
-      alignTop      = (Math.sin(bisection) > 0),
       explodeCoeff  = explode + radius + 4,
+      distX         = Math.cos(bisection) * explodeCoeff,
+      distY         = Math.sin(bisection) * explodeCoeff,
+      textAlign     = distX < 0 ? 'right' : 'left',
+      textBaseline  = distY > 0 ? 'top' : 'bottom',
       style,
       x, y,
       distX, distY;
     
     context.save();
-    context.translate(options.width / 2, options.height / 2);
+    context.translate(width / 2, height / 2);
     context.scale(1, vScale);
 
     x = Math.cos(bisection) * explode;
@@ -4590,8 +4644,6 @@ Flotr.addType('pie', {
     context.strokeStyle = color;
     context.stroke();
 
-    distX = Math.cos(bisection) * explodeCoeff;
-    distY = Math.sin(bisection) * explodeCoeff;
     style = {
       size : options.fontSize * 1.2,
       color : options.fontColor,
@@ -4600,18 +4652,13 @@ Flotr.addType('pie', {
 
     if (label) {
       if (options.htmlText || !options.textEnabled) {
-        // TODO HTML text is broken here.
-        var yAlignDist = textAlignTop ? (distY - 5) : (height - distY + 5),
-            divStyle = 'position:absolute;' + (textAlignTop ? 'top' : 'bottom') + ':' + yAlignDist + 'px;'; //@todo: change
-        if (textAlignRight)
-          divStyle += 'right:'+(this.canvasWidth - distX)+'px;text-align:right;';
-        else 
-          divStyle += 'left:'+distX+'px;text-align:left;';
+        divStyle = 'position:absolute;' + textBaseline + ':' + (height / 2 + (textBaseline === 'top' ? distY : -distY)) + 'px;';
+        divStyle += textAlign + ':' + (width / 2 + (textAlign === 'right' ? -distX : distX)) + 'px;';
         html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
       }
       else {
-        style.textAlign = alignRight ? 'right' : 'left';
-        style.textBaseline = alignTop ? 'top' : 'bottom';
+        style.textAlign = textAlign;
+        style.textBaseline = textBaseline;
         Flotr.drawText(context, label, distX, distY, style);
       }
     }
@@ -4619,7 +4666,7 @@ Flotr.addType('pie', {
     if (options.htmlText || !options.textEnabled) {
       var div = Flotr.DOM.node('<div style="color:' + options.fontColor + '" class="flotr-labels"></div>');
       Flotr.DOM.insert(div, html.join(''));
-      Flotr.DOM.insert(this.el, div);
+      Flotr.DOM.insert(options.element, div);
     }
     
     context.restore();
@@ -6047,8 +6094,9 @@ Flotr.addPlugin('labels', {
       var
         isX     = axis.orientation === 1,
         isFirst = axis.n === 1,
+        name = '',
         left, style, top,
-        offset = graph.plotOffset, name;
+        offset = graph.plotOffset;
 
       if (!isX && !isFirst) {
         ctx.save();
@@ -6074,9 +6122,8 @@ Flotr.addPlugin('labels', {
             name = ' first';
           } else if (i === axis.ticks.length - 1) {
             name = ' last';
-          } else {
-            name = '';
           }
+          name += isX ? ' flotr-grid-label-x' : ' flotr-grid-label-y';
 
           html += [
             '<div style="position:absolute; text-align:' + (isX ? 'center' : 'right') + '; ',

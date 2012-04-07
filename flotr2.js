@@ -4095,6 +4095,7 @@ Flotr.addType('candles', {
       yScale        = options.yScale,
       width         = options.candleWidth / 2,
       shadowSize    = options.shadowSize,
+      lineWidth     = options.lineWidth,
       wickLineWidth = options.wickLineWidth,
       pixelOffset   = (wickLineWidth % 2) / 2,
       color,
@@ -4135,12 +4136,12 @@ Flotr.addType('candles', {
         context.save();
         context.globalAlpha = options.fillOpacity;
         context.fillStyle = color;
-        context.fillRect(left, top2 + width, right - left, bottom2 - top2);
+        context.fillRect(left, top2 + lineWidth, right - left, bottom2 - top2);
         context.restore();
       }
 
       // Draw candle outline/border, high, low.
-      if (options.lineWidth || wickLineWidth) {
+      if (lineWidth || wickLineWidth) {
 
         x = Math.floor((left + right) / 2) + pixelOffset;
 
@@ -4161,12 +4162,12 @@ Flotr.addType('candles', {
           context.moveTo(Math.floor(right) + pixelOffset, y);
           context.lineTo(x, y);
         } else {
-          context.strokeRect(left, top2 + width, right - left, bottom2 - top2);
+          context.strokeRect(left, top2 + lineWidth, right - left, bottom2 - top2);
 
-          context.moveTo(x, Math.floor(top2 + width));
-          context.lineTo(x, Math.floor(top + width));
-          context.moveTo(x, Math.floor(bottom2 + width));
-          context.lineTo(x, Math.floor(bottom + width));
+          context.moveTo(x, Math.floor(top2 + lineWidth));
+          context.lineTo(x, Math.floor(top + lineWidth));
+          context.moveTo(x, Math.floor(bottom2 + lineWidth));
+          context.lineTo(x, Math.floor(bottom + lineWidth));
         }
         
         context.closePath();
