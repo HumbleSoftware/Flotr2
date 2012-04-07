@@ -174,7 +174,7 @@ Flotr.addPlugin('graphGrid', {
       ctx.beginPath();
       ctx.moveTo(orig, orig);
       plotWidth = plotWidth - (lw / 2) % 1;
-      plotHeight = plotHeight - (lw / 2) % 1;
+      plotHeight = plotHeight + lw / 2;
       ctx[outline.indexOf('n') !== -1 ? lineTo : moveTo](plotWidth, orig);
       ctx[outline.indexOf('e') !== -1 ? lineTo : moveTo](plotWidth, plotHeight);
       ctx[outline.indexOf('s') !== -1 ? lineTo : moveTo](orig, plotHeight);

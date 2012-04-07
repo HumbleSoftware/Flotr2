@@ -1625,6 +1625,8 @@ Flotr.defaultOptions = {
     color: null,           // => color of the ticks
     mode: 'normal',        // => can be 'time' or 'normal'
     timeFormat: null,
+    timeMode:'UTC',        // => For UTC time ('local' for local time).
+    timeUnit:'millisecond',// => Unit for time (millisecond, second, minute, hour, day, month, year)
     scaling: 'linear',     // => Scaling, can be 'linear' or 'logarithmic'
     base: Math.E,
     titleAlign: 'center',
@@ -1856,23 +1858,38 @@ Flotr.Color = Color;
  * Flotr Date
  */
 Flotr.Date = {
-  format: function(d, format) {
+
+  set : function (date, name, mode, value) {
+    mode = mode || 'UTC';
+    name = 'set' + (mode === 'UTC' ? 'UTC' : '') + name;
+    date[name](value);
+  },
+
+  get : function (date, name, mode) {
+    mode = mode || 'UTC';
+    name = 'get' + (mode === 'UTC' ? 'UTC' : '') + name;
+    return date[name]();
+  },
+
+  format: function(d, format, mode) {
     if (!d) return;
-    
+
     // We should maybe use an "official" date format spec, like PHP date() or ColdFusion 
     // http://fr.php.net/manual/en/function.date.php
     // http://livedocs.adobe.com/coldfusion/8/htmldocs/help.html?content=functions_c-d_29.html
-    var tokens = {
-      h: d.getUTCHours().toString(),
-      H: leftPad(d.getUTCHours()),
-      M: leftPad(d.getUTCMinutes()),
-      S: leftPad(d.getUTCSeconds()),
-      s: d.getUTCMilliseconds(),
-      d: d.getUTCDate().toString(),
-      m: (d.getUTCMonth() + 1).toString(),
-      y: d.getUTCFullYear().toString(),
-      b: Flotr.Date.monthNames[d.getUTCMonth()]
-    };
+    var
+      get = this.get,
+      tokens = {
+        h: get(d, 'Hours', mode).toString(),
+        H: leftPad(get(d, 'Hours', mode)),
+        M: leftPad(get(d, 'Minutes', mode)),
+        S: leftPad(get(d, 'Seconds', mode)),
+        s: get(d, 'Milliseconds', mode),
+        d: get(d, 'Date', mode).toString(),
+        m: (get(d, 'Month') + 1).toString(),
+        y: get(d, 'FullYear').toString(),
+        b: Flotr.Date.monthNames[get(d, 'Month', mode)]
+      };
 
     function leftPad(n){
       n += '';
@@ -1906,69 +1923,121 @@ Flotr.Date = {
     else                       return "%y";
   },
   formatter: function (v, axis) {
-    var d = new Date(v);
+    var
+      options = axis.options,
+      scale = Flotr.Date.timeUnits[options.timeUnit],
+      d = new Date(v * scale);
 
     // first check global format
     if (axis.options.timeFormat)
-      return Flotr.Date.format(d, axis.options.timeFormat);
+      return Flotr.Date.format(d, options.timeFormat, options.timeMode);
     
-    var span = axis.max - axis.min,
+    var span = (axis.max - axis.min) * scale,
         t = axis.tickSize * Flotr.Date.timeUnits[axis.tickUnit];
-        
-    return Flotr.Date.format(d, Flotr.Date.getFormat(t, span));
+
+    return Flotr.Date.format(d, Flotr.Date.getFormat(t, span), options.timeMode);
   },
   generator: function(axis) {
-    var ticks = [],
-      d = new Date(axis.min),
-      tu = Flotr.Date.timeUnits;
-    
-    var step = axis.tickSize * tu[axis.tickUnit];
 
-    switch (axis.tickUnit) {
-      case "millisecond": d.setUTCMilliseconds(Flotr.floorInBase(d.getUTCMilliseconds(), axis.tickSize)); break;
-      case "second": d.setUTCSeconds(Flotr.floorInBase(d.getUTCSeconds(), axis.tickSize)); break;
-      case "minute": d.setUTCMinutes(Flotr.floorInBase(d.getUTCMinutes(), axis.tickSize)); break;
-      case "hour":   d.setUTCHours(Flotr.floorInBase(d.getUTCHours(), axis.tickSize)); break;
-      case "month":  d.setUTCMonth(Flotr.floorInBase(d.getUTCMonth(), axis.tickSize)); break;
-      case "year":   d.setUTCFullYear(Flotr.floorInBase(d.getUTCFullYear(), axis.tickSize));break;
+     var
+      set       = this.set,
+      get       = this.get,
+      timeUnits = this.timeUnits,
+      spec      = this.spec,
+      options   = axis.options,
+      mode      = options.timeMode,
+      scale     = timeUnits[options.timeUnit],
+      min       = axis.min * scale,
+      max       = axis.max * scale,
+      delta     = (max - min) / options.noTicks,
+      ticks     = [],
+      tickSize  = axis.tickSize,
+      tickUnit,
+      formatter, i;
+
+    // Use custom formatter or time tick formatter
+    formatter = (options.tickFormatter === Flotr.defaultTickFormatter ?
+      this.formatter : options.tickFormatter
+    );
+
+    for (i = 0; i < spec.length - 1; ++i) {
+      var d = spec[i][0] * timeUnits[spec[i][1]];
+      if (delta < (d + spec[i+1][0] * timeUnits[spec[i+1][1]]) / 2 && d >= tickSize)
+        break;
+    }
+    tickSize = spec[i][0];
+    tickUnit = spec[i][1];
+
+    // special-case the possibility of several years
+    if (tickUnit == "year") {
+      tickSize = Flotr.getTickSize(options.noTicks*timeUnits.year, min, max, 0);
+
+      // Fix for 0.5 year case
+      if (tickSize == 0.5) {
+        tickUnit = "month";
+        tickSize = 6;
+      }
+    }
+
+    axis.tickUnit = tickUnit;
+    axis.tickSize = tickSize;
+
+    var
+      d = new Date(min);
+
+    var step = tickSize * timeUnits[tickUnit];
+
+    function setTick (name) {
+      set(d, name, mode, Flotr.floorInBase(
+        get(d, name, mode), tickSize
+      ));
+    }
+
+    switch (tickUnit) {
+      case "millisecond": setTick('Milliseconds'); break;
+      case "second": setTick('Seconds'); break;
+      case "minute": setTick('Minutes'); break;
+      case "hour": setTick('Hours'); break;
+      case "month": setTick('Month'); break;
+      case "year": setTick('FullYear'); break;
     }
     
     // reset smaller components
-    if (step >= tu.second)  d.setUTCMilliseconds(0);
-    if (step >= tu.minute)  d.setUTCSeconds(0);
-    if (step >= tu.hour)    d.setUTCMinutes(0);
-    if (step >= tu.day)     d.setUTCHours(0);
-    if (step >= tu.day * 4) d.setUTCDate(1);
-    if (step >= tu.year)    d.setUTCMonth(0);
+    if (step >= timeUnits.second)  set(d, 'Milliseconds', mode, 0);
+    if (step >= timeUnits.minute)  set(d, 'Seconds', mode, 0);
+    if (step >= timeUnits.hour)    set(d, 'Minutes', mode, 0);
+    if (step >= timeUnits.day)     set(d, 'Hours', mode, 0);
+    if (step >= timeUnits.day * 4) set(d, 'Date', mode, 1);
+    if (step >= timeUnits.year)    set(d, 'Month', mode, 0);
 
     var carry = 0, v = NaN, prev;
     do {
       prev = v;
       v = d.getTime();
-      ticks.push({ v:v, label:Flotr.Date.formatter(v, axis) });
-      if (axis.tickUnit == "month") {
-        if (axis.tickSize < 1) {
+      ticks.push({ v: v / scale, label: formatter(v / scale, axis) });
+      if (tickUnit == "month") {
+        if (tickSize < 1) {
           /* a bit complicated - we'll divide the month up but we need to take care of fractions
            so we don't end up in the middle of a day */
-          d.setUTCDate(1);
+          set(d, 'Date', mode, 1);
           var start = d.getTime();
-          d.setUTCMonth(d.getUTCMonth() + 1);
+          set(d, 'Month', mode, get(d, 'Month', mode) + 1)
           var end = d.getTime();
-          d.setTime(v + carry * tu.hour + (end - start) * axis.tickSize);
-          carry = d.getUTCHours();
-          d.setUTCHours(0);
+          d.setTime(v + carry * timeUnits.hour + (end - start) * tickSize);
+          carry = get(d, 'Hours', mode)
+          set(d, 'Hours', mode, 0);
         }
         else
-          d.setUTCMonth(d.getUTCMonth() + axis.tickSize);
+          set(d, 'Month', mode, get(d, 'Month', mode) + tickSize);
       }
-      else if (axis.tickUnit == "year") {
-        d.setUTCFullYear(d.getUTCFullYear() + axis.tickSize);
+      else if (tickUnit == "year") {
+        set(d, 'FullYear', mode, get(d, 'FullYear', mode) + tickSize);
       }
       else
         d.setTime(v + step);
 
-    } while (v < axis.max && v != prev);
-    
+    } while (v < max && v != prev);
+
     return ticks;
   },
   timeUnits: {
@@ -2278,6 +2347,12 @@ Graph = function(el, data, options){
   }*/
 };
 
+function observe (object, name, callback) {
+  E.observe.apply(this, arguments);
+  this._handles.push(arguments);
+  return this;
+}
+
 Graph.prototype = {
 
   destroy: function () {
@@ -2289,11 +2364,13 @@ Graph.prototype = {
     this.el.graph = null;
   },
 
-  _observe: function (object, name, callback) {
-    E.observe.apply(this, arguments);
-    this._handles.push(arguments);
-    return this;
-  },
+  observe : observe,
+
+  /**
+   * @deprecated
+   */
+  _observe : observe,
+
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
@@ -2580,8 +2657,8 @@ Graph.prototype = {
   mouseMoveHandler: function(event){
     if (this.mouseDownMoveHandler) return;
     var pos = this.getEventPosition(event);
-    this.lastMousePos = pos;
     E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+    this.lastMousePos = pos;
   },
   /**
    * Observes the 'mousedown' event.
@@ -2618,8 +2695,8 @@ Graph.prototype = {
     }, this);
     this.mouseDownMoveHandler = _.bind(function (e) {
         var pos = this.getEventPosition(e);
-        this.lastMousePos = pos;
         E.fire(this.el, 'flotr:mousemove', [event, pos, this]);
+        this.lastMousePos = pos;
     }, this);
     E.observe(document, 'mouseup', this.mouseUpHandler);
     E.observe(document, 'mousemove', this.mouseDownMoveHandler);
@@ -2713,15 +2790,15 @@ Graph.prototype = {
         }
       }, this);
 
-      this._observe(this.overlay, 'touchstart', _.bind(function (e) {
+      this.observe(this.overlay, 'touchstart', _.bind(function (e) {
         movement = false;
         touchend = false;
         this.ignoreClick = false;
         E.fire(el, 'flotr:mousedown', [event, this]);
-        this._observe(document, 'touchend', touchendHandler);
+        this.observe(document, 'touchend', touchendHandler);
       }, this));
 
-      this._observe(this.overlay, 'touchmove', _.bind(function (e) {
+      this.observe(this.overlay, 'touchmove', _.bind(function (e) {
 
         e.preventDefault();
 
@@ -2731,19 +2808,18 @@ Graph.prototype = {
           pageY = e.touches[0].pageY,
           pos = this.getEventPosition(e.touches[0]);
 
-        this.lastMousePos.pageX = pageX;
-        this.lastMousePos.pageY = pageY;
         if (!touchend) {
           E.fire(el, 'flotr:mousemove', [event, pos, this]);
         }
+        this.lastMousePos = pos;
       }, this));
 
     } else {
       this.
-        _observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
-        _observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
-        _observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
-        _observe(el, 'mouseout', function () {
+        observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
+        observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+        observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
+        observe(el, 'mouseout', function () {
           E.fire(el, 'flotr:mouseout');
         });
     }
@@ -2778,7 +2854,9 @@ Graph.prototype = {
     }
 
     D.setStyles(el, {position: 'relative'}); // For positioning labels and overlay.
-    size = D.size(el);
+    size = {};
+    size.width = el.clientWidth;
+    size.height = el.clientHeight;
 
     if(size.width <= 0 || size.height <= 0 || o.resolution <= 0){
       throw 'Invalid dimensions for plot, width = ' + size.width + ', height = ' + size.height + ', resolution = ' + o.resolution;
@@ -2830,7 +2908,7 @@ Graph.prototype = {
     // TODO Should be moved to flotr and mixed in.
     _.each(flotr.plugins, function(plugin, name){
       _.each(plugin.callbacks, function(fn, c){
-        this._observe(this.el, c, _.bind(fn, this));
+        this.observe(this.el, c, _.bind(fn, this));
       }, this);
       this[name] = flotr.clone(plugin);
       _.each(this[name], function(fn, p){
@@ -3031,8 +3109,8 @@ Axis.prototype = {
 
     if (max == min) {
       var widen = max ? 0.01 : 1.00;
-      min -= widen;
-      max += widen;
+      if (o.min === null) min -= widen;
+      if (o.max === null) max += widen;
     }
 
     if (o.scaling === 'logarithmic') {
@@ -3132,28 +3210,7 @@ Axis.prototype = {
   },
 
   _calculateTimeTicks : function () {
-    var axis = this,
-        tu = Flotr.Date.timeUnits,
-        spec = Flotr.Date.spec,
-        delta = (axis.max - axis.min) / axis.options.noTicks,
-        size, unit, i;
-
-    for (i = 0; i < spec.length - 1; ++i) {
-      var d = spec[i][0] * tu[spec[i][1]];
-      if (delta < (d + spec[i+1][0] * tu[spec[i+1][1]]) / 2 && d >= axis.tickSize)
-        break;
-    }
-    size = spec[i][0];
-    unit = spec[i][1];
-    
-    // special-case the possibility of several years
-    if (unit == "year") {
-      size = Flotr.getTickSize(axis.options.noTicks*tu.year, axis.min, axis.max, 0);
-    }
-    
-    axis.tickSize = size;
-    axis.tickUnit = unit;
-    axis.ticks = Flotr.Date.generator(axis);
+    this.ticks = Flotr.Date.generator(this);
   },
 
   _calculateLogTicks : function () {
@@ -3216,7 +3273,7 @@ Axis.prototype = {
 
       if (o.minorTickFreq) {
         for (j = 0; j < o.minorTickFreq && (i * tickSize + j * minorTickSize) < max; ++j) {
-          v = (v2 + j * minorTickSize).toFixed(decimals);
+          v = v2 + j * minorTickSize;
           axis.minorTicks.push({ v: v, label: o.tickFormatter(v, {min : axis.min, max : axis.max}) });
         }
       }
@@ -3409,8 +3466,8 @@ Flotr.addType('lines', {
 
     var
       context   = options.context,
-      width     = options.plotWidth, 
-      height    = options.plotHeight,
+      width     = options.width, 
+      height    = options.height,
       xScale    = options.xScale,
       yScale    = options.yScale,
       data      = options.data, 
@@ -3458,10 +3515,12 @@ Flotr.addType('lines', {
         y2 = yScale(data[i+1][1]);
       }
 
-      if ((y1 >= height && y2 >= width) || 
-        (y1 <= 0 && y2 <= 0) ||
-        (x1 <= 0 && x2 <= 0) ||
-        (x1 >= width && x2 >= width)) continue;
+      if (
+        (y1 > height && y2 > height) ||
+        (y1 < 0 && y2 < 0) ||
+        (x1 < 0 && x2 < 0) ||
+        (x1 > width && x2 > width)
+      ) continue;
 
       if((prevx != x1) || (prevy != y1 + shadowOffset))
         context.moveTo(x1, y1 + shadowOffset);
@@ -4938,10 +4997,10 @@ Flotr.addPlugin('crosshair', {
   },
   callbacks: {
     'flotr:mousemove': function(e, pos) {
-      if (this.options.crosshair.mode)
+      if (this.options.crosshair.mode) {
         this.crosshair.clearCrosshair();
-      if (this.options.crosshair.mode)
         this.crosshair.drawCrosshair(pos);
+      }
     }
   },
   /**   
@@ -4951,17 +5010,14 @@ Flotr.addPlugin('crosshair', {
     var octx = this.octx,
       options = this.options.crosshair,
       plotOffset = this.plotOffset,
-      x = plotOffset.left+pos.relX+0.5,
-      y = plotOffset.top+pos.relY+0.5;
+      x = plotOffset.left + pos.relX + 0.5,
+      y = plotOffset.top + pos.relY + 0.5;
     
     if (pos.relX < 0 || pos.relY < 0 || pos.relX > this.plotWidth || pos.relY > this.plotHeight) {
       this.el.style.cursor = null;
       D.removeClass(this.el, 'flotr-crosshair');
       return; 
     }
-    
-    this.lastMousePos.relX = null;
-    this.lastMousePos.relY = null;
     
     if (options.hideCursor) {
       this.el.style.cursor = 'none';
@@ -4976,13 +5032,11 @@ Flotr.addPlugin('crosshair', {
     if (options.mode.indexOf('x') != -1) {
       octx.moveTo(x, plotOffset.top);
       octx.lineTo(x, plotOffset.top + this.plotHeight);
-      this.lastMousePos.relX = x;
     }
     
     if (options.mode.indexOf('y') != -1) {
       octx.moveTo(plotOffset.left, y);
       octx.lineTo(plotOffset.left + this.plotWidth, y);
-      this.lastMousePos.relY = y;
     }
     
     octx.stroke();
@@ -4992,10 +5046,26 @@ Flotr.addPlugin('crosshair', {
    * Removes the selection box from the overlay canvas.
    */
   clearCrosshair: function() {
-    if (this.lastMousePos.relX)
-      this.octx.clearRect(this.lastMousePos.relX-0.5, this.plotOffset.top, 1,this.plotHeight+1);
-    if (this.lastMousePos.relY)
-      this.octx.clearRect(this.plotOffset.left, this.lastMousePos.relY-0.5, this.plotWidth+1, 1);    
+
+    var
+      plotOffset = this.plotOffset,
+      position = this.lastMousePos,
+      context = this.octx;
+
+    if (position) {
+      context.clearRect(
+        position.relX + plotOffset.left,
+        plotOffset.top,
+        1,
+        this.plotHeight + 1
+      );
+      context.clearRect(
+        plotOffset.left,
+        position.relY + plotOffset.top,
+        this.plotWidth + 1,
+        1
+      );    
+    }
   }
 });
 })();
@@ -5228,7 +5298,7 @@ Flotr.addPlugin('graphGrid', {
       ctx.beginPath();
       ctx.moveTo(orig, orig);
       plotWidth = plotWidth - (lw / 2) % 1;
-      plotHeight = plotHeight - (lw / 2) % 1;
+      plotHeight = plotHeight + lw / 2;
       ctx[outline.indexOf('n') !== -1 ? lineTo : moveTo](plotWidth, orig);
       ctx[outline.indexOf('e') !== -1 ? lineTo : moveTo](plotWidth, plotHeight);
       ctx[outline.indexOf('s') !== -1 ? lineTo : moveTo](orig, plotHeight);
@@ -5638,8 +5708,8 @@ Flotr.addPlugin('selection', {
       if (!this.options.selection || !this.options.selection.mode) return;
       if (this.selection.interval) clearInterval(this.selection.interval);
 
-      var pointer = E.eventPointer(event);
-      this.selection.setSelectionPos(this.selection.selection.second, {pageX:pointer.x, pageY:pointer.y});
+      var pointer = this.getEventPosition(event);
+      this.selection.setSelectionPos(this.selection.selection.second, pointer);
       this.selection.clearSelection();
 
       if(this.selection.selecting && this.selection.selectionIsSane()){
@@ -5652,9 +5722,8 @@ Flotr.addPlugin('selection', {
       if (!this.options.selection || !this.options.selection.mode) return;
       if (!this.options.selection.mode || (!isLeftClick(event) && _.isUndefined(event.touches))) return;
 
-      var pointer = E.eventPointer(event);
-
-      this.selection.setSelectionPos(this.selection.selection.first, {pageX:pointer.x, pageY:pointer.y});
+      var pointer = this.getEventPosition(event);
+      this.selection.setSelectionPos(this.selection.selection.first, pointer);
 
       if (this.selection.interval) clearInterval(this.selection.interval);
 
@@ -5745,20 +5814,19 @@ Flotr.addPlugin('selection', {
    * @param {Event} event - Event object.
    */
   setSelectionPos: function(pos, pointer) {
-    var options = this.options,
-        offset = D.position(this.overlay),
-        s = this.selection.selection;
+    var mode = this.options.selection.mode,
+        selection = this.selection.selection;
 
-    if(options.selection.mode.indexOf('x') == -1){
-      pos.x = (pos == s.first) ? 0 : this.plotWidth;         
+    if(mode.indexOf('x') == -1) {
+      pos.x = (pos == selection.first) ? 0 : this.plotWidth;         
     }else{
-      pos.x = boundX(pointer.pageX - offset.left - this.plotOffset.left, this);
+      pos.x = boundX(pointer.relX, this);
     }
 
-    if (options.selection.mode.indexOf('y') == -1){
-      pos.y = (pos == s.first) ? 0 : this.plotHeight - 1;
+    if (mode.indexOf('y') == -1) {
+      pos.y = (pos == selection.first) ? 0 : this.plotHeight - 1;
     }else{
-      pos.y = boundY(pointer.pageY - offset.top - this.plotOffset.top, this);
+      pos.y = boundY(pointer.relY, this);
     }
   },
   /**
@@ -6029,8 +6097,9 @@ Flotr.addPlugin('labels', {
       var
         isX     = axis.orientation === 1,
         isFirst = axis.n === 1,
+        name = '',
         left, style, top,
-        offset = graph.plotOffset, name;
+        offset = graph.plotOffset;
 
       if (!isX && !isFirst) {
         ctx.save();
@@ -6056,9 +6125,8 @@ Flotr.addPlugin('labels', {
             name = ' first';
           } else if (i === axis.ticks.length - 1) {
             name = ' last';
-          } else {
-            name = '';
           }
+          name += isX ? ' flotr-grid-label-x' : ' flotr-grid-label-y';
 
           html += [
             '<div style="position:absolute; text-align:' + (isX ? 'center' : 'right') + '; ',
@@ -6323,8 +6391,8 @@ Flotr.addPlugin('spreadsheet', {
       D.setStyles(container, {top: this.canvasHeight-offset+'px'});
 
       this.
-        _observe(graph, 'click',  function(){ss.showTab('graph');}).
-        _observe(data, 'click', function(){ss.showTab('data');});
+        observe(graph, 'click',  function(){ss.showTab('graph');}).
+        observe(data, 'click', function(){ss.showTab('data');});
       if (this.options.spreadsheet.initialTab !== 'graph'){
         ss.showTab(this.options.spreadsheet.initialTab);
       }
@@ -6441,8 +6509,8 @@ Flotr.addPlugin('spreadsheet', {
       '</button>');
 
     this.
-      _observe(buttonDownload, 'click', _.bind(this.spreadsheet.downloadCSV, this)).
-      _observe(buttonSelect, 'click', _.bind(this.spreadsheet.selectAllData, this));
+      observe(buttonDownload, 'click', _.bind(this.spreadsheet.downloadCSV, this)).
+      observe(buttonSelect, 'click', _.bind(this.spreadsheet.selectAllData, this));
 
     var toolbar = D.node('<div class="flotr-datagrid-toolbar"></div>');
     D.insert(toolbar, buttonDownload);

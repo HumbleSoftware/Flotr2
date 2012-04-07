@@ -7,6 +7,8 @@ The Canvas graphing library.
 
 http://groups.google.com/group/flotr2/
 
+Please fork http://jsfiddle.net/cesutherland/ZFBj5/ with your question or bug reproduction case.
+
 
 API
 ---

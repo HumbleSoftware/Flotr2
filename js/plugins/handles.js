@@ -56,10 +56,10 @@ function init() {
     handles.left = left;
     handles.right = right;
 
-    this._observe(left, 'mousedown', function () {
+    this.observe(left, 'mousedown', function () {
       handles.moveHandler = leftMoveHandler;
     });
-    this._observe(right, 'mousedown', function () {
+    this.observe(right, 'mousedown', function () {
       handles.moveHandler = rightMoveHandler;
     });
   }
@@ -70,12 +70,12 @@ function init() {
     D.insert(container, scroll);
     D.hide(scroll);
     handles.scroll = scroll;
-    this._observe(scroll, 'mousedown', function () {
+    this.observe(scroll, 'mousedown', function () {
       handles.moveHandler = scrollMoveHandler;
     });
   }
 
-  this._observe(document, 'mouseup', function() {
+  this.observe(document, 'mouseup', function() {
     handles.moveHandler = null;
   });
 

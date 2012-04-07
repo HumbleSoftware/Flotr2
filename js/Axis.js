@@ -77,8 +77,8 @@ Axis.prototype = {
 
     if (max == min) {
       var widen = max ? 0.01 : 1.00;
-      min -= widen;
-      max += widen;
+      if (o.min === null) min -= widen;
+      if (o.max === null) max += widen;
     }
 
     if (o.scaling === 'logarithmic') {
@@ -178,28 +178,7 @@ Axis.prototype = {
   },
 
   _calculateTimeTicks : function () {
-    var axis = this,
-        tu = Flotr.Date.timeUnits,
-        spec = Flotr.Date.spec,
-        delta = (axis.max - axis.min) / axis.options.noTicks,
-        size, unit, i;
-
-    for (i = 0; i < spec.length - 1; ++i) {
-      var d = spec[i][0] * tu[spec[i][1]];
-      if (delta < (d + spec[i+1][0] * tu[spec[i+1][1]]) / 2 && d >= axis.tickSize)
-        break;
-    }
-    size = spec[i][0];
-    unit = spec[i][1];
-    
-    // special-case the possibility of several years
-    if (unit == "year") {
-      size = Flotr.getTickSize(axis.options.noTicks*tu.year, axis.min, axis.max, 0);
-    }
-    
-    axis.tickSize = size;
-    axis.tickUnit = unit;
-    axis.ticks = Flotr.Date.generator(axis);
+    this.ticks = Flotr.Date.generator(this);
   },
 
   _calculateLogTicks : function () {
@@ -262,7 +241,7 @@ Axis.prototype = {
 
       if (o.minorTickFreq) {
         for (j = 0; j < o.minorTickFreq && (i * tickSize + j * minorTickSize) < max; ++j) {
-          v = (v2 + j * minorTickSize).toFixed(decimals);
+          v = v2 + j * minorTickSize;
           axis.minorTicks.push({ v: v, label: o.tickFormatter(v, {min : axis.min, max : axis.max}) });
         }
       }
