@@ -723,12 +723,11 @@ Graph.prototype = {
 
   _setEl: function(el) {
     if (!el) throw 'The target container doesn\'t exist';
-    if (!el.clientWidth) throw 'The target container must be visible';
+    else if (el.graph instanceof Graph) el.graph.destroy();
+    else if (!el.clientWidth) throw 'The target container must be visible';
+
+    el.graph = this;
     this.el = el;
-
-    if (this.el.graph) this.el.graph.destroy();
-
-    this.el.graph = this;
   }
 };
 
