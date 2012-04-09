@@ -40,8 +40,12 @@ Flotr.addPlugin('selection', {
       if (!this.options.selection || !this.options.selection.mode) return;
       if (this.selection.interval) clearInterval(this.selection.interval);
 
-      var pointer = this.getEventPosition(event);
-      this.selection.setSelectionPos(this.selection.selection.second, pointer);
+      if (this.multitouches) {
+        this.selection.updateSelection();
+      } else {
+        var pointer = this.getEventPosition(event);
+        this.selection.setSelectionPos(this.selection.selection.second, pointer);
+      }
       this.selection.clearSelection();
 
       if(this.selection.selecting && this.selection.selectionIsSane()){
@@ -210,7 +214,13 @@ Flotr.addPlugin('selection', {
     if (!this.lastMousePos.pageX) return;
 
     this.selection.selecting = true;
-    this.selection.setSelectionPos(this.selection.selection.second, this.lastMousePos);
+
+    if (this.multitouches) {
+      this.selection.setSelectionPos(this.selection.selection.first,  this.getEventPosition(this.multitouches[0]));
+      this.selection.setSelectionPos(this.selection.selection.second,  this.getEventPosition(this.multitouches[1]));
+    } else {
+      this.selection.setSelectionPos(this.selection.selection.second, this.lastMousePos);
+    }
 
     this.selection.clearSelection();
     
