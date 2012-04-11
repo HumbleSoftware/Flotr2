@@ -197,6 +197,7 @@ Flotr.addPlugin('labels', {
               axis.d2p(tick.v) - axis.maxLabel.height / 2);
           left = isX ? (offset.left + axis.d2p(tick.v) - xBoxWidth / 2) : 0;
 
+          name = '';
           if (i === 0) {
             name = ' first';
           } else if (i === axis.ticks.length - 1) {
