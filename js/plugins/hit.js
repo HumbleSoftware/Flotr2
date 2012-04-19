@@ -233,6 +233,9 @@ Flotr.addPlugin('hit', {
 
         if (x === null || y === null) continue;
 
+        // don't check if the point isn't visible in the current range
+        if (x < serie.xaxis.min || x > serie.xaxis.max) continue;
+
         distanceX = Math.abs(x - mouseX);
         distanceY = Math.abs(y - mouseY);
 
