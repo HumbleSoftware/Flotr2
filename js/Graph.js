@@ -575,7 +575,7 @@ Graph.prototype = {
     this.ctx = getContext(this.canvas);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.octx = getContext(this.overlay);
-    this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+    this.octx.clearRect(0, 0, this.overlay.width, this.overlay.height);
     this.canvasHeight = size.height;
     this.canvasWidth = size.width;
     this.textEnabled = !!this.ctx.drawText || !!this.ctx.fillText; // Enable text functions
