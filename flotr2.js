@@ -2879,7 +2879,7 @@ Graph.prototype = {
     this.ctx = getContext(this.canvas);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.octx = getContext(this.overlay);
-    this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+    this.octx.clearRect(0, 0, this.overlay.width, this.overlay.height);
     this.canvasHeight = size.height;
     this.canvasWidth = size.width;
     this.textEnabled = !!this.ctx.drawText || !!this.ctx.fillText; // Enable text functions
@@ -4028,6 +4028,31 @@ Flotr.addType('bubbles', {
       z : point[2] * options.baseRadius
     };
   },
+  hit : function (options) {
+    var
+      data = options.data,
+      args = options.args,
+      mouse = args[0],
+      n = args[1],
+      x = mouse.x,
+      y = mouse.y,
+      geometry,
+      dx, dy;
+
+    for (i = data.length; i--;) {
+      geometry = this.getGeometry(data[i], options);
+
+      dx = geometry.x - options.xScale(x);
+      dy = geometry.y - options.yScale(y);
+
+      if (Math.sqrt(dx * dx + dy * dy) < geometry.z) {
+        n.x = data[i][0];
+        n.y = data[i][1];
+        n.index = i;
+        n.seriesIndex = options.index;
+      }
+    }
+  },
   drawHit : function (options) {
 
     var
@@ -4444,6 +4469,7 @@ Flotr.addType('markers', {
     fillOpacity: 0.4,      // => fill opacity
     stroke: false,         // => draw the rectangle around the markers
     position: 'ct',        // => the markers position (vertical align: b, m, t, horizontal align: l, c, r)
+    verticalMargin: 0,     // => the margin between the point and the text.
     labelFormatter: Flotr.defaultMarkerFormatter,
     fontSize: Flotr.defaultOptions.fontSize,
     stacked: false,        // => true if markers should be stacked
@@ -4537,7 +4563,8 @@ Flotr.addType('markers', {
     else if (options.position.indexOf('l') != -1) left -= dim.width;
     
          if (options.position.indexOf('m') != -1) top -= dim.height/2 + margin;
-    else if (options.position.indexOf('t') != -1) top -= dim.height;
+    else if (options.position.indexOf('t') != -1) top -= dim.height + options.verticalMargin;
+    else top += options.verticalMargin;
     
     left = Math.floor(left)+0.5;
     top = Math.floor(top)+0.5;
@@ -5571,6 +5598,9 @@ Flotr.addPlugin('hit', {
         y = data[j][1];
 
         if (x === null || y === null) continue;
+
+        // don't check if the point isn't visible in the current range
+        if (x < serie.xaxis.min || x > serie.xaxis.max) continue;
 
         distanceX = Math.abs(x - mouseX);
         distanceY = Math.abs(y - mouseY);
