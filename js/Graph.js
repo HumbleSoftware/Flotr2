@@ -491,6 +491,8 @@ Graph.prototype = {
         touchend = true;
         E.stopObserving(document, 'touchend', touchendHandler);
         E.fire(el, 'flotr:mouseup', [event, this]);
+        this.multitouches = null;
+
         if (!movement) {
           this.clickHandler(e);
         }
@@ -500,22 +502,29 @@ Graph.prototype = {
         movement = false;
         touchend = false;
         this.ignoreClick = false;
+
+        if (e.touches && e.touches.length > 1) {
+          this.multitouches = e.touches;
+        }
+
         E.fire(el, 'flotr:mousedown', [event, this]);
         this.observe(document, 'touchend', touchendHandler);
       }, this));
 
       this.observe(this.overlay, 'touchmove', _.bind(function (e) {
 
+        var pos = this.getEventPosition(e);
+
         e.preventDefault();
 
         movement = true;
 
-        var pageX = e.touches[0].pageX,
-          pageY = e.touches[0].pageY,
-          pos = this.getEventPosition(e.touches[0]);
-
-        if (!touchend) {
-          E.fire(el, 'flotr:mousemove', [event, pos, this]);
+        if (this.multitouches || (e.touches && e.touches.length > 1)) {
+          this.multitouches = e.touches;
+        } else {
+          if (!touchend) {
+            E.fire(el, 'flotr:mousemove', [event, pos, this]);
+          }
         }
         this.lastMousePos = pos;
       }, this));

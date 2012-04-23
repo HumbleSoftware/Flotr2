@@ -30,6 +30,7 @@ var
 Flotr.addPlugin('selection', {
 
   options: {
+    pinchOnly: null,       // Only select on pinch
     mode: null,            // => one of null, 'x', 'y' or 'xy'
     color: '#B6D9FF',      // => selection box color
     fps: 20                // => frames-per-second
@@ -37,33 +38,46 @@ Flotr.addPlugin('selection', {
 
   callbacks: {
     'flotr:mouseup' : function (event) {
-      if (!this.options.selection || !this.options.selection.mode) return;
-      if (this.selection.interval) clearInterval(this.selection.interval);
 
-      var pointer = this.getEventPosition(event);
-      this.selection.setSelectionPos(this.selection.selection.second, pointer);
-      this.selection.clearSelection();
+      var
+        options = this.options.selection,
+        selection = this.selection,
+        pointer = this.getEventPosition(event);
 
-      if(this.selection.selecting && this.selection.selectionIsSane()){
-        this.selection.drawSelection();
-        this.selection.fireSelectEvent();
+      if (!options || !options.mode) return;
+      if (selection.interval) clearInterval(selection.interval);
+
+      if (this.multitouches) {
+        selection.updateSelection();
+      } else
+      if (!options.pinchOnly) {
+        selection.setSelectionPos(selection.selection.second, pointer);
+      }
+      selection.clearSelection();
+
+      if(selection.selecting && selection.selectionIsSane()){
+        selection.drawSelection();
+        selection.fireSelectEvent();
         this.ignoreClick = true;
       }
     },
     'flotr:mousedown' : function (event) {
-      if (!this.options.selection || !this.options.selection.mode) return;
-      if (!this.options.selection.mode || (!isLeftClick(event) && _.isUndefined(event.touches))) return;
 
-      var pointer = this.getEventPosition(event);
-      this.selection.setSelectionPos(this.selection.selection.first, pointer);
+      var
+        options = this.options.selection,
+        selection = this.selection,
+        pointer = this.getEventPosition(event);
 
-      if (this.selection.interval) clearInterval(this.selection.interval);
+      if (!options || !options.mode) return;
+      if (!options.mode || (!isLeftClick(event) && _.isUndefined(event.touches))) return;
+      if (!options.pinchOnly) selection.setSelectionPos(selection.selection.first, pointer);
+      if (selection.interval) clearInterval(selection.interval);
 
       this.lastMousePos.pageX = null;
-      this.selection.selecting = false;
-      this.selection.interval = setInterval(
-        _.bind(this.selection.updateSelection, this),
-        1000/this.options.selection.fps
+      selection.selecting = false;
+      selection.interval = setInterval(
+        _.bind(selection.updateSelection, this),
+        1000 / options.fps
       );
     },
     'flotr:destroy' : function (event) {
@@ -210,7 +224,16 @@ Flotr.addPlugin('selection', {
     if (!this.lastMousePos.pageX) return;
 
     this.selection.selecting = true;
-    this.selection.setSelectionPos(this.selection.selection.second, this.lastMousePos);
+
+    if (this.multitouches) {
+      this.selection.setSelectionPos(this.selection.selection.first,  this.getEventPosition(this.multitouches[0]));
+      this.selection.setSelectionPos(this.selection.selection.second,  this.getEventPosition(this.multitouches[1]));
+    } else
+    if (this.options.selection.pinchOnly) {
+      return;
+    } else {
+      this.selection.setSelectionPos(this.selection.selection.second, this.lastMousePos);
+    }
 
     this.selection.clearSelection();
     
