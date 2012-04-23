@@ -57,6 +57,31 @@ Flotr.addType('bubbles', {
       z : point[2] * options.baseRadius
     };
   },
+  hit : function (options) {
+    var
+      data = options.data,
+      args = options.args,
+      mouse = args[0],
+      n = args[1],
+      x = mouse.x,
+      y = mouse.y,
+      geometry,
+      dx, dy;
+
+    for (i = data.length; i--;) {
+      geometry = this.getGeometry(data[i], options);
+
+      dx = geometry.x - options.xScale(x);
+      dy = geometry.y - options.yScale(y);
+
+      if (Math.sqrt(dx * dx + dy * dy) < geometry.z) {
+        n.x = data[i][0];
+        n.y = data[i][1];
+        n.index = i;
+        n.seriesIndex = options.index;
+      }
+    }
+  },
   drawHit : function (options) {
 
     var
