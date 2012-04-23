@@ -20,7 +20,7 @@ Flotr.addType('markers', {
     fillOpacity: 0.4,      // => fill opacity
     stroke: false,         // => draw the rectangle around the markers
     position: 'ct',        // => the markers position (vertical align: b, m, t, horizontal align: l, c, r)
-    verticalMargin: 2,     // => the margin between the point and the text.
+    verticalMargin: 0,     // => the margin between the point and the text.
     labelFormatter: Flotr.defaultMarkerFormatter,
     fontSize: Flotr.defaultOptions.fontSize,
     stacked: false,        // => true if markers should be stacked
