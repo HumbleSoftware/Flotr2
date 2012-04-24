@@ -2786,6 +2786,8 @@ Graph.prototype = {
         touchend = true;
         E.stopObserving(document, 'touchend', touchendHandler);
         E.fire(el, 'flotr:mouseup', [event, this]);
+        this.multitouches = null;
+
         if (!movement) {
           this.clickHandler(e);
         }
@@ -2795,22 +2797,29 @@ Graph.prototype = {
         movement = false;
         touchend = false;
         this.ignoreClick = false;
+
+        if (e.touches && e.touches.length > 1) {
+          this.multitouches = e.touches;
+        }
+
         E.fire(el, 'flotr:mousedown', [event, this]);
         this.observe(document, 'touchend', touchendHandler);
       }, this));
 
       this.observe(this.overlay, 'touchmove', _.bind(function (e) {
 
+        var pos = this.getEventPosition(e);
+
         e.preventDefault();
 
         movement = true;
 
-        var pageX = e.touches[0].pageX,
-          pageY = e.touches[0].pageY,
-          pos = this.getEventPosition(e.touches[0]);
-
-        if (!touchend) {
-          E.fire(el, 'flotr:mousemove', [event, pos, this]);
+        if (this.multitouches || (e.touches && e.touches.length > 1)) {
+          this.multitouches = e.touches;
+        } else {
+          if (!touchend) {
+            E.fire(el, 'flotr:mousemove', [event, pos, this]);
+          }
         }
         this.lastMousePos = pos;
       }, this));
@@ -2870,9 +2879,9 @@ Graph.prototype = {
     this.ctx = getContext(this.canvas);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.octx = getContext(this.overlay);
-    this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
-    this.canvasHeight = size.height*o.resolution;
-    this.canvasWidth = size.width*o.resolution;
+    this.octx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+    this.canvasHeight = size.height;
+    this.canvasWidth = size.width;
     this.textEnabled = !!this.ctx.drawText || !!this.ctx.fillText; // Enable text functions
 
     function getCanvas(canvas, name){
@@ -4019,6 +4028,31 @@ Flotr.addType('bubbles', {
       z : point[2] * options.baseRadius
     };
   },
+  hit : function (options) {
+    var
+      data = options.data,
+      args = options.args,
+      mouse = args[0],
+      n = args[1],
+      x = mouse.x,
+      y = mouse.y,
+      geometry,
+      dx, dy;
+
+    for (i = data.length; i--;) {
+      geometry = this.getGeometry(data[i], options);
+
+      dx = geometry.x - options.xScale(x);
+      dy = geometry.y - options.yScale(y);
+
+      if (Math.sqrt(dx * dx + dy * dy) < geometry.z) {
+        n.x = data[i][0];
+        n.y = data[i][1];
+        n.index = i;
+        n.seriesIndex = options.index;
+      }
+    }
+  },
   drawHit : function (options) {
 
     var
@@ -4435,6 +4469,7 @@ Flotr.addType('markers', {
     fillOpacity: 0.4,      // => fill opacity
     stroke: false,         // => draw the rectangle around the markers
     position: 'ct',        // => the markers position (vertical align: b, m, t, horizontal align: l, c, r)
+    verticalMargin: 0,     // => the margin between the point and the text.
     labelFormatter: Flotr.defaultMarkerFormatter,
     fontSize: Flotr.defaultOptions.fontSize,
     stacked: false,        // => true if markers should be stacked
@@ -4528,7 +4563,8 @@ Flotr.addType('markers', {
     else if (options.position.indexOf('l') != -1) left -= dim.width;
     
          if (options.position.indexOf('m') != -1) top -= dim.height/2 + margin;
-    else if (options.position.indexOf('t') != -1) top -= dim.height;
+    else if (options.position.indexOf('t') != -1) top -= dim.height + options.verticalMargin;
+    else top += options.verticalMargin;
     
     left = Math.floor(left)+0.5;
     top = Math.floor(top)+0.5;
@@ -5317,7 +5353,7 @@ Flotr.addPlugin('graphGrid', {
         ctx.save();
         if (backgroundImage.alpha) ctx.globalAlpha = backgroundImage.alpha;
         ctx.globalCompositeOperation = 'destination-over';
-        ctx.drawImage(img, 0, 0, plotWidth, plotHeight, left, top, plotWidth, plotHeight);
+        ctx.drawImage(img, 0, 0, img.width, img.height, left, top, plotWidth, plotHeight);
         ctx.restore();
       };
 
@@ -5563,6 +5599,9 @@ Flotr.addPlugin('hit', {
 
         if (x === null || y === null) continue;
 
+        // don't check if the point isn't visible in the current range
+        if (x < serie.xaxis.min || x > serie.xaxis.max) continue;
+
         distanceX = Math.abs(x - mouseX);
         distanceY = Math.abs(y - mouseY);
 
@@ -5695,6 +5734,7 @@ var
 Flotr.addPlugin('selection', {
 
   options: {
+    pinchOnly: null,       // Only select on pinch
     mode: null,            // => one of null, 'x', 'y' or 'xy'
     color: '#B6D9FF',      // => selection box color
     fps: 20                // => frames-per-second
@@ -5702,33 +5742,46 @@ Flotr.addPlugin('selection', {
 
   callbacks: {
     'flotr:mouseup' : function (event) {
-      if (!this.options.selection || !this.options.selection.mode) return;
-      if (this.selection.interval) clearInterval(this.selection.interval);
 
-      var pointer = this.getEventPosition(event);
-      this.selection.setSelectionPos(this.selection.selection.second, pointer);
-      this.selection.clearSelection();
+      var
+        options = this.options.selection,
+        selection = this.selection,
+        pointer = this.getEventPosition(event);
 
-      if(this.selection.selecting && this.selection.selectionIsSane()){
-        this.selection.drawSelection();
-        this.selection.fireSelectEvent();
+      if (!options || !options.mode) return;
+      if (selection.interval) clearInterval(selection.interval);
+
+      if (this.multitouches) {
+        selection.updateSelection();
+      } else
+      if (!options.pinchOnly) {
+        selection.setSelectionPos(selection.selection.second, pointer);
+      }
+      selection.clearSelection();
+
+      if(selection.selecting && selection.selectionIsSane()){
+        selection.drawSelection();
+        selection.fireSelectEvent();
         this.ignoreClick = true;
       }
     },
     'flotr:mousedown' : function (event) {
-      if (!this.options.selection || !this.options.selection.mode) return;
-      if (!this.options.selection.mode || (!isLeftClick(event) && _.isUndefined(event.touches))) return;
 
-      var pointer = this.getEventPosition(event);
-      this.selection.setSelectionPos(this.selection.selection.first, pointer);
+      var
+        options = this.options.selection,
+        selection = this.selection,
+        pointer = this.getEventPosition(event);
 
-      if (this.selection.interval) clearInterval(this.selection.interval);
+      if (!options || !options.mode) return;
+      if (!options.mode || (!isLeftClick(event) && _.isUndefined(event.touches))) return;
+      if (!options.pinchOnly) selection.setSelectionPos(selection.selection.first, pointer);
+      if (selection.interval) clearInterval(selection.interval);
 
       this.lastMousePos.pageX = null;
-      this.selection.selecting = false;
-      this.selection.interval = setInterval(
-        _.bind(this.selection.updateSelection, this),
-        1000/this.options.selection.fps
+      selection.selecting = false;
+      selection.interval = setInterval(
+        _.bind(selection.updateSelection, this),
+        1000 / options.fps
       );
     },
     'flotr:destroy' : function (event) {
@@ -5875,7 +5928,16 @@ Flotr.addPlugin('selection', {
     if (!this.lastMousePos.pageX) return;
 
     this.selection.selecting = true;
-    this.selection.setSelectionPos(this.selection.selection.second, this.lastMousePos);
+
+    if (this.multitouches) {
+      this.selection.setSelectionPos(this.selection.selection.first,  this.getEventPosition(this.multitouches[0]));
+      this.selection.setSelectionPos(this.selection.selection.second,  this.getEventPosition(this.multitouches[1]));
+    } else
+    if (this.options.selection.pinchOnly) {
+      return;
+    } else {
+      this.selection.setSelectionPos(this.selection.selection.second, this.lastMousePos);
+    }
 
     this.selection.clearSelection();
     
@@ -6118,6 +6180,7 @@ Flotr.addPlugin('labels', {
               axis.d2p(tick.v) - axis.maxLabel.height / 2);
           left = isX ? (offset.left + axis.d2p(tick.v) - xBoxWidth / 2) : 0;
 
+          name = '';
           if (i === 0) {
             name = ' first';
           } else if (i === axis.ticks.length - 1) {
