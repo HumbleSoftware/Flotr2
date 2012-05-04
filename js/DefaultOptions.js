@@ -59,7 +59,7 @@ Flotr.defaultOptions = {
     color: null,           // => The color of the ticks
     scaling: 'linear',     // => Scaling, can be 'linear' or 'logarithmic'
     base: Math.E,
-    titleAlign: 'right',
+    titleAlign: 'center',
     margin: true           // => Turn off margins with false
   },
   y2axis: {
