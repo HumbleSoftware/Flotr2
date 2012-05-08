@@ -147,6 +147,10 @@ Flotr.addPlugin('hit', {
 
       if (!_.isUndefined(n.seriesIndex)) {
         series    = this.series[n.seriesIndex];
+// SP: 2012/05/08 Added check for series        
+        if ( !series ) {        
+          return;
+        }
         n.series  = series;
         n.mouse   = series.mouse;
         n.xaxis   = series.xaxis;
@@ -161,6 +165,10 @@ Flotr.addPlugin('hit', {
         closest     = options.mouse.trackY ? closest.point : closest.x;
         seriesIndex = closest.seriesIndex;
         series      = this.series[seriesIndex];
+// SP: 2012/05/08 Added check for series        
+        if ( !series ) {        
+          return;
+        }
         xaxis       = series.xaxis;
         yaxis       = series.yaxis;
         sensibility = 2 * series.mouse.sensibility;
