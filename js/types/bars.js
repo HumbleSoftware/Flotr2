@@ -11,7 +11,8 @@ Flotr.addType('bars', {
     horizontal: false,     // => horizontal bars (x and y inverted)
     stacked: false,        // => stacked bar charts
     centered: true,        // => center the bars to their x axis value
-    topPadding: 0.1        // => top padding in percent
+    topPadding: 0.1,       // => top padding in percent
+    grouped: false         // => groups bars together which share x value, hit not supported.
   },
 
   stack : { 
@@ -24,6 +25,8 @@ Flotr.addType('bars', {
   draw : function (options) {
     var
       context = options.context;
+
+    this.current += 1;
 
     context.save();
     context.lineJoin = 'miter';
@@ -94,6 +97,14 @@ Flotr.addType('bars', {
       yValue        = horizontal ? x : y,
       stackOffset   = 0,
       stackValue, left, right, top, bottom;
+
+    if (options.grouped) {
+      this.current / this.groups
+      xValue = xValue - bisection;
+      barWidth = barWidth / this.groups;
+      bisection = barWidth / 2;
+      xValue = xValue + barWidth * this.current - bisection;
+    }
 
     // Stacked bars
     if (stack) {
@@ -205,6 +216,8 @@ Flotr.addType('bars', {
 
   extendXRange : function (axis, data, options, bars) {
     this._extendRange(axis, data, options, bars);
+    this.groups = (this.groups + 1) || 1;
+    this.current = 0;
   },
 
   extendYRange : function (axis, data, options, bars) {
