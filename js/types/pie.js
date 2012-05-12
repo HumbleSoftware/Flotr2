@@ -161,7 +161,7 @@ Flotr.addType('pie', {
     }
 
     if (r < slice.radius + explode && r > explode) {
-      if ((start > end && (theta < end || theta > start)) ||
+      if ((start >= end && (theta < end || theta > start)) ||
         (theta > start && theta < end)) {
 
         // TODO Decouple this from hit plugin (chart shouldn't know what n means)
