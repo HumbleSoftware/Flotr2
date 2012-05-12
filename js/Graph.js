@@ -440,13 +440,14 @@ Graph.prototype = {
     }
   },
 
-  clip: function () {
+  clip: function (ctx) {
 
     var
-      ctx = this.ctx,
       o   = this.plotOffset,
       w   = this.canvasWidth,
       h   = this.canvasHeight;
+
+    ctx = ctx || this.ctx;
 
     if (flotr.isIE && flotr.isIE < 9) {
       // Clipping for excanvas :-(

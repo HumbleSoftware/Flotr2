@@ -84,6 +84,7 @@ Flotr.addPlugin('hit', {
         octx.closePath();
       }
       octx.restore();
+      this.clip(octx);
     }
     this.prevHit = n;
   },
