@@ -198,8 +198,8 @@ Flotr.addPlugin('hit', {
     var
       series    = this.series,
       options   = this.options,
-      mouseX    = mouse.x,
-      mouseY    = mouse.y,
+      relX      = mouse.relX,
+      relY      = mouse.relY,
       compare   = Number.MAX_VALUE,
       compareX  = Number.MAX_VALUE,
       closest   = {},
@@ -207,6 +207,7 @@ Flotr.addPlugin('hit', {
       check     = false,
       serie, data,
       distance, distanceX, distanceY,
+      mouseX, mouseY,
       x, y, i, j;
 
     function setClosest (o) {
@@ -223,6 +224,8 @@ Flotr.addPlugin('hit', {
 
       serie = series[i];
       data = serie.data;
+      mouseX = serie.xaxis.p2d(relX);
+      mouseY = serie.yaxis.p2d(relY);
 
       if (data.length) check = true;
 
