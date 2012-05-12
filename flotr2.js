@@ -2735,13 +2735,14 @@ Graph.prototype = {
     }
   },
 
-  clip: function () {
+  clip: function (ctx) {
 
     var
-      ctx = this.ctx,
       o   = this.plotOffset,
       w   = this.canvasWidth,
       h   = this.canvasHeight;
+
+    ctx = ctx || this.ctx;
 
     if (flotr.isIE && flotr.isIE < 9) {
       // Clipping for excanvas :-(
@@ -3094,6 +3095,10 @@ Axis.prototype = {
         this._calculateTicks();
       }
     }
+
+    // Ticks to strings
+    _.each(this.ticks, function (tick) { tick.label += ''; });
+    _.each(this.minorTicks, function (tick) { tick.label += ''; });
   },
 
   /**
@@ -3707,7 +3712,8 @@ Flotr.addType('bars', {
     horizontal: false,     // => horizontal bars (x and y inverted)
     stacked: false,        // => stacked bar charts
     centered: true,        // => center the bars to their x axis value
-    topPadding: 0.1        // => top padding in percent
+    topPadding: 0.1,       // => top padding in percent
+    grouped: false         // => groups bars together which share x value, hit not supported.
   },
 
   stack : { 
@@ -3720,6 +3726,8 @@ Flotr.addType('bars', {
   draw : function (options) {
     var
       context = options.context;
+
+    this.current += 1;
 
     context.save();
     context.lineJoin = 'miter';
@@ -3790,6 +3798,14 @@ Flotr.addType('bars', {
       yValue        = horizontal ? x : y,
       stackOffset   = 0,
       stackValue, left, right, top, bottom;
+
+    if (options.grouped) {
+      this.current / this.groups
+      xValue = xValue - bisection;
+      barWidth = barWidth / this.groups;
+      bisection = barWidth / 2;
+      xValue = xValue + barWidth * this.current - bisection;
+    }
 
     // Stacked bars
     if (stack) {
@@ -3901,6 +3917,8 @@ Flotr.addType('bars', {
 
   extendXRange : function (axis, data, options, bars) {
     this._extendRange(axis, data, options, bars);
+    this.groups = (this.groups + 1) || 1;
+    this.current = 0;
   },
 
   extendYRange : function (axis, data, options, bars) {
@@ -4036,20 +4054,25 @@ Flotr.addType('bubbles', {
       n = args[1],
       x = mouse.x,
       y = mouse.y,
+      distance,
       geometry,
       dx, dy;
+
+    n.best = n.best || Number.MAX_VALUE;
 
     for (i = data.length; i--;) {
       geometry = this.getGeometry(data[i], options);
 
       dx = geometry.x - options.xScale(x);
       dy = geometry.y - options.yScale(y);
+      distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (Math.sqrt(dx * dx + dy * dy) < geometry.z) {
+      if (distance < geometry.z && geometry.z < n.best) {
         n.x = data[i][0];
         n.y = data[i][1];
         n.index = i;
         n.seriesIndex = options.index;
+        n.best = geometry.z;
       }
     }
   },
@@ -4751,7 +4774,7 @@ Flotr.addType('pie', {
     }
 
     if (r < slice.radius + explode && r > explode) {
-      if ((start > end && (theta < end || theta > start)) ||
+      if ((start >= end && (theta < end || theta > start)) ||
         (theta > start && theta < end)) {
 
         // TODO Decouple this from hit plugin (chart shouldn't know what n means)
@@ -5450,6 +5473,7 @@ Flotr.addPlugin('hit', {
         octx.closePath();
       }
       octx.restore();
+      this.clip(octx);
     }
     this.prevHit = n;
   },
@@ -5564,8 +5588,8 @@ Flotr.addPlugin('hit', {
     var
       series    = this.series,
       options   = this.options,
-      mouseX    = mouse.x,
-      mouseY    = mouse.y,
+      relX      = mouse.relX,
+      relY      = mouse.relY,
       compare   = Number.MAX_VALUE,
       compareX  = Number.MAX_VALUE,
       closest   = {},
@@ -5573,6 +5597,7 @@ Flotr.addPlugin('hit', {
       check     = false,
       serie, data,
       distance, distanceX, distanceY,
+      mouseX, mouseY,
       x, y, i, j;
 
     function setClosest (o) {
@@ -5589,6 +5614,8 @@ Flotr.addPlugin('hit', {
 
       serie = series[i];
       data = serie.data;
+      mouseX = serie.xaxis.p2d(relX);
+      mouseY = serie.yaxis.p2d(relY);
 
       if (data.length) check = true;
 
@@ -6824,14 +6851,14 @@ Flotr.addPlugin('titles', {
           '<div style="position:absolute;top:', 
           (this.plotOffset.top + this.plotHeight + options.grid.labelMargin + a.x.titleSize.height), 
           'px;left:', this.plotOffset.left, 'px;width:', this.plotWidth, 
-          'px;text-align:', a.x.options.titleAlign, ';" class="flotr-axis-title">', a.x.options.title, '</div>'
+          'px;text-align:', a.x.options.titleAlign, ';" class="flotr-axis-title flotr-axis-title-x1">', a.x.options.title, '</div>'
         );
       
       // Add x2 axis title
       if (a.x2.options.title && a.x2.used)
         html.push(
           '<div style="position:absolute;top:0;left:', this.plotOffset.left, 'px;width:', 
-          this.plotWidth, 'px;text-align:', a.x2.options.titleAlign, ';" class="flotr-axis-title">', a.x2.options.title, '</div>'
+          this.plotWidth, 'px;text-align:', a.x2.options.titleAlign, ';" class="flotr-axis-title flotr-axis-title-x2">', a.x2.options.title, '</div>'
         );
       
       // Add y axis title
@@ -6839,7 +6866,7 @@ Flotr.addPlugin('titles', {
         html.push(
           '<div style="position:absolute;top:', 
           (this.plotOffset.top + this.plotHeight/2 - a.y.titleSize.height/2), 
-          'px;left:0;text-align:', a.y.options.titleAlign, ';" class="flotr-axis-title">', a.y.options.title, '</div>'
+          'px;left:0;text-align:', a.y.options.titleAlign, ';" class="flotr-axis-title flotr-axis-title-y1">', a.y.options.title, '</div>'
         );
       
       // Add y2 axis title
@@ -6847,7 +6874,7 @@ Flotr.addPlugin('titles', {
         html.push(
           '<div style="position:absolute;top:', 
           (this.plotOffset.top + this.plotHeight/2 - a.y.titleSize.height/2), 
-          'px;right:0;text-align:', a.y2.options.titleAlign, ';" class="flotr-axis-title">', a.y2.options.title, '</div>'
+          'px;right:0;text-align:', a.y2.options.titleAlign, ';" class="flotr-axis-title flotr-axis-title-y2">', a.y2.options.title, '</div>'
         );
       
       html = html.join('');
