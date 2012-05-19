@@ -45,6 +45,7 @@ Example.prototype = {
 
     if (!this._editor) {
       this._editor = new Flotr.Examples.Editor(editorNode, {
+          args : example.args,
           example : source,
           teardown : function () {
             // Unbind event listeners from previous examples
@@ -55,7 +56,7 @@ Example.prototype = {
           }
       });
     } else {
-      this._editor.setExample(source);
+      this._editor.setExample(source, example.args);
     }
   },
 

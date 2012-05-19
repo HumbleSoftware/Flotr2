@@ -642,11 +642,10 @@ function mouse_zoom (container) {
   Flotr.EventAdapter.observe(container, 'flotr:select', function (area) {
 
     // Draw graph with new area
-    f = drawGraph({
+    graph = drawGraph({
       xaxis: {min:area.x1, max:area.x2},
       yaxis: {min:area.y1, max:area.y2}
     });
-
   });
     
   // When graph is clicked, draw the graph with default area.

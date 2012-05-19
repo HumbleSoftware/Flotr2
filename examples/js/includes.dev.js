@@ -16,6 +16,7 @@ yepnope([
   'lib/beautify.js',
   'lib/randomseed.js',
   'lib/jquery-1.7.1.min.js',
+  'lib/jquery.ba-hashchange.min.js',
 
   // Flotr
   '../js/Flotr.js',

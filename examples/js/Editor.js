@@ -27,9 +27,11 @@
       var
         example = o.example,
         render = o.render,
-        renderId = $(render).attr('id');
+        renderId = $(render).attr('id'),
+        args = o.args ? ',' + o.args.toString() : '';
 
-      return '(' + example + ')(document.getElementById("' + renderId + '"));';
+      return '(' + example + ')(document.getElementById("' + renderId+ '")' +
+          args + ');';
     },
     render : function (o) {
       eval(o.example);
@@ -115,6 +117,7 @@
       .append(errors)
 
     example = api.example({
+      args : o.args,
       example : example,
       render : render
     });
@@ -211,8 +214,9 @@
 
     COUNT++;
 
-    this.setExample = function (source) {
+    this.setExample = function (source, args) {
       example = api.example({
+        args : args,
         example : source,
         render : render
       });
