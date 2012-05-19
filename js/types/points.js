@@ -6,7 +6,8 @@ Flotr.addType('points', {
     lineWidth: 2,          // => line width in pixels
     fill: true,            // => true to fill the points with a color, false for (transparent) no fill
     fillColor: '#FFFFFF',  // => fill color.  Null to use series color.
-    fillOpacity: 1         // => opacity of color inside the points
+    fillOpacity: 1,        // => opacity of color inside the points
+    hitRadius: null        // => override for points hit radius
   },
 
   draw : function (options) {
