@@ -516,7 +516,9 @@ Graph.prototype = {
 
         var pos = this.getEventPosition(e);
 
-        e.preventDefault();
+        if (this.options.preventDefault) {
+          e.preventDefault();
+        }
 
         movement = true;
 
