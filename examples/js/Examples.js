@@ -250,7 +250,9 @@ Examples.prototype = {
     else {
       if (params[0] == 'single') {
         this.single = true;
-        example = this.list.get(params[1]);
+        this._loadExample(
+          this.list.get(params[1])
+        );
       }
     }
   },
