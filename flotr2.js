@@ -1606,6 +1606,7 @@ Flotr.defaultOptions = {
   fontSize: 7.5,           // => canvas' text font size
   resolution: 1,           // => resolution of the graph, to have printer-friendly graphs !
   parseFloat: true,        // => whether to preprocess data for floats (ie. if input is string)
+  preventDefault: true,    // => preventDefault by default for mobile events.  Turn off to enable scroll.
   xaxis: {
     ticks: null,           // => format: either [1, 3] or [[1, 'a'], 3]
     minorTicks: null,      // => format: either [1, 3] or [[1, 'a'], 3]
@@ -1982,10 +1983,8 @@ Flotr.Date = {
     axis.tickUnit = tickUnit;
     axis.tickSize = tickSize;
 
-    var
-      d = new Date(min);
-
     var step = tickSize * timeUnits[tickUnit];
+    d = new Date(min);
 
     function setTick (name) {
       set(d, name, mode, Flotr.floorInBase(
@@ -2021,10 +2020,10 @@ Flotr.Date = {
            so we don't end up in the middle of a day */
           set(d, 'Date', mode, 1);
           var start = d.getTime();
-          set(d, 'Month', mode, get(d, 'Month', mode) + 1)
+          set(d, 'Month', mode, get(d, 'Month', mode) + 1);
           var end = d.getTime();
           d.setTime(v + carry * timeUnits.hour + (end - start) * tickSize);
-          carry = get(d, 'Hours', mode)
+          carry = get(d, 'Hours', mode);
           set(d, 'Hours', mode, 0);
         }
         else
@@ -2811,7 +2810,9 @@ Graph.prototype = {
 
         var pos = this.getEventPosition(e);
 
-        e.preventDefault();
+        if (this.options.preventDefault) {
+          e.preventDefault();
+        }
 
         movement = true;
 
@@ -3818,7 +3819,7 @@ Flotr.addType('bars', {
       stackValue, left, right, top, bottom;
 
     if (options.grouped) {
-      this.current / this.groups
+      this.current / this.groups;
       xValue = xValue - bisection;
       barWidth = barWidth / this.groups;
       bisection = barWidth / 2;
@@ -4629,8 +4630,9 @@ function isImage (i) {
 
 })();
 
-/** Pie **/
 /**
+ * Pie
+ *
  * Formats the pies labels.
  * @param {Object} slice - Slice object
  * @return {String} Formatted pie label string
@@ -4693,8 +4695,7 @@ Flotr.addType('pie', {
       textAlign     = distX < 0 ? 'right' : 'left',
       textBaseline  = distY > 0 ? 'top' : 'bottom',
       style,
-      x, y,
-      distX, distY;
+      x, y;
     
     context.save();
     context.translate(width / 2, height / 2);
@@ -5703,12 +5704,12 @@ Flotr.addPlugin('hit', {
       else if (p.charAt(1) == 'w') pos += 'left:' + (m + left) + 'px;right:auto;';
 
     // Bars
-    } else if (s.bars.show) {
+    } else if (s.bars && s.bars.show) {
         pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y/2) + this.canvasHeight) + 'px;top:auto;';
         pos += 'left:' + (m + left + n.xaxis.d2p(n.x - options.bars.barWidth/2)) + 'px;right:auto;';
 
     // Pie
-    } else if (s.pie.show) {
+    } else if (s.pie && s.pie.show) {
       var center = {
           x: (this.plotWidth)/2,
           y: (this.plotHeight)/2
@@ -5895,8 +5896,8 @@ Flotr.addPlugin('selection', {
 
     s.first.y  = boundY((selX && !selY) ? 0 : (ya.max - area.y1) * vertScale, this);
     s.second.y = boundY((selX && !selY) ? this.plotHeight - 1: (ya.max - area.y2) * vertScale, this);
-    s.first.x  = boundX((selY && !selX) ? 0 : area.x1, this);
-    s.second.x = boundX((selY && !selX) ? this.plotWidth : area.x2, this);
+    s.first.x  = boundX((selY && !selX) ? 0 : (area.x1 - xa.min) * hozScale, this);
+    s.second.x = boundX((selY && !selX) ? this.plotWidth : (area.x2 - xa.min) * hozScale, this);
     
     this.selection.drawSelection();
     if (!preventEvent)
@@ -6273,7 +6274,7 @@ Flotr.addPlugin('legend', {
     container: null,       // => container (as jQuery object) to put legend in, null means default on top of graph
     position: 'nw',        // => position of default legend container within plot
     margin: 5,             // => distance from grid edge to default legend container within plot
-    backgroundColor: null, // => null means auto-detect
+    backgroundColor: '#F0F0F0', // => Legend background color.
     backgroundOpacity: 0.85// => set to 0 to avoid background, set to 1 for a solid background
   },
   callbacks: {
@@ -6329,7 +6330,7 @@ Flotr.addPlugin('legend', {
         if(p.charAt(1) == 'e') offsetX = plotOffset.left + this.plotWidth - (m + legendWidth);
         
         // Legend box
-        color = this.processColor(legend.backgroundColor || 'rgb(240,240,240)', {opacity: legend.backgroundOpacity || 0.1});
+        color = this.processColor(legend.backgroundColor, {opacity: legend.backgroundOpacity || 0.1});
         
         ctx.fillStyle = color;
         ctx.fillRect(offsetX, offsetY, legendWidth, legendHeight);
@@ -6394,7 +6395,7 @@ Flotr.addPlugin('legend', {
             D.insert(legend.container, table);
           }
           else {
-            var styles = {position: 'absolute', 'z-index': 2};
+            var styles = {position: 'absolute', 'zIndex': '2', 'border' : '1px solid ' + legend.labelBoxBorderColor};
             
                  if(p.charAt(0) == 'n') { styles.top = (m + plotOffset.top) + 'px'; styles.bottom = 'auto'; }
             else if(p.charAt(0) == 's') { styles.bottom = (m + plotOffset.bottom) + 'px'; styles.top = 'auto'; }
@@ -6414,7 +6415,8 @@ Flotr.addPlugin('legend', {
 
             _.extend(styles, D.size(div), {
               'backgroundColor': c,
-              'z-index': 1
+              'zIndex' : '',
+              'border' : ''
             });
             styles.width += 'px';
             styles.height += 'px';
