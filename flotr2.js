@@ -4848,8 +4848,9 @@ Flotr.addType('points', {
     radius: 3,             // => point radius (pixels)
     lineWidth: 2,          // => line width in pixels
     fill: true,            // => true to fill the points with a color, false for (transparent) no fill
-    fillColor: '#FFFFFF',  // => fill color
-    fillOpacity: 0.4       // => opacity of color inside the points
+    fillColor: '#FFFFFF',  // => fill color.  Null to use series color.
+    fillOpacity: 1,        // => opacity of color inside the points
+    hitRadius: null        // => override for points hit radius
   },
 
   draw : function (options) {
@@ -4872,7 +4873,7 @@ Flotr.addType('points', {
 
     context.lineWidth = options.lineWidth;
     context.strokeStyle = options.color;
-    context.fillStyle = options.fillColor || options.color;
+    if (options.fill) context.fillStyle = options.fillStyle;
 
     this.plot(options);
     context.restore();
@@ -5481,12 +5482,13 @@ Flotr.addPlugin('hit', {
       octx.translate(this.plotOffset.left, this.plotOffset.top);
 
       if (!this.hit.executeOnType(s, 'drawHit', n)) {
-        var xa = n.xaxis,
+        var
+          xa = n.xaxis,
           ya = n.yaxis;
 
         octx.beginPath();
           // TODO fix this (points) should move to general testable graph mixin
-          octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.points.radius || s.mouse.radius, 0, 2 * Math.PI, true);
+          octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.points.hitRadius || s.points.radius || s.mouse.radius, 0, 2 * Math.PI, true);
           octx.fill();
           octx.stroke();
         octx.closePath();
@@ -5511,7 +5513,7 @@ Flotr.addPlugin('hit', {
         var
           s = prev.series,
           lw = (s.points ? s.points.lineWidth : 1);
-          offset = (s.points.radius || s.mouse.radius) + lw;
+          offset = (s.points.hitRadius || s.points.radius || s.mouse.radius) + lw;
         octx.clearRect(
           prev.xaxis.d2p(prev.x) - offset,
           prev.yaxis.d2p(prev.y) - offset,
@@ -5722,10 +5724,10 @@ Flotr.addPlugin('hit', {
 
     // Default
     } else {
-      if      (p.charAt(0) == 'n') pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
-      else if (p.charAt(0) == 's') pos += 'top:' + (m + top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
-      if      (p.charAt(1) == 'e') pos += 'left:' + (m + left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
-      else if (p.charAt(1) == 'w') pos += 'right:' + (m - left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
+      if (/n/.test(p)) pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
+      else             pos += 'top:' + (m + top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
+      if (/e/.test(p)) pos += 'right:' + (m - left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
+      else             pos += 'left:' + (m + left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
     }
 
     elStyle += pos;
@@ -5743,6 +5745,19 @@ Flotr.addPlugin('hit', {
     });
 
     D.show(mouseTrack);
+
+    if (n.mouse.relative) {
+      if (!/[ew]/.test(p)) {
+        // Center Horizontally
+        mouseTrack.style.left =
+          (left + n.xaxis.d2p(n.x) - D.size(mouseTrack).width / 2) + 'px';
+      } else
+      if (!/[ns]/.test(p)) {
+        // Center Vertically
+        mouseTrack.style.top =
+          (top + n.yaxis.d2p(n.y) - D.size(mouseTrack).height / 2) + 'px';
+      }
+    }
   }
 
 });
