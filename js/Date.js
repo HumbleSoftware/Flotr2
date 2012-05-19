@@ -126,10 +126,8 @@ Flotr.Date = {
     axis.tickUnit = tickUnit;
     axis.tickSize = tickSize;
 
-    var
-      d = new Date(min);
-
     var step = tickSize * timeUnits[tickUnit];
+    d = new Date(min);
 
     function setTick (name) {
       set(d, name, mode, Flotr.floorInBase(
@@ -165,10 +163,10 @@ Flotr.Date = {
            so we don't end up in the middle of a day */
           set(d, 'Date', mode, 1);
           var start = d.getTime();
-          set(d, 'Month', mode, get(d, 'Month', mode) + 1)
+          set(d, 'Month', mode, get(d, 'Month', mode) + 1);
           var end = d.getTime();
           d.setTime(v + carry * timeUnits.hour + (end - start) * tickSize);
-          carry = get(d, 'Hours', mode)
+          carry = get(d, 'Hours', mode);
           set(d, 'Hours', mode, 0);
         }
         else
