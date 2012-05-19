@@ -296,12 +296,12 @@ Flotr.addPlugin('hit', {
       else if (p.charAt(1) == 'w') pos += 'left:' + (m + left) + 'px;right:auto;';
 
     // Bars
-    } else if (s.bars.show) {
+    } else if (s.bars && s.bars.show) {
         pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y/2) + this.canvasHeight) + 'px;top:auto;';
         pos += 'left:' + (m + left + n.xaxis.d2p(n.x - options.bars.barWidth/2)) + 'px;right:auto;';
 
     // Pie
-    } else if (s.pie.show) {
+    } else if (s.pie && s.pie.show) {
       var center = {
           x: (this.plotWidth)/2,
           y: (this.plotHeight)/2
