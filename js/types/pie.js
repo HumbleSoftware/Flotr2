@@ -1,5 +1,6 @@
-/** Pie **/
 /**
+ * Pie
+ *
  * Formats the pies labels.
  * @param {Object} slice - Slice object
  * @return {String} Formatted pie label string
@@ -62,8 +63,7 @@ Flotr.addType('pie', {
       textAlign     = distX < 0 ? 'right' : 'left',
       textBaseline  = distY > 0 ? 'top' : 'bottom',
       style,
-      x, y,
-      distX, distY;
+      x, y;
     
     context.save();
     context.translate(width / 2, height / 2);
