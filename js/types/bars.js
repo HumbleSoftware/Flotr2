@@ -99,7 +99,7 @@ Flotr.addType('bars', {
       stackValue, left, right, top, bottom;
 
     if (options.grouped) {
-      this.current / this.groups
+      this.current / this.groups;
       xValue = xValue - bisection;
       barWidth = barWidth / this.groups;
       bisection = barWidth / 2;
