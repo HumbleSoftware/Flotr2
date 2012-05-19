@@ -146,8 +146,8 @@ Flotr.addPlugin('selection', {
 
     s.first.y  = boundY((selX && !selY) ? 0 : (ya.max - area.y1) * vertScale, this);
     s.second.y = boundY((selX && !selY) ? this.plotHeight - 1: (ya.max - area.y2) * vertScale, this);
-    s.first.x  = boundX((selY && !selX) ? 0 : area.x1, this);
-    s.second.x = boundX((selY && !selX) ? this.plotWidth : area.x2, this);
+    s.first.x  = boundX((selY && !selX) ? 0 : (area.x1 - xa.min) * hozScale, this);
+    s.second.x = boundX((selY && !selX) ? this.plotWidth : (area.x2 - xa.min) * hozScale, this);
     
     this.selection.drawSelection();
     if (!preventEvent)
