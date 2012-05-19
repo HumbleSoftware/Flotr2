@@ -138,7 +138,7 @@ Flotr.addPlugin('legend', {
             D.insert(legend.container, table);
           }
           else {
-            var styles = {position: 'absolute', 'z-index': 2};
+            var styles = {position: 'absolute', 'zIndex': '2'};
             
                  if(p.charAt(0) == 'n') { styles.top = (m + plotOffset.top) + 'px'; styles.bottom = 'auto'; }
             else if(p.charAt(0) == 's') { styles.bottom = (m + plotOffset.bottom) + 'px'; styles.top = 'auto'; }
@@ -158,7 +158,7 @@ Flotr.addPlugin('legend', {
 
             _.extend(styles, D.size(div), {
               'backgroundColor': c,
-              'z-index': 1
+              'zIndex': 1
             });
             styles.width += 'px';
             styles.height += 'px';
