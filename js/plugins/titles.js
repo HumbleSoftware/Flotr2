@@ -136,14 +136,14 @@ Flotr.addPlugin('titles', {
           '<div style="position:absolute;top:', 
           (this.plotOffset.top + this.plotHeight + options.grid.labelMargin + a.x.titleSize.height), 
           'px;left:', this.plotOffset.left, 'px;width:', this.plotWidth, 
-          'px;text-align:center;" class="flotr-axis-title">', a.x.options.title, '</div>'
+          'px;text-align:', a.x.options.titleAlign, ';" class="flotr-axis-title flotr-axis-title-x1">', a.x.options.title, '</div>'
         );
       
       // Add x2 axis title
       if (a.x2.options.title && a.x2.used)
         html.push(
           '<div style="position:absolute;top:0;left:', this.plotOffset.left, 'px;width:', 
-          this.plotWidth, 'px;text-align:center;" class="flotr-axis-title">', a.x2.options.title, '</div>'
+          this.plotWidth, 'px;text-align:', a.x2.options.titleAlign, ';" class="flotr-axis-title flotr-axis-title-x2">', a.x2.options.title, '</div>'
         );
       
       // Add y axis title
@@ -151,7 +151,7 @@ Flotr.addPlugin('titles', {
         html.push(
           '<div style="position:absolute;top:', 
           (this.plotOffset.top + this.plotHeight/2 - a.y.titleSize.height/2), 
-          'px;left:0;text-align:right;" class="flotr-axis-title">', a.y.options.title, '</div>'
+          'px;left:0;text-align:', a.y.options.titleAlign, ';" class="flotr-axis-title flotr-axis-title-y1">', a.y.options.title, '</div>'
         );
       
       // Add y2 axis title
@@ -159,7 +159,7 @@ Flotr.addPlugin('titles', {
         html.push(
           '<div style="position:absolute;top:', 
           (this.plotOffset.top + this.plotHeight/2 - a.y.titleSize.height/2), 
-          'px;right:0;text-align:right;" class="flotr-axis-title">', a.y2.options.title, '</div>'
+          'px;right:0;text-align:', a.y2.options.titleAlign, ';" class="flotr-axis-title flotr-axis-title-y2">', a.y2.options.title, '</div>'
         );
       
       html = html.join('');

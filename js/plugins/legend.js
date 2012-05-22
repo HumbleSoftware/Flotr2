@@ -17,7 +17,7 @@ Flotr.addPlugin('legend', {
     container: null,       // => container (as jQuery object) to put legend in, null means default on top of graph
     position: 'nw',        // => position of default legend container within plot
     margin: 5,             // => distance from grid edge to default legend container within plot
-    backgroundColor: null, // => null means auto-detect
+    backgroundColor: '#F0F0F0', // => Legend background color.
     backgroundOpacity: 0.85// => set to 0 to avoid background, set to 1 for a solid background
   },
   callbacks: {
@@ -73,7 +73,7 @@ Flotr.addPlugin('legend', {
         if(p.charAt(1) == 'e') offsetX = plotOffset.left + this.plotWidth - (m + legendWidth);
         
         // Legend box
-        color = this.processColor(legend.backgroundColor || 'rgb(240,240,240)', {opacity: legend.backgroundOpacity || 0.1});
+        color = this.processColor(legend.backgroundColor, {opacity: legend.backgroundOpacity || 0.1});
         
         ctx.fillStyle = color;
         ctx.fillRect(offsetX, offsetY, legendWidth, legendHeight);
@@ -138,7 +138,7 @@ Flotr.addPlugin('legend', {
             D.insert(legend.container, table);
           }
           else {
-            var styles = {position: 'absolute', 'z-index': 2};
+            var styles = {position: 'absolute', 'zIndex': '2', 'border' : '1px solid ' + legend.labelBoxBorderColor};
             
                  if(p.charAt(0) == 'n') { styles.top = (m + plotOffset.top) + 'px'; styles.bottom = 'auto'; }
             else if(p.charAt(0) == 's') { styles.bottom = (m + plotOffset.bottom) + 'px'; styles.top = 'auto'; }
@@ -158,7 +158,8 @@ Flotr.addPlugin('legend', {
 
             _.extend(styles, D.size(div), {
               'backgroundColor': c,
-              'z-index': 1
+              'zIndex' : '',
+              'border' : ''
             });
             styles.width += 'px';
             styles.height += 'px';

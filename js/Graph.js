@@ -283,6 +283,7 @@ Graph.prototype = {
         textEnabled : this.textEnabled,
         htmlText    : this.options.HtmlText,
         text        : this._text, // TODO Is this necessary?
+        element     : this.el,
         data        : series.data,
         color       : series.color,
         shadowSize  : series.shadowSize,
@@ -439,13 +440,14 @@ Graph.prototype = {
     }
   },
 
-  clip: function () {
+  clip: function (ctx) {
 
     var
-      ctx = this.ctx,
       o   = this.plotOffset,
       w   = this.canvasWidth,
       h   = this.canvasHeight;
+
+    ctx = ctx || this.ctx;
 
     if (flotr.isIE && flotr.isIE < 9) {
       // Clipping for excanvas :-(
@@ -490,6 +492,8 @@ Graph.prototype = {
         touchend = true;
         E.stopObserving(document, 'touchend', touchendHandler);
         E.fire(el, 'flotr:mouseup', [event, this]);
+        this.multitouches = null;
+
         if (!movement) {
           this.clickHandler(e);
         }
@@ -499,22 +503,31 @@ Graph.prototype = {
         movement = false;
         touchend = false;
         this.ignoreClick = false;
+
+        if (e.touches && e.touches.length > 1) {
+          this.multitouches = e.touches;
+        }
+
         E.fire(el, 'flotr:mousedown', [event, this]);
         this.observe(document, 'touchend', touchendHandler);
       }, this));
 
       this.observe(this.overlay, 'touchmove', _.bind(function (e) {
 
-        e.preventDefault();
+        var pos = this.getEventPosition(e);
+
+        if (this.options.preventDefault) {
+          e.preventDefault();
+        }
 
         movement = true;
 
-        var pageX = e.touches[0].pageX,
-          pageY = e.touches[0].pageY,
-          pos = this.getEventPosition(e.touches[0]);
-
-        if (!touchend) {
-          E.fire(el, 'flotr:mousemove', [event, pos, this]);
+        if (this.multitouches || (e.touches && e.touches.length > 1)) {
+          this.multitouches = e.touches;
+        } else {
+          if (!touchend) {
+            E.fire(el, 'flotr:mousemove', [event, pos, this]);
+          }
         }
         this.lastMousePos = pos;
       }, this));
@@ -574,9 +587,9 @@ Graph.prototype = {
     this.ctx = getContext(this.canvas);
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.octx = getContext(this.overlay);
-    this.ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
-    this.canvasHeight = size.height*o.resolution;
-    this.canvasWidth = size.width*o.resolution;
+    this.octx.clearRect(0, 0, this.overlay.width, this.overlay.height);
+    this.canvasHeight = size.height;
+    this.canvasWidth = size.width;
     this.textEnabled = !!this.ctx.drawText || !!this.ctx.fillText; // Enable text functions
 
     function getCanvas(canvas, name){
@@ -722,12 +735,11 @@ Graph.prototype = {
 
   _setEl: function(el) {
     if (!el) throw 'The target container doesn\'t exist';
-    if (!el.clientWidth) throw 'The target container must be visible';
+    else if (el.graph instanceof Graph) el.graph.destroy();
+    else if (!el.clientWidth) throw 'The target container must be visible';
+
+    el.graph = this;
     this.el = el;
-
-    if (this.el.graph) this.el.graph.destroy();
-
-    this.el.graph = this;
   }
 };
 

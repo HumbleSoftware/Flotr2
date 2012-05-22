@@ -65,6 +65,7 @@ Flotr.addType('lines', {
       prevx     = null,
       prevy     = null,
       zero      = yScale(0),
+      start     = null,
       x1, x2, y1, y2, stack1, stack2, i;
       
     if (length < 1) return;
@@ -74,7 +75,18 @@ Flotr.addType('lines', {
     for (i = 0; i < length; ++i) {
 
       // To allow empty values
-      if (data[i][1] === null || data[i+1][1] === null) continue;
+      if (data[i][1] === null || data[i+1][1] === null) {
+        if (options.fill) {
+          if (i > 0 && data[i][1]) {
+            context.stroke();
+            fill();
+            start = null;
+            context.closePath();
+            context.beginPath();
+          }
+        }
+        continue;
+      }
 
       // Zero is infinity for log scales
       // TODO handle zero for logarithmic
@@ -83,6 +95,8 @@ Flotr.addType('lines', {
       
       x1 = xScale(data[i][0]);
       x2 = xScale(data[i+1][0]);
+
+      if (start === null) start = data[i];
       
       if (stack) {
 
@@ -126,16 +140,20 @@ Flotr.addType('lines', {
     
     if (!options.fill || options.fill && !options.fillBorder) context.stroke();
 
-    // TODO stacked lines
-    if(!shadowOffset && options.fill){
-      x1 = xScale(data[0][0]);
-      context.fillStyle = options.fillStyle;
-      context.lineTo(x2, zero);
-      context.lineTo(x1, zero);
-      context.lineTo(x1, yScale(data[0][1]));
-      context.fill();
-      if (options.fillBorder) {
-        context.stroke();
+    fill();
+
+    function fill () {
+      // TODO stacked lines
+      if(!shadowOffset && options.fill && start){
+        x1 = xScale(start[0]);
+        context.fillStyle = options.fillStyle;
+        context.lineTo(x2, zero);
+        context.lineTo(x1, zero);
+        context.lineTo(x1, yScale(start[1]));
+        context.fill();
+        if (options.fillBorder) {
+          context.stroke();
+        }
       }
     }
 

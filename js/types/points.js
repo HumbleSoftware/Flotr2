@@ -5,8 +5,9 @@ Flotr.addType('points', {
     radius: 3,             // => point radius (pixels)
     lineWidth: 2,          // => line width in pixels
     fill: true,            // => true to fill the points with a color, false for (transparent) no fill
-    fillColor: '#FFFFFF',  // => fill color
-    fillOpacity: 0.4       // => opacity of color inside the points
+    fillColor: '#FFFFFF',  // => fill color.  Null to use series color.
+    fillOpacity: 1,        // => opacity of color inside the points
+    hitRadius: null        // => override for points hit radius
   },
 
   draw : function (options) {
@@ -29,7 +30,7 @@ Flotr.addType('points', {
 
     context.lineWidth = options.lineWidth;
     context.strokeStyle = options.color;
-    context.fillStyle = options.fillColor || options.color;
+    if (options.fill) context.fillStyle = options.fillStyle;
 
     this.plot(options);
     context.restore();

@@ -53,6 +53,10 @@ Axis.prototype = {
         this._calculateTicks();
       }
     }
+
+    // Ticks to strings
+    _.each(this.ticks, function (tick) { tick.label += ''; });
+    _.each(this.minorTicks, function (tick) { tick.label += ''; });
   },
 
   /**

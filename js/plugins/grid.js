@@ -196,7 +196,7 @@ Flotr.addPlugin('graphGrid', {
         ctx.save();
         if (backgroundImage.alpha) ctx.globalAlpha = backgroundImage.alpha;
         ctx.globalCompositeOperation = 'destination-over';
-        ctx.drawImage(img, 0, 0, plotWidth, plotHeight, left, top, plotWidth, plotHeight);
+        ctx.drawImage(img, 0, 0, img.width, img.height, left, top, plotWidth, plotHeight);
         ctx.restore();
       };
 

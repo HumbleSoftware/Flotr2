@@ -73,17 +73,19 @@ Flotr.addPlugin('hit', {
       octx.translate(this.plotOffset.left, this.plotOffset.top);
 
       if (!this.hit.executeOnType(s, 'drawHit', n)) {
-        var xa = n.xaxis,
+        var
+          xa = n.xaxis,
           ya = n.yaxis;
 
         octx.beginPath();
           // TODO fix this (points) should move to general testable graph mixin
-          octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.points.radius || s.mouse.radius, 0, 2 * Math.PI, true);
+          octx.arc(xa.d2p(n.x), ya.d2p(n.y), s.points.hitRadius || s.points.radius || s.mouse.radius, 0, 2 * Math.PI, true);
           octx.fill();
           octx.stroke();
         octx.closePath();
       }
       octx.restore();
+      this.clip(octx);
     }
     this.prevHit = n;
   },
@@ -102,7 +104,7 @@ Flotr.addPlugin('hit', {
         var
           s = prev.series,
           lw = (s.points ? s.points.lineWidth : 1);
-          offset = (s.points.radius || s.mouse.radius) + lw;
+          offset = (s.points.hitRadius || s.points.radius || s.mouse.radius) + lw;
         octx.clearRect(
           prev.xaxis.d2p(prev.x) - offset,
           prev.yaxis.d2p(prev.y) - offset,
@@ -198,8 +200,8 @@ Flotr.addPlugin('hit', {
     var
       series    = this.series,
       options   = this.options,
-      mouseX    = mouse.x,
-      mouseY    = mouse.y,
+      relX      = mouse.relX,
+      relY      = mouse.relY,
       compare   = Number.MAX_VALUE,
       compareX  = Number.MAX_VALUE,
       closest   = {},
@@ -207,6 +209,7 @@ Flotr.addPlugin('hit', {
       check     = false,
       serie, data,
       distance, distanceX, distanceY,
+      mouseX, mouseY,
       x, y, i, j;
 
     function setClosest (o) {
@@ -223,6 +226,8 @@ Flotr.addPlugin('hit', {
 
       serie = series[i];
       data = serie.data;
+      mouseX = serie.xaxis.p2d(relX);
+      mouseY = serie.yaxis.p2d(relY);
 
       if (data.length) check = true;
 
@@ -232,6 +237,9 @@ Flotr.addPlugin('hit', {
         y = data[j][1];
 
         if (x === null || y === null) continue;
+
+        // don't check if the point isn't visible in the current range
+        if (x < serie.xaxis.min || x > serie.xaxis.max) continue;
 
         distanceX = Math.abs(x - mouseX);
         distanceY = Math.abs(y - mouseY);
@@ -289,12 +297,12 @@ Flotr.addPlugin('hit', {
       else if (p.charAt(1) == 'w') pos += 'left:' + (m + left) + 'px;right:auto;';
 
     // Bars
-    } else if (s.bars.show) {
+    } else if (s.bars && s.bars.show) {
         pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y/2) + this.canvasHeight) + 'px;top:auto;';
         pos += 'left:' + (m + left + n.xaxis.d2p(n.x - options.bars.barWidth/2)) + 'px;right:auto;';
 
     // Pie
-    } else if (s.pie.show) {
+    } else if (s.pie && s.pie.show) {
       var center = {
           x: (this.plotWidth)/2,
           y: (this.plotHeight)/2
@@ -307,10 +315,10 @@ Flotr.addPlugin('hit', {
 
     // Default
     } else {
-      if      (p.charAt(0) == 'n') pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
-      else if (p.charAt(0) == 's') pos += 'top:' + (m + top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
-      if      (p.charAt(1) == 'e') pos += 'left:' + (m + left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
-      else if (p.charAt(1) == 'w') pos += 'right:' + (m - left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
+      if (/n/.test(p)) pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
+      else             pos += 'top:' + (m + top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
+      if (/e/.test(p)) pos += 'right:' + (m - left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
+      else             pos += 'left:' + (m + left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
     }
 
     elStyle += pos;
@@ -328,6 +336,19 @@ Flotr.addPlugin('hit', {
     });
 
     D.show(mouseTrack);
+
+    if (n.mouse.relative) {
+      if (!/[ew]/.test(p)) {
+        // Center Horizontally
+        mouseTrack.style.left =
+          (left + n.xaxis.d2p(n.x) - D.size(mouseTrack).width / 2) + 'px';
+      } else
+      if (!/[ns]/.test(p)) {
+        // Center Vertically
+        mouseTrack.style.top =
+          (top + n.yaxis.d2p(n.y) - D.size(mouseTrack).height / 2) + 'px';
+      }
+    }
   }
 
 });

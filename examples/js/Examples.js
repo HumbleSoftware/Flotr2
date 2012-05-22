@@ -118,10 +118,21 @@ Examples.prototype = {
 
     thumbsNode.delegate(DOT + CN_THUMB, 'mouseenter', {orientation : true}, zoomHandler);
     thumbsNode.delegate(DOT + CN_THUMB, 'mouseleave', {orientation : false}, zoomHandler);
+
+    if ($(window).hashchange) {
+      $(window).hashchange(function () {
+        that._loadHash();
+      });
+    }
   },
 
   _loadExample : function (example) {
     if (example) {
+      if (this._currentExample !== example) {
+        this._currentExample = example;
+      } else {
+        return;
+      }
 
       window.location.hash = '!'+(this.single ? 'single/' : '')+example.key;
 
@@ -223,31 +234,40 @@ Examples.prototype = {
     this._resize = applySize;
   },
   _initExamples : function () {
+    var
+      hash = window.location.hash,
+      example, params;
+
+    hash = hash.substring(2);
+    params = hash.split('/');
+
+    if (params.length == 1) {
+      this.examples();
+      if (hash) {
+        this._loadHash();
+      }
+    }
+    else {
+      if (params[0] == 'single') {
+        this.single = true;
+        this._loadExample(
+          this.list.get(params[1])
+        );
+      }
+    }
+  },
+  _loadHash : function () {
 
     var
       hash = window.location.hash,
-      example,
-      params;
+      example;
 
+    hash = hash.substring(2);
     if (hash) {
-      hash = hash.substring(2);
-      params = hash.split('/');
-
-      if (params.length == 1) {
-        example = this.list.get(hash);
-        this.examples();
-      }
-      else {
-        if (params[0] == 'single') {
-          this.single = true;
-          example = this.list.get(params[1]);
-        }
-      }
-
+      example = this.list.get(hash);
       this._loadExample(example);
-
     } else {
-      this.examples();
+      this._reset();
     }
   }
 }
