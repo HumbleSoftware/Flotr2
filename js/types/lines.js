@@ -66,8 +66,9 @@ Flotr.addType('lines', {
       prevy     = null,
       zero      = yScale(0),
       start     = null,
+      end       = null,
       x1, x2, y1, y2, stack1, stack2, i;
-      
+
     if (length < 1) return;
 
     context.beginPath();
@@ -76,14 +77,18 @@ Flotr.addType('lines', {
 
       // To allow empty values
       if (data[i][1] === null || data[i+1][1] === null) {
-        if (options.fill) {
-          if (i > 0 && data[i][1]) {
-            context.stroke();
+        if (i > 0 && data[i][1]) {
+          context.stroke();
+          // increment the stack when data[i] is not empty, otherwise
+          // we miss this step
+          increment_stack();
+
+          // Reopening the path is mandatory even if we don't fill
+          if (options.fill)
             fill();
-            start = null;
-            context.closePath();
-            context.beginPath();
-          }
+          start = null;
+          context.closePath();
+          context.beginPath();
         }
         continue;
       }
@@ -92,42 +97,32 @@ Flotr.addType('lines', {
       // TODO handle zero for logarithmic
       // if (xa.options.scaling === 'logarithmic' && (data[i][0] <= 0 || data[i+1][0] <= 0)) continue;
       // if (ya.options.scaling === 'logarithmic' && (data[i][1] <= 0 || data[i+1][1] <= 0)) continue;
-      
+
       x1 = xScale(data[i][0]);
       x2 = xScale(data[i+1][0]);
 
-      if (start === null) start = data[i];
-      
+      // When we have staked graphs, compute the new Y offset (series
+      // are plotted one after another) and store it in the stack if asked
       if (stack) {
-
         stack1 = stack.values[data[i][0]] || 0;
-        stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
+        stack2 = stack.values[data[i+1][0]] || 0;
 
         y1 = yScale(data[i][1] + stack1);
         y2 = yScale(data[i+1][1] + stack2);
-        
-        if(incStack){
-          stack.values[data[i][0]] = data[i][1]+stack1;
-            
-          if(i == length-1)
-            stack.values[data[i+1][0]] = data[i+1][1]+stack2;
-        }
+
+        increment_stack();
       }
       else{
         y1 = yScale(data[i][1]);
         y2 = yScale(data[i+1][1]);
       }
 
-      if (
-        (y1 > height && y2 > height) ||
-        (y1 < 0 && y2 < 0) ||
-        (x1 < 0 && x2 < 0) ||
-        (x1 > width && x2 > width)
-      ) continue;
-
-      if((prevx != x1) || (prevy != y1 + shadowOffset))
+      // When we restart the line, first move to the start position (x1, y1)
+      if (start === null) {
         context.moveTo(x1, y1 + shadowOffset);
-      
+        start = i;
+      }
+
       prevx = x2;
       prevy = y2 + shadowOffset;
       if (options.steps) {
@@ -136,20 +131,66 @@ Flotr.addType('lines', {
       } else {
         context.lineTo(prevx, prevy);
       }
+
+      // Save the index of the last point of the line for the fill function
+      end = i+1;
     }
     
     if (!options.fill || options.fill && !options.fillBorder) context.stroke();
 
     fill();
 
+    // quick and dirty fonction to save data to the stack
+    function increment_stack() {
+      if(stack && incStack){
+        stack.values[data[i][0]] = data[i][1] + (stack.values[data[i][0]] || 0);
+        
+        if(i == length-1)
+          stack.values[data[i+1][0]] = data[i+1][1] + (stack.values[data[i+1][0]] || 0);
+      }
+    }
+
+
     function fill () {
-      // TODO stacked lines
-      if(!shadowOffset && options.fill && start){
-        x1 = xScale(start[0]);
+      var j;
+
+      if(!shadowOffset && options.fill && start !== null){
         context.fillStyle = options.fillStyle;
-        context.lineTo(x2, zero);
-        context.lineTo(x1, zero);
-        context.lineTo(x1, yScale(start[1]));
+
+        // To handle the stacked lines, we will close the line into a
+        // filled shape that follows the previous line.
+
+        // The current position is at the end of the line, so we continue to
+        // plot from "right to left" following the previous series
+        // line (the stack value of X has been updated in meantime)
+        for (j = end || start; j >= start; j--) {
+
+          x1 = xScale(data[j][0]);
+          if (stack)
+            y1 = yScale((stack.values[data[j][0]] - data[j][1]) || 0);
+          else
+            y1 = zero;
+
+          if (options.steps) {
+            context.lineTo(prevx, prevy);
+            context.lineTo(prevx, y1);
+            if (!j)
+              context.lineTo(x1, y1);
+          } else {
+            context.lineTo(x1, y1);
+          }
+
+          // Remember to previous point for steps
+          prevx = x1;
+          prevy = y1;
+        }
+
+        // Close the line
+        if (stack)
+          context.lineTo(xScale(data[start][0]), yScale(stack.values[data[start][0]]));
+        else
+          context.lineTo(xScale(data[start][0]), yScale(data[start][1]));
+
         context.fill();
         if (options.fillBorder) {
           context.stroke();
@@ -158,6 +199,7 @@ Flotr.addType('lines', {
     }
 
     context.closePath();
+    
   },
 
   // Perform any pre-render precalculations (this should be run on data first)
