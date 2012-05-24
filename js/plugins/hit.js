@@ -128,7 +128,7 @@ Flotr.addPlugin('hit', {
     var
       options = this.options,
       prevHit = this.prevHit,
-      closest, sensibility, dataIndex, seriesIndex, series, value, xaxis, yaxis;
+      closest, sensibility, dataIndex, seriesIndex, series, value, xaxis, yaxis, n;
 
     if (this.series.length === 0) return;
 
