@@ -5,3 +5,4 @@ build
 *.swo
 *.vim
 .jhw-cache
+.gradle/

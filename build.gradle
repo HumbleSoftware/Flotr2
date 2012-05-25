@@ -1,0 +1,88 @@
+import java.text.SimpleDateFormat;
+
+apply plugin: 'java'
+
+TimeZone tz = TimeZone.getTimeZone("UTC");
+def df = new SimpleDateFormat("yyyyMMddHHmmss");
+df.setTimeZone(tz);
+
+group = 'com.humblesoftware'
+archivesBaseName = 'flotr2'
+version = df.format(new Date());
+
+task buildLibraries(type:Exec) {
+    inputs.files 'lib/bean.js', 'lib/underscore.js'
+    outputs.files 'build/bean.js', 'build/bean.min.js', 'build/underscore.js', 'build/underscore.min.js'
+    workingDir '.'
+    commandLine 'smoosh', 'make/lib.json'
+}
+
+task buildIELibraries(type:Exec) {
+    inputs.files 'lib/excanvas.js', 'lib/base64.js', 'lib/canvastext.js'
+    outputs.files 'build/ie.js', 'build/ie.min.js'
+    workingDir '.'
+    commandLine 'smoosh', 'make/ie.json'
+}
+
+task buildFlotr(type:Exec) {
+    inputs.dir 'js'
+    outputs.files 'build/flotr2.js', 'build/flotr2.min.js'
+    workingDir '.'
+    commandLine 'smoosh', 'make/flotr2.json'
+}
+
+task createTargetFiles(dependsOn: [
+    buildLibraries,
+    buildIELibraries,
+    buildFlotr
+]){
+    def target = new File(sourceSets.main.output.resourcesDir,'com/humblesoftware/flotr2')
+    inputs.files 'build/bean.js', 'build/underscore.js', 'build/flotr2.js'
+    def flotr2 = new File(target, "flotr2.js")
+    def flotr2min = new File(target, "flotr2.min.js")
+    def flotr2iemin = new File(target, "flotr2.ie.min.js")
+    outputs.files flotr2, flotr2min, flotr2iemin
+    doLast {
+        flotr2iemin << new File('build', 'ie.min.js')
+        flotr2 << new File("build/bean.js").text << new File("build/underscore.js").text << new File("build/flotr2.js").text
+        flotr2min <<';' << new File("build/bean.min.js").text<<';' << new File("build/underscore.min.js").text<<';' << new File("build/flotr2.min.js").text<<';'
+    }
+}
+
+task copyComponents(type:Copy) {
+    from('js')
+    into new File(new File(new File(new File(new File(sourceSets.main.output.resourcesDir,'com'), 'humblesoftware'), 'flotr2'), 'src'), 'js')
+}
+
+task copyLibraries(type:Copy, dependsOn : buildIELibraries ) {
+    from('lib'){
+        include 'bean.js'
+        include 'underscore.js'
+    }
+    from('build'){ include 'ie.js' }
+    into new File(new File(new File(new File(new File(sourceSets.main.output.resourcesDir,'com'), 'humblesoftware'), 'flotr2'), 'src'), 'lib')
+}
+
+task copyMinifiedLibraries(type:Copy, dependsOn:  [
+    buildIELibraries,
+    buildLibraries
+]) {
+
+    from('build'){
+        include 'bean.min.js'
+        include 'underscore.min.js'
+        include 'ie.min.js'
+    }
+    into new File(new File(new File(new File(new File(new File(sourceSets.main.output.resourcesDir,'com'), 'humblesoftware'), 'flotr2'), 'src'), 'lib'), 'minified')
+}
+
+task jasmineTests(type:Exec){
+    workingDir 'spec'
+    commandLine 'jasmine-headless-webkit', '-j', 'jasmine.yml', '-c'
+}
+
+test.dependsOn jasmineTests
+
+processResources.dependsOn createTargetFiles, copyComponents, copyLibraries, copyMinifiedLibraries
+
+task wrapper(type: Wrapper) { gradleVersion = '1.0-rc-3' }
