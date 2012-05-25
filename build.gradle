@@ -81,6 +81,12 @@ task jasmineTests(type:Exec){
     commandLine 'jasmine-headless-webkit', '-j', 'jasmine.yml', '-c'
 }
 
+jar {
+    metaInf {
+        from('.'){ include 'LICENSE' }
+    }
+}
+
 test.dependsOn jasmineTests
 
 processResources.dependsOn createTargetFiles, copyComponents, copyLibraries, copyMinifiedLibraries
