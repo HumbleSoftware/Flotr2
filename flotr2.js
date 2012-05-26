@@ -2568,6 +2568,8 @@ Graph.prototype = {
     var
       type = series[typeKey],
       graphType = this[typeKey],
+      xaxis = series.xaxis,
+      yaxis = series.yaxis,
       options = {
         context     : this.ctx,
         width       : this.plotWidth,
@@ -2581,8 +2583,10 @@ Graph.prototype = {
         data        : series.data,
         color       : series.color,
         shadowSize  : series.shadowSize,
-        xScale      : _.bind(series.xaxis.d2p, series.xaxis),
-        yScale      : _.bind(series.yaxis.d2p, series.yaxis)
+        xScale      : xaxis.d2p,
+        yScale      : yaxis.d2p,
+        xInverse    : xaxis.p2d,
+        yInverse    : yaxis.p2d
       };
 
     options = flotr.merge(type, options);
@@ -3059,8 +3063,6 @@ function Axis (o) {
   this.datamax = -Number.MAX_VALUE;
 
   _.extend(this, o);
-
-  this._setTranslations();
 }
 
 
@@ -3068,11 +3070,38 @@ function Axis (o) {
 Axis.prototype = {
 
   setScale : function () {
-    var length = this.length;
-    if (this.options.scaling == LOGARITHMIC) {
-      this.scale = length / (log(this.max, this.options.base) - log(this.min, this.options.base));
+    var
+      length = this.length,
+      max = this.max,
+      min = this.min,
+      offset = this.offset,
+      orientation = this.orientation,
+      options = this.options,
+      logarithmic = options.scaling === LOGARITHMIC,
+      scale;
+
+    if (logarithmic) {
+      scale = length / (log(max, options.base) - log(min, options.base));
     } else {
-      this.scale = length / (this.max - this.min);
+      scale = length / (max - min);
+    }
+    this.scale = scale;
+
+    // Logarithmic?
+    if (logarithmic) {
+      this.d2p = function d2pLog (dataValue) {
+        return offset + orientation * (log(dataValue, options.base) - log(min, options.base)) * scale;
+      }
+      this.p2d = function p2dLog (pointValue) {
+        return exp((offset + orientation * pointValue) / scale + log(min, options.base), options.base);
+      }
+    } else {
+      this.d2p = function d2p (dataValue) {
+        return offset + orientation * (dataValue - min) * scale;
+      }
+      this.p2d = function p2d (pointValue) {
+        return (offset + orientation * pointValue) / scale + min;
+      }
     }
   },
 
@@ -3294,11 +3323,6 @@ Axis.prototype = {
       }
     }
 
-  },
-
-  _setTranslations : function (logarithmic) {
-    this.d2p = (logarithmic ? d2pLog : d2p);
-    this.p2d = (logarithmic ? p2dLog : p2d);
   }
 };
 
@@ -3318,21 +3342,6 @@ _.extend(Axis, {
 
 // Helper Methods
 
-function d2p (dataValue) {
-  return this.offset + this.orientation * (dataValue - this.min) * this.scale;
-}
-
-function p2d (pointValue) {
-  return (this.offset + this.orientation * pointValue) / this.scale + this.min;
-}
-
-function d2pLog (dataValue) {
-  return this.offset + this.orientation * (log(dataValue, this.options.base) - log(this.min, this.options.base)) * this.scale;
-}
-
-function p2dLog (pointValue) {
-  return exp((this.offset + this.orientation * pointValue) / this.scale + log(this.min, this.options.base), this.options.base);
-}
 
 function log (value, base) {
   value = Math.log(Math.max(value, Number.MIN_VALUE));
@@ -3654,7 +3663,7 @@ Flotr.addType('lines', {
           mouse = args[0],
           length = data.length,
           n = args[1],
-          x = mouse.x,
+          x = options.xInverse(mouse.relX),
           relY = mouse.relY,
           i;
 
@@ -3862,8 +3871,8 @@ Flotr.addType('bars', {
       args = options.args,
       mouse = args[0],
       n = args[1],
-      x = mouse.x,
-      y = mouse.y,
+      x = options.xInverse(mouse.relX),
+      y = options.yInverse(mouse.relY),
       hitGeometry = this.getBarGeometry(x, y, options),
       width = hitGeometry.width / 2,
       left = hitGeometry.left,
@@ -4071,8 +4080,8 @@ Flotr.addType('bubbles', {
       args = options.args,
       mouse = args[0],
       n = args[1],
-      x = mouse.x,
-      y = mouse.y,
+      relX = mouse.relX,
+      relY = mouse.relY,
       distance,
       geometry,
       dx, dy;
@@ -4082,8 +4091,8 @@ Flotr.addType('bubbles', {
     for (i = data.length; i--;) {
       geometry = this.getGeometry(data[i], options);
 
-      dx = geometry.x - options.xScale(x);
-      dy = geometry.y - options.yScale(y);
+      dx = geometry.x - relX;
+      dy = geometry.y - relY;
       distance = Math.sqrt(dx * dx + dy * dy);
 
       if (distance < geometry.z && geometry.z < n.best) {
@@ -5532,12 +5541,12 @@ Flotr.addPlugin('hit', {
    * value of the data.
    * @param {Object} mouse - Object that holds the relative x and y coordinates of the cursor.
    */
-  hit: function(mouse){
+  hit : function (mouse) {
 
     var
       options = this.options,
       prevHit = this.prevHit,
-      closest, sensibility, dataIndex, seriesIndex, series, value, xaxis, yaxis;
+      closest, sensibility, dataIndex, seriesIndex, series, value, xaxis, yaxis, n;
 
     if (this.series.length === 0) return;
 
@@ -5553,16 +5562,14 @@ Flotr.addPlugin('hit', {
 
     if (options.mouse.trackY &&
         !options.mouse.trackAll &&
-        this.hit.executeOnType(this.series, 'hit', [mouse, n]))
+        this.hit.executeOnType(this.series, 'hit', [mouse, n]) &&
+        !_.isUndefined(n.seriesIndex))
       {
-
-      if (!_.isUndefined(n.seriesIndex)) {
-        series    = this.series[n.seriesIndex];
-        n.series  = series;
-        n.mouse   = series.mouse;
-        n.xaxis   = series.xaxis;
-        n.yaxis   = series.yaxis;
-      }
+      series    = this.series[n.seriesIndex];
+      n.series  = series;
+      n.mouse   = series.mouse;
+      n.xaxis   = series.xaxis;
+      n.yaxis   = series.yaxis;
     } else {
 
       closest = this.hit.closest(mouse);
@@ -6407,6 +6414,7 @@ Flotr.addPlugin('legend', {
         if(fragments.length > 0){
           var table = '<table style="font-size:smaller;color:' + options.grid.color + '">' + fragments.join('') + '</table>';
           if(legend.container){
+            D.empty(legend.container);
             D.insert(legend.container, table);
           }
           else {
