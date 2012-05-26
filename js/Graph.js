@@ -287,8 +287,8 @@ Graph.prototype = {
         data        : series.data,
         color       : series.color,
         shadowSize  : series.shadowSize,
-        xScale      : _.bind(series.xaxis.d2p, series.xaxis),
-        yScale      : _.bind(series.yaxis.d2p, series.yaxis)
+        xScale      : series.xaxis.d2p,
+        yScale      : series.yaxis.d2p
       };
 
     options = flotr.merge(type, options);
