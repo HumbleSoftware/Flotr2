@@ -274,6 +274,8 @@ Graph.prototype = {
     var
       type = series[typeKey],
       graphType = this[typeKey],
+      xaxis = series.xaxis,
+      yaxis = series.yaxis,
       options = {
         context     : this.ctx,
         width       : this.plotWidth,
@@ -287,8 +289,10 @@ Graph.prototype = {
         data        : series.data,
         color       : series.color,
         shadowSize  : series.shadowSize,
-        xScale      : series.xaxis.d2p,
-        yScale      : series.yaxis.d2p
+        xScale      : xaxis.d2p,
+        yScale      : yaxis.d2p,
+        xInverse    : xaxis.p2d,
+        yInverse    : yaxis.p2d
       };
 
     options = flotr.merge(type, options);
