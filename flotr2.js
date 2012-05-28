@@ -5636,6 +5636,7 @@ Flotr.addPlugin('hit', {
       o.dataIndex = j;
       o.x = x;
       o.y = y;
+      check = true;
     }
 
     for (i = 0; i < series.length; i++) {
@@ -5644,8 +5645,6 @@ Flotr.addPlugin('hit', {
       data = serie.data;
       mouseX = serie.xaxis.p2d(relX);
       mouseY = serie.yaxis.p2d(relY);
-
-      if (data.length) check = true;
 
       for (j = data.length; j--;) {
 
@@ -5896,7 +5895,8 @@ Flotr.addPlugin('selection', {
       y1:Math.min(y1, y2), 
       x2:Math.max(x1, x2), 
       y2:Math.max(y1, y2),
-      xfirst:x1, xsecond:x2, yfirst:y1, ysecond:y2
+      xfirst:x1, xsecond:x2, yfirst:y1, ysecond:y2,
+      selection : s
     }, this]);
   },
 
