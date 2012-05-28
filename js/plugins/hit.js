@@ -218,6 +218,7 @@ Flotr.addPlugin('hit', {
       o.dataIndex = j;
       o.x = x;
       o.y = y;
+      check = true;
     }
 
     for (i = 0; i < series.length; i++) {
@@ -226,8 +227,6 @@ Flotr.addPlugin('hit', {
       data = serie.data;
       mouseX = serie.xaxis.p2d(relX);
       mouseY = serie.yaxis.p2d(relY);
-
-      if (data.length) check = true;
 
       for (j = data.length; j--;) {
 
