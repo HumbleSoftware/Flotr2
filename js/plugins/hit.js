@@ -123,7 +123,7 @@ Flotr.addPlugin('hit', {
    * value of the data.
    * @param {Object} mouse - Object that holds the relative x and y coordinates of the cursor.
    */
-  hit: function(mouse){
+  hit : function (mouse) {
 
     var
       options = this.options,
@@ -144,16 +144,14 @@ Flotr.addPlugin('hit', {
 
     if (options.mouse.trackY &&
         !options.mouse.trackAll &&
-        this.hit.executeOnType(this.series, 'hit', [mouse, n]))
+        this.hit.executeOnType(this.series, 'hit', [mouse, n]) &&
+        !_.isUndefined(n.seriesIndex))
       {
-
-      if (!_.isUndefined(n.seriesIndex)) {
-        series    = this.series[n.seriesIndex];
-        n.series  = series;
-        n.mouse   = series.mouse;
-        n.xaxis   = series.xaxis;
-        n.yaxis   = series.yaxis;
-      }
+      series    = this.series[n.seriesIndex];
+      n.series  = series;
+      n.mouse   = series.mouse;
+      n.xaxis   = series.xaxis;
+      n.yaxis   = series.yaxis;
     } else {
 
       closest = this.hit.closest(mouse);
@@ -220,6 +218,7 @@ Flotr.addPlugin('hit', {
       o.dataIndex = j;
       o.x = x;
       o.y = y;
+      check = true;
     }
 
     for (i = 0; i < series.length; i++) {
@@ -228,8 +227,6 @@ Flotr.addPlugin('hit', {
       data = serie.data;
       mouseX = serie.xaxis.p2d(relX);
       mouseY = serie.yaxis.p2d(relY);
-
-      if (data.length) check = true;
 
       for (j = data.length; j--;) {
 

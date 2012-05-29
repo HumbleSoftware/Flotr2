@@ -135,6 +135,7 @@ Flotr.addPlugin('legend', {
         if(fragments.length > 0){
           var table = '<table style="font-size:smaller;color:' + options.grid.color + '">' + fragments.join('') + '</table>';
           if(legend.container){
+            D.empty(legend.container);
             D.insert(legend.container, table);
           }
           else {
