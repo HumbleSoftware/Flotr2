@@ -63,8 +63,8 @@ Flotr.addType('bubbles', {
       args = options.args,
       mouse = args[0],
       n = args[1],
-      x = mouse.x,
-      y = mouse.y,
+      relX = mouse.relX,
+      relY = mouse.relY,
       distance,
       geometry,
       dx, dy;
@@ -74,8 +74,8 @@ Flotr.addType('bubbles', {
     for (i = data.length; i--;) {
       geometry = this.getGeometry(data[i], options);
 
-      dx = geometry.x - options.xScale(x);
-      dy = geometry.y - options.yScale(y);
+      dx = geometry.x - relX;
+      dy = geometry.y - relY;
       distance = Math.sqrt(dx * dx + dy * dy);
 
       if (distance < geometry.z && geometry.z < n.best) {

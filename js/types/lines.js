@@ -228,7 +228,7 @@ Flotr.addType('lines', {
           mouse = args[0],
           length = data.length,
           n = args[1],
-          x = mouse.x,
+          x = options.xInverse(mouse.relX),
           relY = mouse.relY,
           i;
 
