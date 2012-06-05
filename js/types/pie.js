@@ -27,7 +27,8 @@ Flotr.addType('pie', {
     labelFormatter: Flotr.defaultPieLabelFormatter,
     pie3D: false,          // => whether to draw the pie in 3 dimenstions or not (ineffective) 
     pie3DviewAngle: (Math.PI/2 * 0.8),
-    pie3DspliceThickness: 20
+    pie3DspliceThickness: 20,
+    circleRatio: 1
   },
 
   draw : function (options) {
@@ -51,7 +52,7 @@ Flotr.addType('pie', {
       value         = data[0][1],
       html          = [],
       vScale        = 1,//Math.cos(series.pie.viewAngle);
-      measure       = Math.PI * 2 * value / this.total,
+      measure       = Math.PI * 2 * options.circleRatio * value / this.total,
       startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
       endAngle      = startAngle + measure,
       bisection     = startAngle + measure / 2,
@@ -149,7 +150,7 @@ Flotr.addType('pie', {
       y         = mouse.relY - options.height / 2,
       r         = Math.sqrt(x * x + y * y),
       theta     = Math.atan(y / x),
-      circle    = Math.PI * 2,
+      circle    = Math.PI,
       explode   = slice.explode || options.explode,
       start     = slice.start % circle,
       end       = slice.end % circle;
