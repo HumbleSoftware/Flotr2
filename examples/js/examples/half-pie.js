@@ -2,7 +2,7 @@
 
 Flotr.ExampleList.add({
   key : 'half-pie',
-  name : 'half Pie',
+  name : 'Half Pie',
   callback : half_pie
 });
 
@@ -21,7 +21,7 @@ function half_pie (container) {
     { data : d3, label : 'Green'},
     { data : d4, label : 'Pirates' }
   ], {
-    HtmlText : false,
+    HtmlText : true,
     grid : {
       verticalLines : false,
       horizontalLines : false
@@ -30,7 +30,13 @@ function half_pie (container) {
     yaxis : { showLabels : false },
     pie : {
       show : true, 
-      explode : 6
+      explode : 6,
+      startAngle: 0.5,
+      labelFormatter: function(total, value){
+        return value;
+      },
+      labelPadding: -30,
+      halfPie: true
     },
     mouse : { track : true },
     legend : {

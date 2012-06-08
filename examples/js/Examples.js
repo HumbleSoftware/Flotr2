@@ -72,6 +72,7 @@ Examples.prototype = {
         "basic-bar-stacked",
         "basic-stacked-horizontal",
         "basic-pie",
+        "half-pie",
         "basic-radar",
         "basic-bubble",
         "basic-candle",
