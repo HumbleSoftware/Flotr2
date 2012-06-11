@@ -7,6 +7,7 @@
 
     T_CONTROLS =
       '<div class="controls">' +
+        '<button class="fiddle btn large primary">Fiddle</button>' +
         '<button class="run btn large primary">Run</button>' +
       '</div>',
     T_EDITOR = '<div class="editor"></div>',
@@ -138,6 +139,10 @@
       execute();
     }
 
+    controls.delegate('.fiddle', 'click', function () {
+      fiddle();
+    });
+
     // Error handling:
     window.onerror = function (message, url, line) {
 
@@ -210,6 +215,48 @@
 
       errors.show();
       errors.html(html);
+    }
+
+    function fiddle () {
+      var
+        url = 'http://jsfiddle.net/api/post/jquery/1.7/',
+        form = $('<form method="post" action="' + url + '" target="_blank"></form>'),
+        input;
+
+      // Resources
+      resources = [
+        'https://raw.github.com/HumbleSoftware/Flotr2/master/flotr2.min.js',
+        'https://raw.github.com/HumbleSoftware/Flotr2/master/examples/examples.css'
+      ];
+      input = $('<input type="hidden" name="resources">')
+        .attr('value', resources.join(','));
+      form.append(input);
+
+      // HTML
+      input = $('<input type="hidden" name="html">')
+        .attr('value', '<div id="'+renderId+'"></div>');
+      form.append(input);
+
+      // CSS
+      input = $('<input type="hidden" name="normalize_css" value="no">')
+      form.append(input);
+      input = $('<input type="hidden" name="css">')
+        .attr('value',
+          '#'+renderId+' {\n  width: 340px;\n  height: 220px;' +
+          '\n  margin: 24px auto;\n}'
+        );
+      form.append(input);
+
+      // JS
+      input = $('<input type="hidden" name="js">')
+        .attr('value', '$(function () {\n' + example + '\n});');
+
+      form.append(input);
+
+      // Submit
+      form.append(input);
+      $(document.body).append(form);
+      form.submit();
     }
 
     COUNT++;

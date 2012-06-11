@@ -269,6 +269,8 @@ Flotr.addPlugin('hit', {
       s           = n.series,
       p           = n.mouse.position, 
       m           = n.mouse.margin,
+      x           = n.x,
+      y           = n.y,
       elStyle     = S_MOUSETRACK,
       mouseTrack  = this.mouseTrack,
       plotOffset  = this.plotOffset,
@@ -323,9 +325,13 @@ Flotr.addPlugin('hit', {
 
     if (!decimals || decimals < 0) decimals = 0;
     
+    if (x && x.toFixed) x = x.toFixed(decimals);
+
+    if (y && y.toFixed) y = y.toFixed(decimals);
+
     mouseTrack.innerHTML = n.mouse.trackFormatter({
-      x: n.x.toFixed(decimals), 
-      y: n.y.toFixed(decimals), 
+      x: x ,
+      y: y, 
       series: n.series, 
       index: n.index,
       nearest: n,

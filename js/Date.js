@@ -30,8 +30,8 @@ Flotr.Date = {
         S: leftPad(get(d, 'Seconds', mode)),
         s: get(d, 'Milliseconds', mode),
         d: get(d, 'Date', mode).toString(),
-        m: (get(d, 'Month') + 1).toString(),
-        y: get(d, 'FullYear').toString(),
+        m: (get(d, 'Month', mode) + 1).toString(),
+        y: get(d, 'FullYear', mode).toString(),
         b: Flotr.Date.monthNames[get(d, 'Month', mode)]
       };
 
