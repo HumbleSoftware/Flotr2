@@ -91,4 +91,4 @@ test.dependsOn jasmineTests
 
 processResources.dependsOn createTargetFiles, copyComponents, copyLibraries, copyMinifiedLibraries
 
-task wrapper(type: Wrapper) { gradleVersion = '1.0-rc-3' }
+task wrapper(type: Wrapper) { gradleVersion = '1.0' }
