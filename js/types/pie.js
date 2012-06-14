@@ -52,21 +52,14 @@ Flotr.addType('pie', {
       fillStyle     = options.fillStyle,
       radius        = Math.min(canvas.width, canvas.height) * sizeRatio /circleRatio,
       value         = data[0][1],
-      html          = [],
       vScale        = 1,//Math.cos(series.pie.viewAngle);
       measure       = Math.PI * circleRatio * value / this.total,
       startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
       endAngle      = startAngle + measure,
       bisection     = startAngle + measure / 2,
-      label         = options.labelFormatter(this.total, value),
       //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
-      explodeCoeff  = explode + radius + options.labelPadding,
-      distX         = Math.cos(bisection) * explodeCoeff,
-      distY         = Math.sin(bisection) * explodeCoeff,
-      textAlign     = distX < 0 ? 'right' : 'left',
-      textBaseline  = distY > 0 ? 'top' : 'bottom',
-      style,
-      x, y;
+      
+            x, y;
     
     context.save();
     context.translate(width / 2, height / circleRatio);
@@ -93,31 +86,8 @@ Flotr.addType('pie', {
     context.strokeStyle = color;
     context.stroke();
 
-    style = {
-      size : options.fontSize * 1.2,
-      color : options.fontColor,
-      weight : 1.5
-    };
+    this.drawLabel(options, explode, radius, bisection, width, context, value);
 
-    if (label) {
-      if (options.htmlText || !options.textEnabled) {
-        divStyle = 'position:absolute;' + textBaseline + ':' + ((textBaseline === 'top' ? distY : -distY)) + 'px;';
-        divStyle += textAlign + ':' + (width/2 + (textAlign === 'right' ? -distX : distX)) + 'px;';
-        html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
-      }
-      else {
-        style.textAlign = textAlign;
-        style.textBaseline = textBaseline;
-        Flotr.drawText(context, label, distX, distY, style);
-      }
-    }
-    
-    if (options.htmlText || !options.textEnabled) {
-      var div = Flotr.DOM.node('<div style="color:' + options.fontColor + '" class="flotr-labels"></div>');
-      Flotr.DOM.insert(div, html.join(''));
-      Flotr.DOM.insert(options.element, div);
-    }
-    
     context.restore();
 
     // New start angle
@@ -138,6 +108,39 @@ Flotr.addType('pie', {
     context.arc(x, y, radius, startAngle, endAngle, false);
     context.lineTo(x, y);
     context.closePath();
+  },
+  drawLabel : function (options, explode, radius, bisection, width, context, value) {
+    var style = {
+      size : options.fontSize * 1.2,
+      color : options.fontColor,
+      weight : 1.5
+    },
+      html          = [],
+      explodeCoeff  = explode + radius + options.labelPadding,
+      distX         = Math.cos(bisection) * explodeCoeff,
+      distY         = Math.sin(bisection) * explodeCoeff,
+      textAlign     = distX < 0 ? 'right' : 'left',
+      textBaseline  = distY > 0 ? 'top' : 'bottom',
+      label         = options.labelFormatter(this.total, value);
+
+    if (label) {
+      if (options.htmlText || !options.textEnabled) {
+        divStyle = 'position:absolute;' + textBaseline + ':' + ((textBaseline === 'top' ? distY : -distY)) + 'px;';
+        divStyle += textAlign + ':' + (width/2 + (textAlign === 'right' ? -distX : distX)) + 'px;';
+        html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
+      }
+      else {
+        style.textAlign = textAlign;
+        style.textBaseline = textBaseline;
+        Flotr.drawText(context, label, distX, distY, style);
+      }
+    }
+    
+    if (options.htmlText || !options.textEnabled) {
+      var div = Flotr.DOM.node('<div style="color:' + options.fontColor + '" class="flotr-labels"></div>');
+      Flotr.DOM.insert(div, html.join(''));
+      Flotr.DOM.insert(options.element, div);
+    }
   },
   hit : function (options) {
 
