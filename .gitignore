@@ -6,3 +6,5 @@ build
 *.vim
 .jhw-cache
 .gradle/
+node_modules
+dev

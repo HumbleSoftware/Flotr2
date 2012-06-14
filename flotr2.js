@@ -1887,8 +1887,8 @@ Flotr.Date = {
         S: leftPad(get(d, 'Seconds', mode)),
         s: get(d, 'Milliseconds', mode),
         d: get(d, 'Date', mode).toString(),
-        m: (get(d, 'Month') + 1).toString(),
-        y: get(d, 'FullYear').toString(),
+        m: (get(d, 'Month', mode) + 1).toString(),
+        y: get(d, 'FullYear', mode).toString(),
         b: Flotr.Date.monthNames[get(d, 'Month', mode)]
       };
 
@@ -5687,6 +5687,8 @@ Flotr.addPlugin('hit', {
       s           = n.series,
       p           = n.mouse.position, 
       m           = n.mouse.margin,
+      x           = n.x,
+      y           = n.y,
       elStyle     = S_MOUSETRACK,
       mouseTrack  = this.mouseTrack,
       plotOffset  = this.plotOffset,
@@ -5741,9 +5743,13 @@ Flotr.addPlugin('hit', {
 
     if (!decimals || decimals < 0) decimals = 0;
     
+    if (x && x.toFixed) x = x.toFixed(decimals);
+
+    if (y && y.toFixed) y = y.toFixed(decimals);
+
     mouseTrack.innerHTML = n.mouse.trackFormatter({
-      x: n.x.toFixed(decimals), 
-      y: n.y.toFixed(decimals), 
+      x: x ,
+      y: y, 
       series: n.series, 
       index: n.index,
       nearest: n,
