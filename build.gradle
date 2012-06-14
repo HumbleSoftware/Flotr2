@@ -1,14 +1,8 @@
-import java.text.SimpleDateFormat;
-
 apply plugin: 'java'
-
-TimeZone tz = TimeZone.getTimeZone("UTC");
-def df = new SimpleDateFormat("yyyyMMddHHmmss");
-df.setTimeZone(tz);
 
 group = 'com.humblesoftware'
 archivesBaseName = 'flotr2'
-version = df.format(new Date());
+version = '1.0-SNAPSHOT'
 
 task buildLibraries(type:Exec) {
     inputs.files 'lib/bean.js', 'lib/underscore.js'
