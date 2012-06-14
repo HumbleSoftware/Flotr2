@@ -16,6 +16,9 @@ Flotr.addPlugin('hit', {
     },
     'flotr:mouseout': function() {
       this.hit.clearHit();
+    },
+    'flotr:mouseout': function() {
+      this.mouseTrack = null;
     }
   },
   track : function (pos) {
