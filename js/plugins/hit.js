@@ -17,7 +17,7 @@ Flotr.addPlugin('hit', {
     'flotr:mouseout': function() {
       this.hit.clearHit();
     },
-    'flotr:mouseout': function() {
+    'flotr:destroy': function() {
       this.mouseTrack = null;
     }
   },
