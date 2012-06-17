@@ -23,8 +23,8 @@ Flotr.addPlugin('crosshair', {
     var octx = this.octx,
       options = this.options.crosshair,
       plotOffset = this.plotOffset,
-      x = plotOffset.left + pos.relX + 0.5,
-      y = plotOffset.top + pos.relY + 0.5;
+      x = plotOffset.left + Math.round(pos.relX) + .5,
+      y = plotOffset.top + Math.round(pos.relY) + .5;
     
     if (pos.relX < 0 || pos.relY < 0 || pos.relX > this.plotWidth || pos.relY > this.plotHeight) {
       this.el.style.cursor = null;
@@ -67,14 +67,14 @@ Flotr.addPlugin('crosshair', {
 
     if (position) {
       context.clearRect(
-        position.relX + plotOffset.left,
+        Math.round(position.relX) + plotOffset.left,
         plotOffset.top,
         1,
         this.plotHeight + 1
       );
       context.clearRect(
         plotOffset.left,
-        position.relY + plotOffset.top,
+        Math.round(position.relY) + plotOffset.top,
         this.plotWidth + 1,
         1
       );    
