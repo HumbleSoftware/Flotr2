@@ -154,7 +154,7 @@ Flotr.addType('pie', {
       explode   = slice.explode || options.explode,
       start     = slice.start % circle,
       end       = slice.end % circle,
-	  epsilon   = options.epsilon;
+      epsilon   = options.epsilon;
 
     if (x < 0) {
       theta += Math.PI;
@@ -163,11 +163,14 @@ Flotr.addType('pie', {
     }
 
     if (r < slice.radius + explode && r > explode) {
-      if ((start > end && (theta < end || theta > start)) ||
-        (theta > start && theta < end) ||
-		(start === end && ((slice.start === slice.end && Math.abs(theta - start) < epsilon) || (slice.start !== slice.end && Math.abs(theta-start) > epsilon)))) {
-
-        // TODO Decouple this from hit plugin (chart shouldn't know what n means)
+      if (
+          (theta > start && theta < end) || // Normal Slice
+          (start > end && (theta < end || theta > start)) || // First slice
+          // TODO: Document the two cases at the end:
+          (start === end && ((slice.start === slice.end && Math.abs(theta - start) < epsilon) || (slice.start !== slice.end && Math.abs(theta-start) > epsilon)))
+         ) {
+          
+          // TODO Decouple this from hit plugin (chart shouldn't know what n means)
          n.x = data[0];
          n.y = data[1];
          n.sAngle = start;
