@@ -147,11 +147,22 @@ Flotr.addType('bars', {
       hitGeometry = this.getBarGeometry(x, y, options),
       width = hitGeometry.width / 2,
       left = hitGeometry.left,
+      height = hitGeometry.y,
       geometry, i;
 
     for (i = data.length; i--;) {
       geometry = this.getBarGeometry(data[i][0], data[i][1], options);
-      if (geometry.y > hitGeometry.y && Math.abs(left - geometry.left) < width) {
+      if (
+        // Height:
+        (
+          // Positive Bars:
+          (height > 0 && height < geometry.y) ||
+          // Negative Bars:
+          (height < 0 && height > geometry.y)
+        ) &&
+        // Width:
+        (Math.abs(left - geometry.left) < width)
+      ) {
         n.x = data[i][0];
         n.y = data[i][1];
         n.index = i;
