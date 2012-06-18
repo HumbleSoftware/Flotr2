@@ -3089,17 +3089,17 @@ Axis.prototype = {
 
     // Logarithmic?
     if (logarithmic) {
-      this.d2p = function d2pLog (dataValue) {
+      this.d2p = function (dataValue) {
         return offset + orientation * (log(dataValue, options.base) - log(min, options.base)) * scale;
       }
-      this.p2d = function p2dLog (pointValue) {
+      this.p2d = function (pointValue) {
         return exp((offset + orientation * pointValue) / scale + log(min, options.base), options.base);
       }
     } else {
-      this.d2p = function d2p (dataValue) {
+      this.d2p = function (dataValue) {
         return offset + orientation * (dataValue - min) * scale;
       }
-      this.p2d = function p2d (pointValue) {
+      this.p2d = function (pointValue) {
         return (offset + orientation * pointValue) / scale + min;
       }
     }
@@ -3876,11 +3876,22 @@ Flotr.addType('bars', {
       hitGeometry = this.getBarGeometry(x, y, options),
       width = hitGeometry.width / 2,
       left = hitGeometry.left,
+      height = hitGeometry.y,
       geometry, i;
 
     for (i = data.length; i--;) {
       geometry = this.getBarGeometry(data[i][0], data[i][1], options);
-      if (geometry.y > hitGeometry.y && Math.abs(left - geometry.left) < width) {
+      if (
+        // Height:
+        (
+          // Positive Bars:
+          (height > 0 && height < geometry.y) ||
+          // Negative Bars:
+          (height < 0 && height > geometry.y)
+        ) &&
+        // Width:
+        (Math.abs(left - geometry.left) < width)
+      ) {
         n.x = data[i][0];
         n.y = data[i][1];
         n.index = i;
@@ -4668,7 +4679,8 @@ Flotr.addType('pie', {
     labelFormatter: Flotr.defaultPieLabelFormatter,
     pie3D: false,          // => whether to draw the pie in 3 dimenstions or not (ineffective) 
     pie3DviewAngle: (Math.PI/2 * 0.8),
-    pie3DspliceThickness: 20
+    pie3DspliceThickness: 20,
+    epsilon: 0.1           // => how close do you have to get to hit empty slice
   },
 
   draw : function (options) {
@@ -4793,7 +4805,8 @@ Flotr.addType('pie', {
       circle    = Math.PI * 2,
       explode   = slice.explode || options.explode,
       start     = slice.start % circle,
-      end       = slice.end % circle;
+      end       = slice.end % circle,
+      epsilon   = options.epsilon;
 
     if (x < 0) {
       theta += Math.PI;
@@ -4802,10 +4815,14 @@ Flotr.addType('pie', {
     }
 
     if (r < slice.radius + explode && r > explode) {
-      if ((start >= end && (theta < end || theta > start)) ||
-        (theta > start && theta < end)) {
-
-        // TODO Decouple this from hit plugin (chart shouldn't know what n means)
+      if (
+          (theta > start && theta < end) || // Normal Slice
+          (start > end && (theta < end || theta > start)) || // First slice
+          // TODO: Document the two cases at the end:
+          (start === end && ((slice.start === slice.end && Math.abs(theta - start) < epsilon) || (slice.start !== slice.end && Math.abs(theta-start) > epsilon)))
+         ) {
+          
+          // TODO Decouple this from hit plugin (chart shouldn't know what n means)
          n.x = data[0];
          n.y = data[1];
          n.sAngle = start;
@@ -5095,8 +5112,8 @@ Flotr.addPlugin('crosshair', {
     var octx = this.octx,
       options = this.options.crosshair,
       plotOffset = this.plotOffset,
-      x = plotOffset.left + pos.relX + 0.5,
-      y = plotOffset.top + pos.relY + 0.5;
+      x = plotOffset.left + Math.round(pos.relX) + .5,
+      y = plotOffset.top + Math.round(pos.relY) + .5;
     
     if (pos.relX < 0 || pos.relY < 0 || pos.relX > this.plotWidth || pos.relY > this.plotHeight) {
       this.el.style.cursor = null;
@@ -5139,14 +5156,14 @@ Flotr.addPlugin('crosshair', {
 
     if (position) {
       context.clearRect(
-        position.relX + plotOffset.left,
+        Math.round(position.relX) + plotOffset.left,
         plotOffset.top,
         1,
         this.plotHeight + 1
       );
       context.clearRect(
         plotOffset.left,
-        position.relY + plotOffset.top,
+        Math.round(position.relY) + plotOffset.top,
         this.plotWidth + 1,
         1
       );    
@@ -5434,6 +5451,9 @@ Flotr.addPlugin('hit', {
     },
     'flotr:mouseout': function() {
       this.hit.clearHit();
+    },
+    'flotr:destroy': function() {
+      this.mouseTrack = null;
     }
   },
   track : function (pos) {
