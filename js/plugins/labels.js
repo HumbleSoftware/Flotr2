@@ -13,19 +13,13 @@ Flotr.addPlugin('labels', {
   draw: function(){
     // Construct fixed width label boxes, which can be styled easily.
     var
-      axis, tick, left, top, xBoxWidth,
+      axis, tick, left, top,
       radius, sides, coeff, angle,
       div, i, html = '',
-      noLabels = 0,
       options  = this.options,
       ctx      = this.ctx,
       a        = this.axes,
       style    = { size: options.fontSize };
-
-    for (i = 0; i < a.x.ticks.length; ++i){
-      if (a.x.ticks[i].label) { ++noLabels; }
-    }
-    xBoxWidth = this.plotWidth / noLabels;
 
     if (options.grid.circular) {
       ctx.save();
@@ -67,14 +61,6 @@ Flotr.addPlugin('labels', {
 
       ctx.stroke();
       ctx.restore();
-      div = D.create('div');
-      D.setStyles(div, {
-        fontSize: 'smaller',
-        color: options.grid.color
-      });
-      div.className = 'flotr-labels';
-      D.insert(this.el, div);
-      D.insert(div, html);
     }
 
     function drawLabelCircular (graph, axis, minorTicks) {
@@ -175,7 +161,8 @@ Flotr.addPlugin('labels', {
         isFirst = axis.n === 1,
         name = '',
         left, style, top,
-        offset = graph.plotOffset;
+        offset = graph.plotOffset,
+        i, xBoxWidth, noLabels = 0;
 
       if (!isX && !isFirst) {
         ctx.save();
@@ -184,16 +171,21 @@ Flotr.addPlugin('labels', {
       }
 
       if (axis.options.showLabels && (isFirst ? true : axis.used)) {
+        for (i = 0; i < axis.ticks.length; ++i){
+          if (axis.ticks[i].label) { ++noLabels; }
+        }
+        xBoxWidth = graph.plotWidth / noLabels;
+
         for (i = 0; i < axis.ticks.length; ++i) {
           tick = axis.ticks[i];
           if (!tick.label || !tick.label.length ||
-              ((isX ? offset.left : offset.top) + axis.d2p(tick.v) < 0) ||
-              ((isX ? offset.left : offset.top) + axis.d2p(tick.v) > (isX ? graph.canvasWidth : graph.canvasHeight))) {
+              ((isX ? offset.left : offset.top) + axis.d2p(tick.v) < (isX ? (offset.left + options.grid.labelMargin) : 0)) ||
+              ((isX ? offset.left : offset.top) + axis.d2p(tick.v) > (isX ? graph.canvasWidth - offset.right - ctx.measureText(tick.label).width : graph.canvasHeight))) {
             continue;
           }
           top = offset.top +
             (isX ?
-              ((isFirst ? 1 : -1 ) * (graph.plotHeight + options.grid.labelMargin)) :
+             (options.grid.labelMargin + (isFirst ? graph.plotHeight : 0)) :
               axis.d2p(tick.v) - axis.maxLabel.height / 2);
           left = isX ? (offset.left + axis.d2p(tick.v) - xBoxWidth / 2) : 0;
 
@@ -219,6 +211,15 @@ Flotr.addPlugin('labels', {
             ctx.lineTo(offset.left + graph.plotWidth, offset.top + axis.d2p(tick.v));
           }
         }
+        var div = D.create('div');
+        D.setStyles(div, {
+          fontSize: axis.options.fontSize,
+          color: options.grid.color
+        });
+        div.className = 'flotr-labels';
+        D.insert(graph.el, div);
+        D.insert(div, html);
+        html = '';
       }
     }
   }

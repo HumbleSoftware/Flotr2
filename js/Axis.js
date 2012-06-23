@@ -174,7 +174,7 @@ Axis.prototype = {
     this.maxLabel = T.dimensions(
       maxLabel,
       {size:options.fontSize, angle: Flotr.toRad(this.options.labelsAngle)},
-      'font-size:smaller;',
+      'font-size:' + this.options.fontSize + ';',
       'flotr-grid-label'
     );
 
