@@ -5,3 +5,5 @@ build
 *.swo
 *.vim
 .jhw-cache
+node_modules
+dev
