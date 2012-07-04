@@ -70,6 +70,7 @@ Flotr.addPlugin('legend', {
             legendHeight = Math.round(itemCount*(lbm+lbh) + lbm);
         
         if(p.charAt(0) == 's') offsetY = plotOffset.top + this.plotHeight - (m + legendHeight);
+        if(p.charAt(0) == 'c') offsetY = plotOffset.top + (this.plotHeight/2) - (m + (legendHeight/2));
         if(p.charAt(1) == 'e') offsetX = plotOffset.left + this.plotWidth - (m + legendWidth);
         
         // Legend box
@@ -140,6 +141,8 @@ Flotr.addPlugin('legend', {
           }
           else {
             var styles = {position: 'absolute', 'zIndex': '2', 'border' : '1px solid ' + legend.labelBoxBorderColor};
+            // Center positioning not supported for HTML text
+            if(p.charAt(0) == 'c') p = 'n'+p.charAt(1);
             
                  if(p.charAt(0) == 'n') { styles.top = (m + plotOffset.top) + 'px'; styles.bottom = 'auto'; }
             else if(p.charAt(0) == 's') { styles.bottom = (m + plotOffset.bottom) + 'px'; styles.top = 'auto'; }
