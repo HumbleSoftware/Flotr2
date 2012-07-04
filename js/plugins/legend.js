@@ -74,8 +74,12 @@ Flotr.addPlugin('legend', {
         if(p.charAt(1) == 'e') offsetX = plotOffset.left + this.plotWidth - (m + legendWidth);
         
         // Legend box
-        color = this.processColor(legend.backgroundColor, {opacity: legend.backgroundOpacity || 0.1});
-        
+        opacity = 0.1;
+        if(legend.backgroundOpacity !== undefined && legend.backgroundOpacity !== null) {
+          opacity = legend.backgroundOpacity;
+        }
+        color = this.processColor(legend.backgroundColor, {opacity: opacity});
+            
         ctx.fillStyle = color;
         ctx.fillRect(offsetX, offsetY, legendWidth, legendHeight);
         ctx.strokeStyle = legend.labelBoxBorderColor;
