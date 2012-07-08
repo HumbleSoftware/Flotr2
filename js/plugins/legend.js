@@ -46,28 +46,29 @@ Flotr.addPlugin('legend', {
       i, label, color;
 
     if (itemCount) {
+
+      var lbw = legend.labelBoxWidth,
+          lbh = legend.labelBoxHeight,
+          lbm = legend.labelBoxMargin,
+          offsetX = plotOffset.left + m,
+          offsetY = plotOffset.top + m;
+
+      // We calculate the labels' max width
+      var labelMaxWidth = 0;
+      for(i = series.length - 1; i > -1; --i){
+        if(!series[i].label || series[i].hide) continue;
+        label = legend.labelFormatter(series[i].label);
+        labelMaxWidth = Math.max(labelMaxWidth, this._text.measureText(label, style).width);
+      }
+
+      var legendWidth  = Math.round(lbw + lbm*3 + labelMaxWidth),
+          legendHeight = Math.round(itemCount*(lbm+lbh) + lbm);
+
       if (!options.HtmlText && this.textEnabled && !legend.container) {
         var style = {
           size: options.fontSize*1.1,
           color: options.grid.color
         };
-
-        var lbw = legend.labelBoxWidth,
-            lbh = legend.labelBoxHeight,
-            lbm = legend.labelBoxMargin,
-            offsetX = plotOffset.left + m,
-            offsetY = plotOffset.top + m;
-        
-        // We calculate the labels' max width
-        var labelMaxWidth = 0;
-        for(i = series.length - 1; i > -1; --i){
-          if(!series[i].label || series[i].hide) continue;
-          label = legend.labelFormatter(series[i].label);
-          labelMaxWidth = Math.max(labelMaxWidth, this._text.measureText(label, style).width);
-        }
-        
-        var legendWidth  = Math.round(lbw + lbm*3 + labelMaxWidth),
-            legendHeight = Math.round(itemCount*(lbm+lbh) + lbm);
         
         if(p.charAt(0) == 's') offsetY = plotOffset.top + this.plotHeight - (m + legendHeight);
         if(p.charAt(0) == 'c') offsetY = plotOffset.top + (this.plotHeight/2) - (m + (legendHeight/2));
@@ -145,14 +146,13 @@ Flotr.addPlugin('legend', {
           }
           else {
             var styles = {position: 'absolute', 'zIndex': '2', 'border' : '1px solid ' + legend.labelBoxBorderColor};
-            // Center positioning not supported for HTML text
-            if(p.charAt(0) == 'c') p = 'n'+p.charAt(1);
-            
+
                  if(p.charAt(0) == 'n') { styles.top = (m + plotOffset.top) + 'px'; styles.bottom = 'auto'; }
+            else if(p.charAt(0) == 'c') { styles.top = (m + (this.plotHeight - legendHeight) / 2) + 'px'; styles.bottom = 'auto'; }
             else if(p.charAt(0) == 's') { styles.bottom = (m + plotOffset.bottom) + 'px'; styles.top = 'auto'; }
                  if(p.charAt(1) == 'e') { styles.right = (m + plotOffset.right) + 'px'; styles.left = 'auto'; }
             else if(p.charAt(1) == 'w') { styles.left = (m + plotOffset.left) + 'px'; styles.right = 'auto'; }
-                 
+
             var div = D.create('div'), size;
             div.className = 'flotr-legend';
             D.setStyles(div, styles);
