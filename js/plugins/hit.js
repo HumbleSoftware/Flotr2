@@ -12,7 +12,9 @@ Flotr.addPlugin('hit', {
       this.hit.track(pos);
     },
     'flotr:click': function(pos) {
-      this.hit.track(pos);
+      var
+        hit = this.hit.track(pos);
+      _.defaults(pos, hit);
     },
     'flotr:mouseout': function() {
       this.hit.clearHit();
@@ -23,7 +25,7 @@ Flotr.addPlugin('hit', {
   },
   track : function (pos) {
     if (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;})) {
-      this.hit.hit(pos);
+      return this.hit.hit(pos);
     }
   },
   /**
@@ -194,6 +196,8 @@ Flotr.addPlugin('hit', {
         Flotr.EventAdapter.fire(this.el, 'flotr:hit', [n, this]);
       }
     }
+
+    return n;
   },
 
   closest : function (mouse) {
