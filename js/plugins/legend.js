@@ -51,10 +51,14 @@ Flotr.addPlugin('legend', {
           lbh = legend.labelBoxHeight,
           lbm = legend.labelBoxMargin,
           offsetX = plotOffset.left + m,
-          offsetY = plotOffset.top + m;
+          offsetY = plotOffset.top + m,
+          labelMaxWidth = 0,
+          style = {
+            size: options.fontSize*1.1,
+            color: options.grid.color
+          };
 
       // We calculate the labels' max width
-      var labelMaxWidth = 0;
       for(i = series.length - 1; i > -1; --i){
         if(!series[i].label || series[i].hide) continue;
         label = legend.labelFormatter(series[i].label);
@@ -70,10 +74,6 @@ Flotr.addPlugin('legend', {
       }
 
       if (!options.HtmlText && this.textEnabled && !legend.container) {
-        var style = {
-          size: options.fontSize*1.1,
-          color: options.grid.color
-        };
         
         if(p.charAt(0) == 's') offsetY = plotOffset.top + this.plotHeight - (m + legendHeight);
         if(p.charAt(0) == 'c') offsetY = plotOffset.top + (this.plotHeight/2) - (m + (legendHeight/2));
