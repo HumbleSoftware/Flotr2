@@ -43,6 +43,7 @@ Flotr.addPlugin('legend', {
       itemCount     = _.filter(series, function(s) {return (s.label && !s.hide);}).length,
       p             = legend.position, 
       m             = legend.margin,
+      opacity       = legend.backgroundOpacity,
       i, label, color;
 
     if (itemCount) {
@@ -64,6 +65,11 @@ Flotr.addPlugin('legend', {
       var legendWidth  = Math.round(lbw + lbm*3 + labelMaxWidth),
           legendHeight = Math.round(itemCount*(lbm+lbh) + lbm);
 
+      // Default Opacity
+      if (!opacity && !opacity === 0) {
+        opacity = 0.1;
+      }
+
       if (!options.HtmlText && this.textEnabled && !legend.container) {
         var style = {
           size: options.fontSize*1.1,
@@ -75,12 +81,8 @@ Flotr.addPlugin('legend', {
         if(p.charAt(1) == 'e') offsetX = plotOffset.left + this.plotWidth - (m + legendWidth);
         
         // Legend box
-        opacity = 0.1;
-        if(legend.backgroundOpacity !== undefined && legend.backgroundOpacity !== null) {
-          opacity = legend.backgroundOpacity;
-        }
-        color = this.processColor(legend.backgroundColor, {opacity: opacity});
-            
+        color = this.processColor(legend.backgroundColor, { opacity : opacity });
+
         ctx.fillStyle = color;
         ctx.fillRect(offsetX, offsetY, legendWidth, legendHeight);
         ctx.strokeStyle = legend.labelBoxBorderColor;
@@ -114,13 +116,12 @@ Flotr.addPlugin('legend', {
             fragments.push(rowStarted ? '</tr><tr>' : '<tr>');
             rowStarted = true;
           }
-           
-          // @TODO remove requirement on bars
+
           var s = series[i],
             boxWidth = legend.labelBoxWidth,
             boxHeight = legend.labelBoxHeight,
-            opacityValue = (s.bars ? s.bars.fillOpacity : legend.labelBoxOpacity),
-            opacity = 'opacity:' + opacityValue + ';filter:alpha(opacity=' + opacityValue*100 + ');';
+            opacityValue = legend.labelBoxOpacity,
+            opacityUnused = 'opacity:' + opacityValue + ';filter:alpha(opacity=' + opacityValue*100 + ');';
 
           label = legend.labelFormatter(s.label);
           color = 'background-color:' + ((s.bars && s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
@@ -159,8 +160,7 @@ Flotr.addPlugin('legend', {
             D.insert(div, table);
             D.insert(this.el, div);
             
-            if(!legend.backgroundOpacity)
-              return;
+            if (!opacity) return;
 
             var c = legend.backgroundColor || options.grid.backgroundColor || '#ffffff';
 
@@ -176,7 +176,7 @@ Flotr.addPlugin('legend', {
             div = D.create('div');
             div.className = 'flotr-legend-bg';
             D.setStyles(div, styles);
-            D.opacity(div, legend.backgroundOpacity);
+            D.opacity(div, opacity);
             D.insert(div, ' ');
             D.insert(this.el, div);
           }
