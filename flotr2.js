@@ -3391,10 +3391,14 @@ Series.prototype = {
     for (i = 0; i < length; i++) {
       x = data[i][0];
       y = data[i][1];
-      if (x < xmin) { xmin = x; xused = true; }
-      if (x > xmax) { xmax = x; xused = true; }
-      if (y < ymin) { ymin = y; yused = true; }
-      if (y > ymax) { ymax = y; yused = true; }
+      if (x !== null) {
+        if (x < xmin) { xmin = x; xused = true; }
+        if (x > xmax) { xmax = x; xused = true; }
+      }
+      if (y !== null) {
+        if (y < ymin) { ymin = y; yused = true; }
+        if (y > ymax) { ymax = y; yused = true; }
+      }
     }
 
     return {
@@ -5447,7 +5451,9 @@ Flotr.addPlugin('hit', {
       this.hit.track(pos);
     },
     'flotr:click': function(pos) {
-      this.hit.track(pos);
+      var
+        hit = this.hit.track(pos);
+      _.defaults(pos, hit);
     },
     'flotr:mouseout': function() {
       this.hit.clearHit();
@@ -5458,7 +5464,7 @@ Flotr.addPlugin('hit', {
   },
   track : function (pos) {
     if (this.options.mouse.track || _.any(this.series, function(s){return s.mouse && s.mouse.track;})) {
-      this.hit.hit(pos);
+      return this.hit.hit(pos);
     }
   },
   /**
@@ -5629,6 +5635,8 @@ Flotr.addPlugin('hit', {
         Flotr.EventAdapter.fire(this.el, 'flotr:hit', [n, this]);
       }
     }
+
+    return n;
   },
 
   closest : function (mouse) {
@@ -6318,7 +6326,6 @@ Flotr.addPlugin('legend', {
     labelBoxWidth: 14,
     labelBoxHeight: 10,
     labelBoxMargin: 5,
-    labelBoxOpacity: 0.4,
     container: null,       // => container (as jQuery object) to put legend in, null means default on top of graph
     position: 'nw',        // => position of default legend container within plot
     margin: 5,             // => distance from grid edge to default legend container within plot
@@ -6348,38 +6355,46 @@ Flotr.addPlugin('legend', {
       itemCount     = _.filter(series, function(s) {return (s.label && !s.hide);}).length,
       p             = legend.position, 
       m             = legend.margin,
+      opacity       = legend.backgroundOpacity,
       i, label, color;
 
     if (itemCount) {
-      if (!options.HtmlText && this.textEnabled && !legend.container) {
-        var style = {
-          size: options.fontSize*1.1,
-          color: options.grid.color
-        };
 
-        var lbw = legend.labelBoxWidth,
-            lbh = legend.labelBoxHeight,
-            lbm = legend.labelBoxMargin,
-            offsetX = plotOffset.left + m,
-            offsetY = plotOffset.top + m;
-        
-        // We calculate the labels' max width
-        var labelMaxWidth = 0;
-        for(i = series.length - 1; i > -1; --i){
-          if(!series[i].label || series[i].hide) continue;
-          label = legend.labelFormatter(series[i].label);
-          labelMaxWidth = Math.max(labelMaxWidth, this._text.measureText(label, style).width);
-        }
-        
-        var legendWidth  = Math.round(lbw + lbm*3 + labelMaxWidth),
-            legendHeight = Math.round(itemCount*(lbm+lbh) + lbm);
+      var lbw = legend.labelBoxWidth,
+          lbh = legend.labelBoxHeight,
+          lbm = legend.labelBoxMargin,
+          offsetX = plotOffset.left + m,
+          offsetY = plotOffset.top + m,
+          labelMaxWidth = 0,
+          style = {
+            size: options.fontSize*1.1,
+            color: options.grid.color
+          };
+
+      // We calculate the labels' max width
+      for(i = series.length - 1; i > -1; --i){
+        if(!series[i].label || series[i].hide) continue;
+        label = legend.labelFormatter(series[i].label);
+        labelMaxWidth = Math.max(labelMaxWidth, this._text.measureText(label, style).width);
+      }
+
+      var legendWidth  = Math.round(lbw + lbm*3 + labelMaxWidth),
+          legendHeight = Math.round(itemCount*(lbm+lbh) + lbm);
+
+      // Default Opacity
+      if (!opacity && !opacity === 0) {
+        opacity = 0.1;
+      }
+
+      if (!options.HtmlText && this.textEnabled && !legend.container) {
         
         if(p.charAt(0) == 's') offsetY = plotOffset.top + this.plotHeight - (m + legendHeight);
+        if(p.charAt(0) == 'c') offsetY = plotOffset.top + (this.plotHeight/2) - (m + (legendHeight/2));
         if(p.charAt(1) == 'e') offsetX = plotOffset.left + this.plotWidth - (m + legendWidth);
         
         // Legend box
-        color = this.processColor(legend.backgroundColor, {opacity: legend.backgroundOpacity || 0.1});
-        
+        color = this.processColor(legend.backgroundColor, { opacity : opacity });
+
         ctx.fillStyle = color;
         ctx.fillRect(offsetX, offsetY, legendWidth, legendHeight);
         ctx.strokeStyle = legend.labelBoxBorderColor;
@@ -6413,13 +6428,10 @@ Flotr.addPlugin('legend', {
             fragments.push(rowStarted ? '</tr><tr>' : '<tr>');
             rowStarted = true;
           }
-           
-          // @TODO remove requirement on bars
+
           var s = series[i],
             boxWidth = legend.labelBoxWidth,
-            boxHeight = legend.labelBoxHeight,
-            opacityValue = (s.bars ? s.bars.fillOpacity : legend.labelBoxOpacity),
-            opacity = 'opacity:' + opacityValue + ';filter:alpha(opacity=' + opacityValue*100 + ');';
+            boxHeight = legend.labelBoxHeight;
 
           label = legend.labelFormatter(s.label);
           color = 'background-color:' + ((s.bars && s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
@@ -6428,7 +6440,7 @@ Flotr.addPlugin('legend', {
             '<td class="flotr-legend-color-box">',
               '<div style="border:1px solid ', legend.labelBoxBorderColor, ';padding:1px">',
                 '<div style="width:', (boxWidth-1), 'px;height:', (boxHeight-1), 'px;border:1px solid ', series[i].color, '">', // Border
-                  '<div style="width:', boxWidth, 'px;height:', boxHeight, 'px;', 'opacity:.4;', color, '"></div>', // Background
+                  '<div style="width:', boxWidth, 'px;height:', boxHeight, 'px;', color, '"></div>', // Background
                 '</div>',
               '</div>',
             '</td>',
@@ -6445,20 +6457,20 @@ Flotr.addPlugin('legend', {
           }
           else {
             var styles = {position: 'absolute', 'zIndex': '2', 'border' : '1px solid ' + legend.labelBoxBorderColor};
-            
+
                  if(p.charAt(0) == 'n') { styles.top = (m + plotOffset.top) + 'px'; styles.bottom = 'auto'; }
+            else if(p.charAt(0) == 'c') { styles.top = (m + (this.plotHeight - legendHeight) / 2) + 'px'; styles.bottom = 'auto'; }
             else if(p.charAt(0) == 's') { styles.bottom = (m + plotOffset.bottom) + 'px'; styles.top = 'auto'; }
                  if(p.charAt(1) == 'e') { styles.right = (m + plotOffset.right) + 'px'; styles.left = 'auto'; }
             else if(p.charAt(1) == 'w') { styles.left = (m + plotOffset.left) + 'px'; styles.right = 'auto'; }
-                 
+
             var div = D.create('div'), size;
             div.className = 'flotr-legend';
             D.setStyles(div, styles);
             D.insert(div, table);
             D.insert(this.el, div);
             
-            if(!legend.backgroundOpacity)
-              return;
+            if (!opacity) return;
 
             var c = legend.backgroundColor || options.grid.backgroundColor || '#ffffff';
 
@@ -6474,7 +6486,7 @@ Flotr.addPlugin('legend', {
             div = D.create('div');
             div.className = 'flotr-legend-bg';
             D.setStyles(div, styles);
-            D.opacity(div, legend.backgroundOpacity);
+            D.opacity(div, opacity);
             D.insert(div, ' ');
             D.insert(this.el, div);
           }
