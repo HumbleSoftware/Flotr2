@@ -13,7 +13,6 @@ Flotr.addPlugin('legend', {
     labelBoxWidth: 14,
     labelBoxHeight: 10,
     labelBoxMargin: 5,
-    labelBoxOpacity: 0.4,
     container: null,       // => container (as jQuery object) to put legend in, null means default on top of graph
     position: 'nw',        // => position of default legend container within plot
     margin: 5,             // => distance from grid edge to default legend container within plot
@@ -119,9 +118,7 @@ Flotr.addPlugin('legend', {
 
           var s = series[i],
             boxWidth = legend.labelBoxWidth,
-            boxHeight = legend.labelBoxHeight,
-            opacityValue = legend.labelBoxOpacity,
-            opacityUnused = 'opacity:' + opacityValue + ';filter:alpha(opacity=' + opacityValue*100 + ');';
+            boxHeight = legend.labelBoxHeight;
 
           label = legend.labelFormatter(s.label);
           color = 'background-color:' + ((s.bars && s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
@@ -130,7 +127,7 @@ Flotr.addPlugin('legend', {
             '<td class="flotr-legend-color-box">',
               '<div style="border:1px solid ', legend.labelBoxBorderColor, ';padding:1px">',
                 '<div style="width:', (boxWidth-1), 'px;height:', (boxHeight-1), 'px;border:1px solid ', series[i].color, '">', // Border
-                  '<div style="width:', boxWidth, 'px;height:', boxHeight, 'px;', 'opacity:.4;', color, '"></div>', // Background
+                  '<div style="width:', boxWidth, 'px;height:', boxHeight, 'px;', color, '"></div>', // Background
                 '</div>',
               '</div>',
             '</td>',
