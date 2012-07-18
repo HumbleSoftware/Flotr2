@@ -69,7 +69,7 @@ Flotr.addPlugin('legend', {
           legendHeight = Math.round(itemCount*(lbm+lbh) + lbm);
 
       // Default Opacity
-      if (!opacity && !opacity === 0) {
+      if (!opacity && opacity !== 0) {
         opacity = 0.1;
       }
 
