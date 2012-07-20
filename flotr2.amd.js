@@ -3789,8 +3789,8 @@ Flotr.addPlugin('crosshair', {
     var octx = this.octx,
       options = this.options.crosshair,
       plotOffset = this.plotOffset,
-      x = plotOffset.left + Math.round(pos.relX) + .5,
-      y = plotOffset.top + Math.round(pos.relY) + .5;
+      x = plotOffset.left + Math.round(pos.relX) + 0.5,
+      y = plotOffset.top + Math.round(pos.relY) + 0.5;
     
     if (pos.relX < 0 || pos.relY < 0 || pos.relX > this.plotWidth || pos.relY > this.plotHeight) {
       this.el.style.cursor = null;
@@ -4414,11 +4414,6 @@ Flotr.addPlugin('hit', {
       if      (p.charAt(1) == 'e') pos += 'right:' + (m + right) + 'px;left:auto;';
       else if (p.charAt(1) == 'w') pos += 'left:' + (m + left) + 'px;right:auto;';
 
-    // Bars
-    } else if (s.bars && s.bars.show) {
-        pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y/2) + this.canvasHeight) + 'px;top:auto;';
-        pos += 'left:' + (m + left + n.xaxis.d2p(n.x - options.bars.barWidth/2)) + 'px;right:auto;';
-
     // Pie
     } else if (s.pie && s.pie.show) {
       var center = {
@@ -4432,16 +4427,15 @@ Flotr.addPlugin('hit', {
       pos += 'left:' + (m + left + center.x + Math.cos(bisection) * radius/2) + 'px;right:auto;';
 
     // Default
-    } else {
+    } else {    
       if (/n/.test(p)) pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
       else             pos += 'top:' + (m + top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
-      if (/e/.test(p)) pos += 'right:' + (m - left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
+      if (/w/.test(p)) pos += 'right:' + (m - left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
       else             pos += 'left:' + (m + left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
     }
 
     elStyle += pos;
     mouseTrack.style.cssText = elStyle;
-
     if (!decimals || decimals < 0) decimals = 0;
     
     if (x && x.toFixed) x = x.toFixed(decimals);
@@ -4566,15 +4560,27 @@ Flotr.addPlugin('selection', {
   // TODO This isn't used.  Maybe it belongs in the draw area and fire select event methods?
   getArea: function() {
 
-    var s = this.selection.selection,
+    var
+      s = this.selection.selection,
+      a = this.axes,
       first = s.first,
-      second = s.second;
+      second = s.second,
+      x1, x2, y1, y2;
+
+    x1 = a.x.p2d(s.first.x);
+    x2 = a.x.p2d(s.second.x);
+    y1 = a.y.p2d(s.first.y);
+    y2 = a.y.p2d(s.second.y);
 
     return {
-      x1: Math.min(first.x, second.x),
-      x2: Math.max(first.x, second.x),
-      y1: Math.min(first.y, second.y),
-      y2: Math.max(first.y, second.y)
+      x1 : Math.min(x1, x2),
+      y1 : Math.min(y1, y2),
+      x2 : Math.max(x1, x2),
+      y2 : Math.max(y1, y2),
+      xfirst : x1,
+      xsecond : x2,
+      yfirst : y1,
+      ysecond : y2
     };
   },
 
@@ -4586,25 +4592,11 @@ Flotr.addPlugin('selection', {
    * Fires the 'flotr:select' event when the user made a selection.
    */
   fireSelectEvent: function(name){
-    var a = this.axes,
-        s = this.selection.selection,
-        x1, x2, y1, y2;
-
+    var
+      area = this.selection.getArea();
     name = name || 'select';
-
-    x1 = a.x.p2d(s.first.x);
-    x2 = a.x.p2d(s.second.x);
-    y1 = a.y.p2d(s.first.y);
-    y2 = a.y.p2d(s.second.y);
-
-    E.fire(this.el, 'flotr:'+name, [{
-      x1:Math.min(x1, x2), 
-      y1:Math.min(y1, y2), 
-      x2:Math.max(x1, x2), 
-      y2:Math.max(y1, y2),
-      xfirst:x1, xsecond:x2, yfirst:y1, ysecond:y2,
-      selection : s
-    }, this]);
+    area.selection = this.selection.selection;
+    E.fire(this.el, 'flotr:'+name, [area, this]);
   },
 
   /**
@@ -5055,7 +5047,7 @@ Flotr.addPlugin('legend', {
           legendHeight = Math.round(itemCount*(lbm+lbh) + lbm);
 
       // Default Opacity
-      if (!opacity && !opacity === 0) {
+      if (!opacity && opacity !== 0) {
         opacity = 0.1;
       }
 
