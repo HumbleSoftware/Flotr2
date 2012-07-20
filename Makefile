@@ -34,6 +34,6 @@ flotr-examples:
 	cp build/examples-types.js flotr2.examples.types.js
 
 flotr-amd: flotr2
-	cat amd/pre > flotr2-amd.js
-	cat build/flotr2.js >> flotr2-amd.js
-	cat amd/post >> flotr2-amd.js
+	cat js/amd/pre.js > flotr2.amd.js
+	cat build/flotr2.js >> flotr2.amd.js
+	cat js/amd/post.js >> flotr2.amd.js
