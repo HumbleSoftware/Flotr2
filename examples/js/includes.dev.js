@@ -60,6 +60,7 @@ yepnope([
   'js/examples/basic-bars.js',
   'js/examples/basic-bars-stacked.js',
   'js/examples/basic-pie.js',
+  'js/examples/half-pie.js',
   'js/examples/basic-radar.js',
   'js/examples/basic-bubble.js',
   'js/examples/basic-candle.js',
