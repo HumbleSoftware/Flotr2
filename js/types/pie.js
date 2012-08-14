@@ -28,7 +28,8 @@ Flotr.addType('pie', {
     pie3D: false,          // => whether to draw the pie in 3 dimenstions or not (ineffective) 
     pie3DviewAngle: (Math.PI/2 * 0.8),
     pie3DspliceThickness: 20,
-    epsilon: 0.1           // => how close do you have to get to hit empty slice
+    epsilon: 0.1,          // => how close do you have to get to hit empty slice
+    halfPie: false
   },
 
   draw : function (options) {
@@ -42,17 +43,18 @@ Flotr.addType('pie', {
       lineWidth     = options.lineWidth,
       shadowSize    = options.shadowSize,
       sizeRatio     = options.sizeRatio,
-      height        = options.height,
-      width         = options.width,
+      circleRatio   = options.halfPie ? 1 : 2,
+      height        = options.height ,
+      width         = options.width ,
       explode       = options.explode,
       color         = options.color,
       fill          = options.fill,
       fillStyle     = options.fillStyle,
-      radius        = Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      radius        = Math.min(canvas.width, canvas.height) * sizeRatio /circleRatio,
       value         = data[0][1],
       html          = [],
       vScale        = 1,//Math.cos(series.pie.viewAngle);
-      measure       = Math.PI * 2 * value / this.total,
+      measure       = Math.PI * circleRatio * value / this.total,
       startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
       endAngle      = startAngle + measure,
       bisection     = startAngle + measure / 2,
@@ -67,7 +69,7 @@ Flotr.addType('pie', {
       x, y;
     
     context.save();
-    context.translate(width / 2, height / 2);
+    context.translate(width / 2, height / circleRatio);
     context.scale(1, vScale);
 
     x = Math.cos(bisection) * explode;
@@ -146,11 +148,12 @@ Flotr.addType('pie', {
       mouse     = args[0],
       n         = args[1],
       slice     = this.slices[index],
-      x         = mouse.relX - options.width / 2,
-      y         = mouse.relY - options.height / 2,
+      circleRatio   = options.halfPie ? 1 : 2,
+      x         = mouse.relX - options.width / circleRatio,
+      y         = mouse.relY - options.height/ circleRatio,
       r         = Math.sqrt(x * x + y * y),
       theta     = Math.atan(y / x),
-      circle    = Math.PI * 2,
+      circle    = Math.PI * circleRatio,
       explode   = slice.explode || options.explode,
       start     = slice.start % circle,
       end       = slice.end % circle,
@@ -184,10 +187,11 @@ Flotr.addType('pie', {
   drawHit: function (options) {
     var
       context = options.context,
+      circleRatio   = options.halfPie ? 1 : 2,
       slice = this.slices[options.args.seriesIndex];
 
     context.save();
-    context.translate(options.width / 2, options.height / 2);
+    context.translate(options.width/circleRatio, options.height/circleRatio);
     this.plotSlice(slice.x, slice.y, slice.radius, slice.start, slice.end, context);
     context.stroke();
     context.restore();
@@ -195,12 +199,13 @@ Flotr.addType('pie', {
   clearHit : function (options) {
     var
       context = options.context,
+      circleRatio   = options.halfPie ? 1 : 2,
       slice = this.slices[options.args.seriesIndex],
       padding = 2 * options.lineWidth,
       radius = slice.radius + padding;
 
     context.save();
-    context.translate(options.width / 2, options.height / 2);
+    context.translate(options.width/circleRatio, options.height/circleRatio);
     context.clearRect(
       slice.x - radius,
       slice.y - radius,
