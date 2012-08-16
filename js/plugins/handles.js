@@ -160,7 +160,7 @@ function mouseMoveHandler(e, position) {
   if (!this.handles.moveHandler) return;
 
   var
-    delta = position.dX,
+    delta = position.x - this.lastMousePos.x,
     selection = this.selection.selection,
     area = this.selection.getArea(),
     handles = this.handles;

@@ -31,10 +31,14 @@ Series.prototype = {
     for (i = 0; i < length; i++) {
       x = data[i][0];
       y = data[i][1];
-      if (x < xmin) { xmin = x; xused = true; }
-      if (x > xmax) { xmax = x; xused = true; }
-      if (y < ymin) { ymin = y; yused = true; }
-      if (y > ymax) { ymax = y; yused = true; }
+      if (x !== null) {
+        if (x < xmin) { xmin = x; xused = true; }
+        if (x > xmax) { xmax = x; xused = true; }
+      }
+      if (y !== null) {
+        if (y < ymin) { ymin = y; yused = true; }
+        if (y > ymax) { ymax = y; yused = true; }
+      }
     }
 
     return {
