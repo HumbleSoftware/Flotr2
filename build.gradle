@@ -31,20 +31,24 @@ task createTargetFiles(dependsOn: [
     buildFlotr
 ]){
     def target = new File(sourceSets.main.output.resourcesDir,'com/humblesoftware/flotr2')
-    inputs.files 'build/bean.js', 'build/underscore.js', 'build/flotr2.js'
+    inputs.files 'build/bean.js', 'build/underscore.js', 'build/flotr2.js', 'js/amd/pre.js', 'js/amd/post.js'
     def flotr2 = new File(target, "flotr2.js")
+    def flotr2amd = new File(target, "flotr2.amd.js")
     def flotr2min = new File(target, "flotr2.min.js")
     def flotr2iemin = new File(target, "flotr2.ie.min.js")
-    outputs.files flotr2, flotr2min, flotr2iemin
+    outputs.files flotr2, flotr2amd, flotr2min, flotr2iemin
     doLast {
         flotr2iemin << new File('build', 'ie.min.js')
         flotr2 << new File("build/bean.js").text << new File("build/underscore.js").text << new File("build/flotr2.js").text
         flotr2min <<';' << new File("build/bean.min.js").text<<';' << new File("build/underscore.min.js").text<<';' << new File("build/flotr2.min.js").text<<';'
+        flotr2amd << new File("js/amd/pre.js").text << new File("build/flotr2.js").text << new File("js/amd/post.js").text
     }
 }
 
 task copyComponents(type:Copy) {
-    from('js')
+    from('js'){
+        exclude 'amd'
+    }
     into new File(new File(new File(new File(new File(sourceSets.main.output.resourcesDir,'com'), 'humblesoftware'), 'flotr2'), 'src'), 'js')
 }
 
