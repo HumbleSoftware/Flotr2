@@ -38,7 +38,7 @@ task createTargetFiles(dependsOn: [
     def flotr2iemin = new File(target, "flotr2.ie.min.js")
     outputs.files flotr2, flotr2amd, flotr2min, flotr2iemin
     doLast {
-        flotr2iemin << new File('build', 'ie.min.js')
+        flotr2iemin << new File('build', 'ie.min.js').text
         flotr2 << new File("build/bean.js").text << new File("build/underscore.js").text << new File("build/flotr2.js").text
         flotr2min <<';' << new File("build/bean.min.js").text<<';' << new File("build/underscore.min.js").text<<';' << new File("build/flotr2.min.js").text<<';'
         flotr2amd << new File("js/amd/pre.js").text << new File("build/flotr2.js").text << new File("js/amd/post.js").text
