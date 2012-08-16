@@ -85,7 +85,7 @@ with [js-imagediff](https://github.com/HumbleSoftware/js-imagediff) to test.  Te
 
 To use Flotr within a Java project, a JAR file can be created using the [gradle](http://gradle.org) build tool. From
 the project's root directory, call `./gradlew build`. This will generate the jar file in 
-`build/libs/flotr2-yyyyMMddHHmmss.jar`. As well as when building with `make`, you will need smoosh and jasmine
+`build/libs/flotr2-$VERSION.jar`. As well as when building with `make`, you will need smoosh and jasmine
 installed.
 
 
