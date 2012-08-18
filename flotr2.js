@@ -5465,7 +5465,7 @@ var
   D = Flotr.DOM,
   _ = Flotr._,
   flotr = Flotr,
-  S_MOUSETRACK = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
+  S_MOUSETRACK = 'opacity:0.7;background-color:#000;color:#fff;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
 
 Flotr.addPlugin('hit', {
   callbacks: {
@@ -5481,6 +5481,9 @@ Flotr.addPlugin('hit', {
       this.hit.clearHit();
     },
     'flotr:destroy': function() {
+      if (this.options.mouse.container) {
+        D.remove(this.mouseTrack);
+      }
       this.mouseTrack = null;
     }
   },
@@ -5747,21 +5750,49 @@ Flotr.addPlugin('hit', {
       bottom      = plotOffset.bottom,
       top         = plotOffset.top,
       decimals    = n.mouse.trackDecimals,
-      options     = this.options;
+      options     = this.options,
+      container   = options.mouse.container,
+      oTop        = 0,
+      oLeft       = 0,
+      offset, size;
 
     // Create
     if (!mouseTrack) {
-      mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
+      mouseTrack = D.node('<div class="flotr-mouse-value" style="'+elStyle+'"></div>');
       this.mouseTrack = mouseTrack;
-      D.insert(this.el, mouseTrack);
+      D.insert(container || this.el, mouseTrack);
+    }
+
+    // Fill tracker:
+    if (!decimals || decimals < 0) decimals = 0;
+    if (x && x.toFixed) x = x.toFixed(decimals);
+    if (y && y.toFixed) y = y.toFixed(decimals);
+    mouseTrack.innerHTML = n.mouse.trackFormatter({
+      x: x,
+      y: y,
+      series: n.series,
+      index: n.index,
+      nearest: n,
+      fraction: n.fraction
+    });
+    D.show(mouseTrack);
+
+    // Positioning
+    size = D.size(mouseTrack);
+    if (container) {
+      offset = D.position(this.el);
+      oTop = offset.top;
+      oLeft = offset.left;
     }
 
     if (!n.mouse.relative) { // absolute to the canvas
-
-      if      (p.charAt(0) == 'n') pos += 'top:' + (m + top) + 'px;bottom:auto;';
-      else if (p.charAt(0) == 's') pos += 'bottom:' + (m + bottom) + 'px;top:auto;';
-      if      (p.charAt(1) == 'e') pos += 'right:' + (m + right) + 'px;left:auto;';
-      else if (p.charAt(1) == 'w') pos += 'left:' + (m + left) + 'px;right:auto;';
+      pos += 'top:'
+      if      (p.charAt(0) == 'n') pos += (oTop + m + top);
+      else if (p.charAt(0) == 's') pos += (oTop - m + top + this.plotHeight - size.height);
+      pos += 'px;bottom:auto;left:';
+      if      (p.charAt(1) == 'e') pos += (oLeft - m + left + this.plotWidth - size.width);
+      else if (p.charAt(1) == 'w') pos += (oLeft + m + left);
+      pos += 'px;right:auto;';
 
     // Pie
     } else if (s.pie && s.pie.show) {
@@ -5776,31 +5807,18 @@ Flotr.addPlugin('hit', {
       pos += 'left:' + (m + left + center.x + Math.cos(bisection) * radius/2) + 'px;right:auto;';
 
     // Default
-    } else {    
-      if (/n/.test(p)) pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
-      else             pos += 'top:' + (m + top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
-      if (/w/.test(p)) pos += 'right:' + (m - left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
-      else             pos += 'left:' + (m + left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
+    } else {
+      pos += 'top:'
+      if (/n/.test(p)) pos += (oTop - m + top + n.yaxis.d2p(n.y) - size.height);
+      else             pos += (oTop + m + top + n.yaxis.d2p(n.y));
+      pos += 'px;bottom:auto;left:';
+      if (/w/.test(p)) pos += (oLeft - m + left + n.xaxis.d2p(n.x) - size.width);
+      else             pos += (oLeft + m + left + n.xaxis.d2p(n.x));
+      pos += 'px;right:auto;';
     }
 
-    elStyle += pos;
-    mouseTrack.style.cssText = elStyle;
-    if (!decimals || decimals < 0) decimals = 0;
-    
-    if (x && x.toFixed) x = x.toFixed(decimals);
-
-    if (y && y.toFixed) y = y.toFixed(decimals);
-
-    mouseTrack.innerHTML = n.mouse.trackFormatter({
-      x: x ,
-      y: y, 
-      series: n.series, 
-      index: n.index,
-      nearest: n,
-      fraction: n.fraction
-    });
-
-    D.show(mouseTrack);
+    // Set position
+    mouseTrack.style.cssText = elStyle + pos;
 
     if (n.mouse.relative) {
       if (!/[ew]/.test(p)) {
