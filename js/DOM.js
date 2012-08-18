@@ -40,6 +40,10 @@ Flotr.DOM = {
     });
     */
   },
+  remove: function (element) {
+    element = getEl(element);
+    element.parentNode.removeChild(element);
+  },
   hide: function(element){
     element = getEl(element);
     Flotr.DOM.setStyles(element, {display:'none'});
