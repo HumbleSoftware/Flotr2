@@ -22,6 +22,13 @@ Flotr.addPlugin('legend', {
   callbacks: {
     'flotr:afterinit': function() {
       this.legend.insertLegend();
+    },
+    'flotr:destroy': function() {
+      var markup = this.legend.markup;
+      if (markup) {
+        this.legend.markup = null;
+        D.remove(markup);
+      }
     }
   },
   /**
@@ -139,7 +146,8 @@ Flotr.addPlugin('legend', {
         if(fragments.length > 0){
           var table = '<table style="font-size:smaller;color:' + options.grid.color + '">' + fragments.join('') + '</table>';
           if(legend.container){
-            D.empty(legend.container);
+            table = D.node(table);
+            this.legend.markup = table;
             D.insert(legend.container, table);
           }
           else {

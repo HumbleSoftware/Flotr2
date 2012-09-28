@@ -1421,7 +1421,11 @@ Flotr = {
       if (v && typeof(v) === 'object') {
         if (v.constructor === Array) {
           result[i] = this._.clone(v);
-        } else if (v.constructor !== RegExp && !this._.isElement(v)) {
+        } else if (
+            v.constructor !== RegExp &&
+            !this._.isElement(v) &&
+            !v.jquery
+        ) {
           result[i] = Flotr.merge(v, (dest ? dest[i] : undefined));
         } else {
           result[i] = v;
@@ -2065,8 +2069,13 @@ Flotr.Date = {
 
 var _ = Flotr._;
 
+function getEl (el) {
+  return (el && el.jquery) ? el[0] : el;
+}
+
 Flotr.DOM = {
   addClass: function(element, name){
+    element = getEl(element);
     var classList = (element.className ? element.className : '');
       if (_.include(classList.split(/\s+/g), name)) return;
     element.className = (classList ? classList + ' ' : '') + name;
@@ -2088,6 +2097,7 @@ Flotr.DOM = {
    * Remove all children.
    */
   empty: function(element){
+    element = getEl(element);
     element.innerHTML = '';
     /*
     if (!element) return;
@@ -2097,7 +2107,12 @@ Flotr.DOM = {
     });
     */
   },
+  remove: function (element) {
+    element = getEl(element);
+    element.parentNode.removeChild(element);
+  },
   hide: function(element){
+    element = getEl(element);
     Flotr.DOM.setStyles(element, {display:'none'});
   },
   /**
@@ -2106,6 +2121,7 @@ Flotr.DOM = {
    * @param {Element|String} Element or string to be appended.
    */
   insert: function(element, child){
+    element = getEl(element);
     if(_.isString(child))
       element.innerHTML += child;
     else if (_.isElement(child))
@@ -2113,9 +2129,11 @@ Flotr.DOM = {
   },
   // @TODO find xbrowser implementation
   opacity: function(element, opacity) {
+    element = getEl(element);
     element.style.opacity = opacity;
   },
   position: function(element, p){
+    element = getEl(element);
     if (!element.offsetParent)
       return {left: (element.offsetLeft || 0), top: (element.offsetTop || 0)};
 
@@ -2126,22 +2144,26 @@ Flotr.DOM = {
   },
   removeClass: function(element, name) {
     var classList = (element.className ? element.className : '');
+    element = getEl(element);
     element.className = _.filter(classList.split(/\s+/g), function (c) {
       if (c != name) return true; }
     ).join(' ');
   },
   setStyles: function(element, o) {
+    element = getEl(element);
     _.each(o, function (value, key) {
       element.style[key] = value;
     });
   },
   show: function(element){
+    element = getEl(element);
     Flotr.DOM.setStyles(element, {display:''});
   },
   /**
    * Return element size.
    */
   size: function(element){
+    element = getEl(element);
     return {
       height : element.offsetHeight,
       width : element.offsetWidth };
@@ -3100,17 +3122,17 @@ Axis.prototype = {
     if (logarithmic) {
       this.d2p = function (dataValue) {
         return offset + orientation * (log(dataValue, options.base) - log(min, options.base)) * scale;
-      }
+      };
       this.p2d = function (pointValue) {
         return exp((offset + orientation * pointValue) / scale + log(min, options.base), options.base);
-      }
+      };
     } else {
       this.d2p = function (dataValue) {
         return offset + orientation * (dataValue - min) * scale;
-      }
+      };
       this.p2d = function (pointValue) {
         return (offset + orientation * pointValue) / scale + min;
-      }
+      };
     }
   },
 
@@ -6336,6 +6358,13 @@ Flotr.addPlugin('legend', {
   callbacks: {
     'flotr:afterinit': function() {
       this.legend.insertLegend();
+    },
+    'flotr:destroy': function() {
+      var markup = this.legend.markup;
+      if (markup) {
+        this.legend.markup = null;
+        D.remove(markup);
+      }
     }
   },
   /**
@@ -6453,7 +6482,8 @@ Flotr.addPlugin('legend', {
         if(fragments.length > 0){
           var table = '<table style="font-size:smaller;color:' + options.grid.color + '">' + fragments.join('') + '</table>';
           if(legend.container){
-            D.empty(legend.container);
+            table = D.node(table);
+            this.legend.markup = table;
             D.insert(legend.container, table);
           }
           else {
