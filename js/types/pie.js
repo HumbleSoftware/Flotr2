@@ -48,6 +48,8 @@ Flotr.addType('pie', {
       color         = options.color,
       fill          = options.fill,
       fillStyle     = options.fillStyle,
+      stroke        = options.stroke,
+      bevel         = options.bevel,
       radius        = Math.min(canvas.width, canvas.height) * sizeRatio / 2,
       value         = data[0][1],
       html          = [],
@@ -64,7 +66,7 @@ Flotr.addType('pie', {
       textAlign     = distX < 0 ? 'right' : 'left',
       textBaseline  = distY > 0 ? 'top' : 'bottom',
       style,
-      x, y;
+      x, y, grad;
     
     context.save();
     context.translate(width / 2, height / 2);
@@ -84,11 +86,19 @@ Flotr.addType('pie', {
 
     this.plotSlice(x, y, radius, startAngle, endAngle, context);
     if (fill) {
+      if (bevel) {
+        // Create a radial gradient
+        grad = context.createRadialGradient(0, 0, 0, x, y, radius);
+        grad.addColorStop('0', fillStyle);
+        grad.addColorStop(bevel.stop, fillStyle);
+        grad.addColorStop('1.0', bevel.color);
+        fillStyle = grad;
+      }
       context.fillStyle = fillStyle;
       context.fill();
     }
     context.lineWidth = lineWidth;
-    context.strokeStyle = color;
+    context.strokeStyle = stroke || color;
     context.stroke();
 
     style = {
