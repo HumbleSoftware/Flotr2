@@ -37,3 +37,9 @@ flotr-amd: flotr2
 	cat js/amd/pre.js > flotr2.amd.js
 	cat build/flotr2.js >> flotr2.amd.js
 	cat js/amd/post.js >> flotr2.amd.js
+
+flotr-pie-line-amd:
+	smoosh make/pieandline.json
+	cat js/amd/pre.js > flotr2-pie-line.amd.js
+	cat build/flotr2-pie-line.js >> flotr2-pie-line.amd.js
+	cat js/amd/post.js >> flotr2-pie-line.amd.js

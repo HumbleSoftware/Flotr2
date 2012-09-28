@@ -1,0 +1,23 @@
+{
+  "JAVASCRIPT": {
+    "DIST_DIR": "./build",
+    "flotr2-pie-line": [
+      "./js/Flotr.js",
+      "./js/DefaultOptions.js",
+      "./js/Color.js",
+      "./js/Date.js",
+      "./js/DOM.js",
+      "./js/EventAdapter.js",
+      "./js/Text.js",
+      "./js/Graph.js",
+      "./js/Axis.js",
+      "./js/Series.js",
+      "./js/types/lines.js",
+      "./js/types/pie.js",
+      "./js/plugins/grid.js",
+      "./js/plugins/labels.js",
+      "./js/plugins/legend.js",
+      "./js/plugins/titles.js"
+    ]
+  }
+}
