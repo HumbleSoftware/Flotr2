@@ -52,8 +52,8 @@ Flotr.addType('pie', {
       value         = data[0][1],
       html          = [],
       vScale        = 1,//Math.cos(series.pie.viewAngle);
-      measure       = Math.PI * 2 * value / this.total,
-      startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
+      measure       = Math.PI * 2 * (value / this.total),
+      startAngle    = measure === (Math.PI * 2) ? 0 : this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
       endAngle      = startAngle + measure,
       bisection     = startAngle + measure / 2,
       label         = options.labelFormatter(this.total, value),
