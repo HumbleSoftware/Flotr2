@@ -2444,7 +2444,6 @@ Graph.prototype = {
         x2 = a.x2,
         y = a.y,
         y2 = a.y2,
-        customOffset = { top: 0, bottom: 0, left: 0, right: 0 },
         maxOutset = options.grid.outlineWidth,
         i, j, l, dim;
 
@@ -2478,34 +2477,26 @@ Graph.prototype = {
       }
     }
 
-    // Custom offset
-    if(options.grid.offset) {
-      customOffset.top = options.grid.offset.top || customOffset.top;
-      customOffset.bottom = options.grid.offset.bottom || customOffset.bottom;
-      customOffset.left = options.grid.offset.left || customOffset.left;
-      customOffset.right = options.grid.offset.right || customOffset.right;
-    }
-
     var p = this.plotOffset;
     if (x.options.margin === false) {
       p.bottom = 0;
       p.top    = 0;
     } else {
       p.bottom += (options.grid.circular ? 0 : (x.used && x.options.showLabels ?  (x.maxLabel.height + margin) : 0)) +
-                  (x.used && x.options.title ? (x.titleSize.height + margin) : 0) + maxOutset + customOffset.bottom;
+                  (x.used && x.options.title ? (x.titleSize.height + margin) : 0) + maxOutset;
 
       p.top    += (options.grid.circular ? 0 : (x2.used && x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) +
-                  (x2.used && x2.options.title ? (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset + customOffset.top;
+                  (x2.used && x2.options.title ? (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset;
     }
     if (y.options.margin === false) {
       p.left  = 0;
       p.right = 0;
     } else {
       p.left   += (options.grid.circular ? 0 : (y.used && y.options.showLabels ?  (y.maxLabel.width + margin) : 0)) +
-                  (y.used && y.options.title ? (y.titleSize.width + margin) : 0) + maxOutset + customOffset.left;
+                  (y.used && y.options.title ? (y.titleSize.width + margin) : 0) + maxOutset;
 
       p.right  += (options.grid.circular ? 0 : (y2.used && y2.options.showLabels ? (y2.maxLabel.width + margin) : 0)) +
-                  (y2.used && y2.options.title ? (y2.titleSize.width + margin) : 0) + maxOutset + customOffset.right;
+                  (y2.used && y2.options.title ? (y2.titleSize.width + margin) : 0) + maxOutset;
     }
 
     p.top = Math.floor(p.top); // In order the outline not to be blured
@@ -3053,7 +3044,6 @@ Graph.prototype = {
 Flotr.Graph = Graph;
 
 })();
-
 /**
  * Flotr Axis Library
  */

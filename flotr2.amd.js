@@ -1717,7 +1717,6 @@ Graph.prototype = {
 Flotr.Graph = Graph;
 
 })();
-
 /**
  * Flotr Axis Library
  */
