@@ -145,7 +145,7 @@ Flotr.addPlugin('hit', {
       relY : mouse.relY,
       absX : mouse.absX,
       absY : mouse.absY,
-      series: this.series,
+      series: this.series
     };
 
     if (options.mouse.trackY &&

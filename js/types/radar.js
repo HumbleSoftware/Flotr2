@@ -6,7 +6,7 @@ Flotr.addType('radar', {
     fill: true,            // => true to fill the area from the line to the x axis, false for (transparent) no fill
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
     radiusRatio: 0.90,      // => ratio of the radar, against the plot size
-    sensibility: 2,         // => the lower this number, the more precise you have to aim to show a value.
+    sensibility: 2         // => the lower this number, the more precise you have to aim to show a value.
   },
   draw : function (options) {
     var
