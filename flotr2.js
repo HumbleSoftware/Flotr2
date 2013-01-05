@@ -3529,88 +3529,131 @@ Flotr.addType('lines', {
       start     = null,
       x1, x2, y1, y2, stack1, stack2, i;
       
-    if (length < 1) return;
+    if (length < 1) return;    
 
     context.beginPath();
-
-    for (i = 0; i < length; ++i) {
-
-      // To allow empty values
-      if (data[i][1] === null || data[i+1][1] === null) {
-        if (options.fill) {
-          if (i > 0 && data[i][1]) {
-            context.stroke();
-            fill();
-            start = null;
-            context.closePath();
-            context.beginPath();
-          }
-        }
-        continue;
-      }
-
-      // Zero is infinity for log scales
-      // TODO handle zero for logarithmic
-      // if (xa.options.scaling === 'logarithmic' && (data[i][0] <= 0 || data[i+1][0] <= 0)) continue;
-      // if (ya.options.scaling === 'logarithmic' && (data[i][1] <= 0 || data[i+1][1] <= 0)) continue;
-      
-      x1 = xScale(data[i][0]);
-      x2 = xScale(data[i+1][0]);
-
-      if (start === null) start = data[i];
-      
-      if (stack) {
-
-        stack1 = stack.values[data[i][0]] || 0;
-        stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
-
-        y1 = yScale(data[i][1] + stack1);
-        y2 = yScale(data[i+1][1] + stack2);
+    
+    drawPath(data);
         
-        if(incStack){
-          stack.values[data[i][0]] = data[i][1]+stack1;
-            
-          if(i == length-1)
-            stack.values[data[i+1][0]] = data[i+1][1]+stack2;
+    function drawPath(data, redraw) {
+
+        if (!redraw) {
+            for (i = 0; i < length; ++i) {
+                drawPathItem(i);
+            }
+        } else {
+            for (i = length-1; i >= 0 ; --i) {
+                drawPathItem(i);
+            }
         }
-      }
-      else{
-        y1 = yScale(data[i][1]);
-        y2 = yScale(data[i+1][1]);
-      }
-
-      if (
-        (y1 > height && y2 > height) ||
-        (y1 < 0 && y2 < 0) ||
-        (x1 < 0 && x2 < 0) ||
-        (x1 > width && x2 > width)
-      ) continue;
-
-      if((prevx != x1) || (prevy != y1 + shadowOffset))
-        context.moveTo(x1, y1 + shadowOffset);
-      
-      prevx = x2;
-      prevy = y2 + shadowOffset;
-      if (options.steps) {
-        context.lineTo(prevx + shadowOffset / 2, y1 + shadowOffset);
-        context.lineTo(prevx + shadowOffset / 2, prevy);
-      } else {
-        context.lineTo(prevx, prevy);
-      }
+        
+        function drawPathItem(i) {
+          // To allow empty values
+          if (data[i][1] === null || data[i+1][1] === null) {
+            if (options.fill) {
+              if (i > 0 && data[i][1]) {
+                context.stroke();
+                fill();
+                start = null;
+                context.closePath();
+                context.beginPath();
+              }
+            }
+            return;
+          }
+                
+          // Zero is infinity for log scales
+          // TODO handle zero for logarithmic
+          // if (xa.options.scaling === 'logarithmic' && (data[i][0] <= 0 || data[i+1][0] <= 0)) continue;
+          // if (ya.options.scaling === 'logarithmic' && (data[i][1] <= 0 || data[i+1][1] <= 0)) continue;
+          
+          x1 = xScale(data[i][0]);
+          x2 = xScale(data[i+1][0]);
+    
+          if (start === null) start = data[i];
+          
+          if (stack && !redraw) {
+    
+            stack1 = stack.values[data[i][0]] || 0;
+            stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
+    
+            y1 = yScale(data[i][1] + stack1);
+            y2 = yScale(data[i+1][1] + stack2);
+            
+            if(incStack){
+              stack.values[data[i][0]] = data[i][1]+stack1;
+                
+              if(i == length-1)
+                stack.values[data[i+1][0]] = data[i+1][1]+stack2;
+            }
+          }
+          else {
+            y1 = yScale(data[i][1]);
+            y2 = yScale(data[i+1][1]);
+          }
+    
+          if (
+            (y1 > height && y2 > height) ||
+            (y1 < 0 && y2 < 0) ||
+            (x1 < 0 && x2 < 0) ||
+            (x1 > width && x2 > width)
+          ) return;
+    
+          if((prevx != x1) || (prevy != y1 + shadowOffset))
+            context.moveTo(x1, y1 + shadowOffset);
+          
+          
+          prevx = x2;
+          prevy = y2 + shadowOffset;
+          if (options.steps) {
+            context.lineTo(prevx + shadowOffset / 2, y1 + shadowOffset);
+            context.lineTo(prevx + shadowOffset / 2, prevy);
+          } else {
+            context.lineTo(prevx, prevy);
+          }
+          
+          context.stroke();
+        }
     }
     
-    if (!options.fill || options.fill && !options.fillBorder) context.stroke();
+    
+    if (!options.fill || options.fills && !options.fillBorder) context.stroke();
 
     fill();
+    
+    function offset(data, value) {
+        var stack_data = [];
+        var new_val;
+        for (i = 0; i < data.length; ++i) {
+            new_val = data[i] + value;
+            stack_data.push([i,new_val]);
+        }
+        return stack_data;
+    }
 
     function fill () {
       // TODO stacked lines
       if(!shadowOffset && options.fill && start){
-        x1 = xScale(start[0]);
+        var new_stack = offset(stack.values, 150);
+        x1 = xScale(data[0][0]);
+        x2 = xScale(data[data.length-1][0]);
+        stack_x1 = xScale(new_stack[0][0]);
+        stack_x2 = xScale(new_stack[new_stack.length-1][0]);
         context.fillStyle = options.fillStyle;
-        context.lineTo(x2, zero);
-        context.lineTo(x1, zero);
-        context.lineTo(x1, yScale(start[1]));
+        context.stroke();
+        // context.lineTo(x2, zero);
+        context.lineTo(x2, yScale(new_stack[new_stack.length-1][1]));
+        context.stroke();
+        // context.lineTo(x1, zero);
+        drawPath(new_stack, true);
+        context.stroke();
+        x1 = xScale(data[0][0]);         
+        // context.moveTo(x1, yScale(new_stack[0][1]));
+        //context.lineTo(x1, yScale(data[0][1]));
+        //context.stroke();
+        //context.closePath();
+        context.closePath();
+        context.stroke();
         context.fill();
         if (options.fillBorder) {
           context.stroke();

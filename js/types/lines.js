@@ -68,16 +68,25 @@ Flotr.addType('lines', {
       start     = null,
       x1, x2, y1, y2, stack1, stack2, i;
       
-    if (length < 1) return;
+    if (length < 1) return;    
 
     context.beginPath();
     
     drawPath(data);
         
-    function drawPath(data) {
+    function drawPath(data, redraw) {
 
-        for (i = 0; i < length; ++i) {
-    
+        if (!redraw) {
+            for (i = 0; i < length; ++i) {
+                drawPathItem(i);
+            }
+        } else {
+            for (i = length-1; i >= 0 ; --i) {
+                drawPathItem(i);
+            }
+        }
+        
+        function drawPathItem(i) {
           // To allow empty values
           if (data[i][1] === null || data[i+1][1] === null) {
             if (options.fill) {
@@ -89,7 +98,7 @@ Flotr.addType('lines', {
                 context.beginPath();
               }
             }
-            continue;
+            return;
           }
                 
           // Zero is infinity for log scales
@@ -102,7 +111,7 @@ Flotr.addType('lines', {
     
           if (start === null) start = data[i];
           
-          if (stack) {
+          if (stack && !redraw) {
     
             stack1 = stack.values[data[i][0]] || 0;
             stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
@@ -117,7 +126,7 @@ Flotr.addType('lines', {
                 stack.values[data[i+1][0]] = data[i+1][1]+stack2;
             }
           }
-          else{
+          else {
             y1 = yScale(data[i][1]);
             y2 = yScale(data[i+1][1]);
           }
@@ -127,7 +136,7 @@ Flotr.addType('lines', {
             (y1 < 0 && y2 < 0) ||
             (x1 < 0 && x2 < 0) ||
             (x1 > width && x2 > width)
-          ) continue;
+          ) return;
     
           if((prevx != x1) || (prevy != y1 + shadowOffset))
             context.moveTo(x1, y1 + shadowOffset);
@@ -141,6 +150,8 @@ Flotr.addType('lines', {
           } else {
             context.lineTo(prevx, prevy);
           }
+          
+          context.stroke();
         }
     }
     
@@ -162,24 +173,26 @@ Flotr.addType('lines', {
     function fill () {
       // TODO stacked lines
       if(!shadowOffset && options.fill && start){
+        var new_stack = offset(stack.values, 150);
         x1 = xScale(data[0][0]);
         x2 = xScale(data[data.length-1][0]);
-        stack_x1 = xScale(stack.values[0]);
-        stack_x2 = xScale(stack.values.length-1);
+        stack_x1 = xScale(new_stack[0][0]);
+        stack_x2 = xScale(new_stack[new_stack.length-1][0]);
         context.fillStyle = options.fillStyle;
         context.stroke();
-        context.lineTo(x2, zero);
-        /// context.lineTo(x2, yScale(stack.values[stack.values.length-1]));
+        // context.lineTo(x2, zero);
+        context.lineTo(x2, yScale(new_stack[new_stack.length-1][1]));
         context.stroke();
         // context.lineTo(x1, zero);
-        drawPath(offset(stack.values, 200));
-        x1 = xScale(data[0][0]);
-        context.stroke(); 
-        // context.lineTo(x1, yScale(start[1]));
-        context.moveTo(x1, yScale(stack.values[1]));
-        context.lineTo(x1, yScale(start[1]));
+        drawPath(new_stack, true);
         context.stroke();
+        x1 = xScale(data[0][0]);         
+        // context.moveTo(x1, yScale(new_stack[0][1]));
+        //context.lineTo(x1, yScale(data[0][1]));
+        //context.stroke();
+        //context.closePath();
         context.closePath();
+        context.stroke();
         context.fill();
         if (options.fillBorder) {
           context.stroke();
