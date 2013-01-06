@@ -125,7 +125,6 @@ Flotr.addType('lines', {
           if (start === null) start = data[i];
           
           if (stack) {
-    
             stack1 = stack.values[data[i][0]] || 0;
             stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
     
@@ -170,6 +169,9 @@ Flotr.addType('lines', {
     if (stack) {
         if(incStack){
             for (i = 0; i < length; ++i) {
+                stack1 = stack.values[data[i][0]] || 0;
+                stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
+
                 stack.values[data[i][0]] = data[i][1]+stack1;
                   
                 if(i == length-1)
@@ -211,7 +213,7 @@ Flotr.addType('lines', {
             context.stroke();         
             context.lineTo(stack_x1, yScale(data[0][1]));
         }
-        // context.stroke();
+        context.stroke();
         context.fill();
         if (options.fillBorder) {
           context.stroke();
