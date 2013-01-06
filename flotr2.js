@@ -3550,7 +3550,6 @@ Flotr.addType('lines', {
               (y < 0) || (x < 0) 
             ) return;      
             context.lineTo(x, y);            
-            context.stroke();
         }          
     }
 
@@ -3616,9 +3615,6 @@ Flotr.addType('lines', {
           } else {
             context.lineTo(prevx, prevy);
           }
-          
-          if (incStack) 
-              context.stroke();
         }        
     }
     
@@ -3657,7 +3653,6 @@ Flotr.addType('lines', {
         x1 = xScale(data[0][0]);
         x2 = xScale(data[data.length-1][0]);
         context.fillStyle = options.fillStyle;
-        context.stroke();
 
         if (stack.values.length === 0) {
             context.lineTo(x2, zero);
@@ -3669,12 +3664,9 @@ Flotr.addType('lines', {
             stack_x1 = xScale(new_stack[0][0]);
             stack_y2 = yScale(new_stack[new_stack.length-1][1]);
             context.lineTo(x2, stack_y2);
-            context.stroke();
-            drawPathRev(new_stack);
-            context.stroke();         
+            drawPathRev(new_stack);                    
             context.lineTo(stack_x1, yScale(data[0][1]));
         }
-        context.stroke();
         context.fill();
         if (options.fillBorder) {
           context.stroke();
