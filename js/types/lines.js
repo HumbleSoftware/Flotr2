@@ -148,26 +148,26 @@ Flotr.addType('lines', {
     }
     
     function drawPathRev(data) {
-        for (i = length-1; i >= 0 ; --i) {
-            if (!options.fill) return;
-                        
-            x = xScale(data[i][0]);
-            y = yScale(data[i][1]);
+      for (i = length-1; i >= 0 ; --i) {
+        if (!options.fill) return;
+                    
+        x = xScale(data[i][0]);
+        y = yScale(data[i][1]);
 
-            if (
-              (y > height) || (x > width) ||
-              (y < 0) || (x < 0) 
-            ) return;      
-            context.lineTo(x, y);            
-        }          
+        if (
+          (y > height) || (x > width) ||
+          (y < 0) || (x < 0) 
+        ) return;      
+        context.lineTo(x, y);            
+      }          
     }
     
     function stackToPlot(data) {
-        var stack_data = [];
-        for (i = 0; i < data.length; ++i) {
-            stack_data.push([i, data[i]]);
-        }
-        return stack_data;
+      var stack_data = [];
+      for (i = 0; i < data.length; ++i) {
+          stack_data.push([i, data[i]]);
+      }
+      return stack_data;
     }
 
     function fill () {
