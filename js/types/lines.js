@@ -151,6 +151,12 @@ Flotr.addType('lines', {
       for (i = length-1; i >= 0 ; --i) {
         if (!options.fill) return;
 
+        // Empty values not full supported
+        if (!data[i]) return;
+        if (data[i][1] === null) {
+          data[i][1] = 0;
+        }
+
         x = xScale(data[i][0]);
         y = yScale(data[i][1]);
 

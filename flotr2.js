@@ -3564,7 +3564,7 @@ Flotr.addType('lines', {
         stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
 
         y1 = yScale(data[i][1] + stack1);
-        y2 = yScale(data[i+1][1] + stack2);             
+        y2 = yScale(data[i+1][1] + stack2);         
       }
       else{
         y1 = yScale(data[i][1]);
@@ -3594,7 +3594,7 @@ Flotr.addType('lines', {
     if (!options.fill || options.fill && !options.fillBorder) context.stroke();
 
     fill();
-    
+
     if (stack) {        
       for (i = 0; i < length; ++i) {
         stack1 = stack.values[data[i][0]] || 0;
@@ -3607,28 +3607,34 @@ Flotr.addType('lines', {
         }
       }
     }
-    
-    function drawPathRev(data) {
-        for (i = length-1; i >= 0 ; --i) {
-            if (!options.fill) return;
-                        
-            x = xScale(data[i][0]);
-            y = yScale(data[i][1]);
 
-            if (
-              (y > height) || (x > width) ||
-              (y < 0) || (x < 0) 
-            ) return;      
-            context.lineTo(x, y);            
-        }          
-    }
-    
-    function stackToPlot(data) {
-        var stack_data = [];
-        for (i = 0; i < data.length; ++i) {
-            stack_data.push([i, data[i]]);
+    function drawPathRev(data) {
+      for (i = length-1; i >= 0 ; --i) {
+        if (!options.fill) return;
+
+        // Empty values not full supported
+        if (!data[i]) return;
+        if (data[i][1] === null) {
+          data[i][1] = 0;
         }
-        return stack_data;
+
+        x = xScale(data[i][0]);
+        y = yScale(data[i][1]);
+
+        if (
+          (y > height) || (x > width) ||
+          (y < 0) || (x < 0)
+        ) return;
+        context.lineTo(x, y);
+      }          
+    }
+
+    function stackToPlot(data) {
+      var stack_data = [];
+      for (i = 0; i < data.length; ++i) {
+          stack_data.push([i, data[i]]);
+      }
+      return stack_data;
     }
 
     function fill () {
@@ -3637,7 +3643,6 @@ Flotr.addType('lines', {
           context.stroke();
         }
         x1 = xScale(start[0]);
-        x2 = xScale(data[data.length-1][0]);
         context.fillStyle = options.fillStyle;
         if (!stack || stack.values.length === 0) {
           context.lineTo(x2, zero);
@@ -3649,7 +3654,7 @@ Flotr.addType('lines', {
           stack_x1 = xScale(stack_plot[0][0]);
           stack_y2 = yScale(stack_plot[stack_plot.length-1][1]);
           context.lineTo(x2, stack_y2);
-          drawPathRev(stack_plot);                    
+          drawPathRev(stack_plot);
           context.lineTo(stack_x1, yScale(data[0][1]));
         }
         context.fill();
