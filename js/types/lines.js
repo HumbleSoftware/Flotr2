@@ -176,7 +176,6 @@ Flotr.addType('lines', {
           context.stroke();
         }
         x1 = xScale(start[0]);
-        x2 = xScale(data[data.length-1][0]);
         context.fillStyle = options.fillStyle;
         if (!stack || stack.values.length === 0) {
           context.lineTo(x2, zero);
