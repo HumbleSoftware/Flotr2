@@ -99,8 +99,8 @@ Flotr.addType('lines', {
       if (start === null) start = data[i];
       
       if (stack) {
-        stack1 = stack.values[data[i][0]] || 0;
-        stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
+        stack1 = stack.values[i] || 0;
+        stack2 = stack.values[i+1] || 0;
 
         y1 = yScale(data[i][1] + stack1);
         y2 = yScale(data[i+1][1] + stack2);         
@@ -136,13 +136,12 @@ Flotr.addType('lines', {
 
     if (stack) {        
       for (i = 0; i < length; ++i) {
-        stack1 = stack.values[data[i][0]] || 0;
-        stack2 = stack.values[data[i+1][0]] || 
-                 stack.values[data[i][0]] || 0;
+        stack1 = stack.values[i] || 0;
+        stack2 = stack.values[i+1] || 0;
         if (incStack) {
-            stack.values[data[i][0]] = data[i][1]+stack1;                  
+            stack.values[i] = data[i][1]+stack1;
             if (i == length-1) 
-              stack.values[data[i+1][0]] = data[i+1][1]+stack2;
+              stack.values[i+1] = data[i+1][1]+stack2;
         }
       }
     }
@@ -168,10 +167,11 @@ Flotr.addType('lines', {
       }          
     }
 
-    function stackToPlot(data) {
+    function stackToPlot(values) {
       var stack_data = [];
-      for (i = 0; i < data.length; ++i) {
-          stack_data.push([i, data[i]]);
+      var x_offset = data[0][0];
+      for (i = 0; i < values.length; ++i) {
+          stack_data.push([i+x_offset, values[i]]);
       }
       return stack_data;
     }
