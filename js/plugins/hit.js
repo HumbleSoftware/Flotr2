@@ -363,12 +363,12 @@ Flotr.addPlugin('hit', {
       if (!/[ew]/.test(p)) {
         // Center Horizontally
         mouseTrack.style.left =
-          (left + n.xaxis.d2p(n.x) - D.size(mouseTrack).width / 2) + 'px';
+          (oLeft + left + n.xaxis.d2p(n.x) - D.size(mouseTrack).width / 2) + 'px';
       } else
       if (!/[ns]/.test(p)) {
         // Center Vertically
         mouseTrack.style.top =
-          (top + n.yaxis.d2p(n.y) - D.size(mouseTrack).height / 2) + 'px';
+          (oTop + top + n.yaxis.d2p(n.y) - D.size(mouseTrack).height / 2) + 'px';
       }
     }
   }
