@@ -549,8 +549,8 @@ Graph.prototype = {
         observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
         observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
         observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
-        observe(el, 'mouseout', function () {
-          E.fire(el, 'flotr:mouseout');
+        observe(el, 'mouseout', function (e) {
+          E.fire(el, 'flotr:mouseout', e);
         });
     }
   },

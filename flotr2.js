@@ -2857,8 +2857,8 @@ Graph.prototype = {
         observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
         observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
         observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
-        observe(el, 'mouseout', function () {
-          E.fire(el, 'flotr:mouseout');
+        observe(el, 'mouseout', function (e) {
+          E.fire(el, 'flotr:mouseout', e);
         });
     }
   },
@@ -4968,7 +4968,8 @@ Flotr.addType('radar', {
     lineWidth: 2,          // => line width in pixels
     fill: true,            // => true to fill the area from the line to the x axis, false for (transparent) no fill
     fillOpacity: 0.4,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
-    radiusRatio: 0.90      // => ratio of the radar, against the plot size
+    radiusRatio: 0.90,      // => ratio of the radar, against the plot size
+    sensibility: 2         // => the lower this number, the more precise you have to aim to show a value.
   },
   draw : function (options) {
     var
@@ -5016,6 +5017,91 @@ Flotr.addType('radar', {
     context.closePath();
     if (options.fill) context.fill();
     context.stroke();
+  },
+  getGeometry : function (point, options) {
+    var
+      radius  = Math.min(options.height, options.width) * options.radiusRatio / 2,
+      step    = 2 * Math.PI / options.data.length,
+      angle   = -Math.PI / 2,
+      ratio = point[1] / this.max;
+
+    return {
+      x : (Math.cos(point[0] * step + angle) * radius * ratio) + options.width / 2,
+      y : (Math.sin(point[0] * step + angle) * radius * ratio) + options.height / 2
+    };
+  },
+  hit : function (options) {
+    var
+      args = options.args,
+      mouse = args[0],
+      n = args[1],
+      relX = mouse.relX,
+      relY = mouse.relY,
+      distance,
+      geometry,
+      dx, dy;
+
+      for (var i = 0; i < n.series.length; i++) {
+        var serie = n.series[i];
+        var data = serie.data;
+
+        for (var j = data.length; j--;) {
+          geometry = this.getGeometry(data[j], options);
+
+          dx = geometry.x - relX;
+          dy = geometry.y - relY;
+          distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance <  options.sensibility*2) {
+            n.x = data[j][0];
+            n.y = data[j][1];
+            n.index = j;
+            n.seriesIndex = i;
+            return n;
+          }
+        }
+      }
+    },
+  drawHit : function (options) {
+    var step = 2 * Math.PI / options.data.length;
+    var angle   = -Math.PI / 2;
+    var radius  = Math.min(options.height, options.width) * options.radiusRatio / 2;
+
+    var s = options.args.series;
+    var point_radius = s.points.hitRadius || s.points.radius || s.mouse.radius;
+
+    var context = options.context;
+
+    context.translate(options.width / 2, options.height / 2);
+
+    var j = options.args.index;
+    var ratio = options.data[j][1] / this.max;
+    var x = Math.cos(j * step + angle) * radius * ratio;
+    var y = Math.sin(j * step + angle) * radius * ratio;
+    context.beginPath();
+    context.arc(x, y, point_radius , 0, 2 * Math.PI, true);
+    context.closePath();
+    context.stroke();
+  },
+  clearHit : function (options) {
+    var step = 2 * Math.PI / options.data.length;
+    var angle   = -Math.PI / 2;
+    var radius  = Math.min(options.height, options.width) * options.radiusRatio / 2;
+
+    var context = options.context;
+
+    var
+        s = options.args.series,
+        lw = (s.points ? s.points.lineWidth : 1);
+        offset = (s.points.hitRadius || s.points.radius || s.mouse.radius) + lw;
+
+    context.translate(options.width / 2, options.height / 2);
+
+    var j = options.args.index;
+    var ratio = options.data[j][1] / this.max;
+    var x = Math.cos(j * step + angle) * radius * ratio;
+    var y = Math.sin(j * step + angle) * radius * ratio;
+    context.clearRect(x-offset,y-offset,offset*2,offset*2);
   },
   extendYRange : function (axis, data) {
     this.max = Math.max(axis.max, this.max || -Number.MAX_VALUE);
@@ -5465,7 +5551,7 @@ var
   D = Flotr.DOM,
   _ = Flotr._,
   flotr = Flotr,
-  S_MOUSETRACK = 'opacity:0.7;background-color:#000;color:#fff;display:none;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
+  S_MOUSETRACK = 'opacity:0.7;background-color:#000;color:#fff;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
 
 Flotr.addPlugin('hit', {
   callbacks: {
@@ -5477,10 +5563,15 @@ Flotr.addPlugin('hit', {
         hit = this.hit.track(pos);
       _.defaults(pos, hit);
     },
-    'flotr:mouseout': function() {
-      this.hit.clearHit();
+    'flotr:mouseout': function(e) {
+      if (e.relatedTarget !== this.mouseTrack) {
+        this.hit.clearHit();
+      }
     },
     'flotr:destroy': function() {
+      if (this.options.mouse.container) {
+        D.remove(this.mouseTrack);
+      }
       this.mouseTrack = null;
     }
   },
@@ -5605,7 +5696,8 @@ Flotr.addPlugin('hit', {
       relX : mouse.relX,
       relY : mouse.relY,
       absX : mouse.absX,
-      absY : mouse.absY
+      absY : mouse.absY,
+      series: this.series
     };
 
     if (options.mouse.trackY &&
@@ -5747,21 +5839,49 @@ Flotr.addPlugin('hit', {
       bottom      = plotOffset.bottom,
       top         = plotOffset.top,
       decimals    = n.mouse.trackDecimals,
-      options     = this.options;
+      options     = this.options,
+      container   = options.mouse.container,
+      oTop        = 0,
+      oLeft       = 0,
+      offset, size;
 
     // Create
     if (!mouseTrack) {
-      mouseTrack = D.node('<div class="flotr-mouse-value"></div>');
+      mouseTrack = D.node('<div class="flotr-mouse-value" style="'+elStyle+'"></div>');
       this.mouseTrack = mouseTrack;
-      D.insert(this.el, mouseTrack);
+      D.insert(container || this.el, mouseTrack);
+    }
+
+    // Fill tracker:
+    if (!decimals || decimals < 0) decimals = 0;
+    if (x && x.toFixed) x = x.toFixed(decimals);
+    if (y && y.toFixed) y = y.toFixed(decimals);
+    mouseTrack.innerHTML = n.mouse.trackFormatter({
+      x: x,
+      y: y,
+      series: n.series,
+      index: n.index,
+      nearest: n,
+      fraction: n.fraction
+    });
+    D.show(mouseTrack);
+
+    // Positioning
+    size = D.size(mouseTrack);
+    if (container) {
+      offset = D.position(this.el);
+      oTop = offset.top;
+      oLeft = offset.left;
     }
 
     if (!n.mouse.relative) { // absolute to the canvas
-
-      if      (p.charAt(0) == 'n') pos += 'top:' + (m + top) + 'px;bottom:auto;';
-      else if (p.charAt(0) == 's') pos += 'bottom:' + (m + bottom) + 'px;top:auto;';
-      if      (p.charAt(1) == 'e') pos += 'right:' + (m + right) + 'px;left:auto;';
-      else if (p.charAt(1) == 'w') pos += 'left:' + (m + left) + 'px;right:auto;';
+      pos += 'top:'
+      if      (p.charAt(0) == 'n') pos += (oTop + m + top);
+      else if (p.charAt(0) == 's') pos += (oTop - m + top + this.plotHeight - size.height);
+      pos += 'px;bottom:auto;left:';
+      if      (p.charAt(1) == 'e') pos += (oLeft - m + left + this.plotWidth - size.width);
+      else if (p.charAt(1) == 'w') pos += (oLeft + m + left);
+      pos += 'px;right:auto;';
 
     // Pie
     } else if (s.pie && s.pie.show) {
@@ -5776,42 +5896,29 @@ Flotr.addPlugin('hit', {
       pos += 'left:' + (m + left + center.x + Math.cos(bisection) * radius/2) + 'px;right:auto;';
 
     // Default
-    } else {    
-      if (/n/.test(p)) pos += 'bottom:' + (m - top - n.yaxis.d2p(n.y) + this.canvasHeight) + 'px;top:auto;';
-      else             pos += 'top:' + (m + top + n.yaxis.d2p(n.y)) + 'px;bottom:auto;';
-      if (/w/.test(p)) pos += 'right:' + (m - left - n.xaxis.d2p(n.x) + this.canvasWidth) + 'px;left:auto;';
-      else             pos += 'left:' + (m + left + n.xaxis.d2p(n.x)) + 'px;right:auto;';
+    } else {
+      pos += 'top:'
+      if (/n/.test(p)) pos += (oTop - m + top + n.yaxis.d2p(n.y) - size.height);
+      else             pos += (oTop + m + top + n.yaxis.d2p(n.y));
+      pos += 'px;bottom:auto;left:';
+      if (/w/.test(p)) pos += (oLeft - m + left + n.xaxis.d2p(n.x) - size.width);
+      else             pos += (oLeft + m + left + n.xaxis.d2p(n.x));
+      pos += 'px;right:auto;';
     }
 
-    elStyle += pos;
-    mouseTrack.style.cssText = elStyle;
-    if (!decimals || decimals < 0) decimals = 0;
-    
-    if (x && x.toFixed) x = x.toFixed(decimals);
-
-    if (y && y.toFixed) y = y.toFixed(decimals);
-
-    mouseTrack.innerHTML = n.mouse.trackFormatter({
-      x: x ,
-      y: y, 
-      series: n.series, 
-      index: n.index,
-      nearest: n,
-      fraction: n.fraction
-    });
-
-    D.show(mouseTrack);
+    // Set position
+    mouseTrack.style.cssText = elStyle + pos;
 
     if (n.mouse.relative) {
       if (!/[ew]/.test(p)) {
         // Center Horizontally
         mouseTrack.style.left =
-          (left + n.xaxis.d2p(n.x) - D.size(mouseTrack).width / 2) + 'px';
+          (oLeft + left + n.xaxis.d2p(n.x) - D.size(mouseTrack).width / 2) + 'px';
       } else
       if (!/[ns]/.test(p)) {
         // Center Vertically
         mouseTrack.style.top =
-          (top + n.yaxis.d2p(n.y) - D.size(mouseTrack).height / 2) + 'px';
+          (oTop + top + n.yaxis.d2p(n.y) - D.size(mouseTrack).height / 2) + 'px';
       }
     }
   }
