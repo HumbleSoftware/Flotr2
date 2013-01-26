@@ -4,21 +4,34 @@ var
   D = Flotr.DOM,
   _ = Flotr._;
 
-function getImage (type, canvas, width, height) {
+function getImage (type, canvas, context, width, height, background) {
 
   // TODO add scaling for w / h
   var
     mime = 'image/'+type,
-    data = canvas.toDataURL(mime),
+    data = context.getImageData(0, 0, width, height),
     image = new Image();
-  image.src = data;
+
+  context.save();
+  context.globalCompositeOperation = 'destination-over';
+  context.fillStyle = background;
+  context.fillRect(0, 0, width, height);
+  image.src = canvas.toDataURL(mime);
+  context.restore();
+
+  context.clearRect(0, 0, width, height);
+  context.putImageData(data, 0, 0);
+
   return image;
 }
 
 Flotr.addPlugin('download', {
 
   saveImage: function (type, width, height, replaceCanvas) {
-    var image = null;
+    var
+      grid = this.options.grid,
+      image;
+
     if (Flotr.isIE && Flotr.isIE < 9) {
       image = '<html><body>'+this.canvas.firstChild.innerHTML+'</body></html>';
       return window.open().document.write(image);
@@ -26,7 +39,11 @@ Flotr.addPlugin('download', {
 
     if (type !== 'jpeg' && type !== 'png') return;
 
-    image = getImage(type, this.canvas, width, height);
+    image = getImage(
+      type, this.canvas, this.ctx,
+      this.canvasWidth, this.canvasHeight,
+      grid && grid.backgroundColor || '#ffffff'
+    );
 
     if (_.isElement(image) && replaceCanvas) {
       this.download.restoreCanvas();
