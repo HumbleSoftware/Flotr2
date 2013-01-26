@@ -2777,7 +2777,17 @@ Graph.prototype = {
 
     ctx = ctx || this.ctx;
 
-    if (flotr.isIE && flotr.isIE < 9) {
+    if (
+      flotr.isIE && flotr.isIE < 9 && // IE w/o canvas
+      !flotr.isFlashCanvas // But not flash canvas
+    ) {
+
+      // Do not clip excanvas on overlay context
+      // Allow hits to overflow.
+      if (ctx === this.octx) {
+        return;
+      }
+
       // Clipping for excanvas :-(
       ctx.save();
       ctx.fillStyle = this.processColor(this.options.ieBackgroundColor);
@@ -2925,6 +2935,7 @@ Graph.prototype = {
         canvas = D.create('canvas');
         if (typeof FlashCanvas != "undefined" && typeof canvas.getContext === 'function') {
           FlashCanvas.initElement(canvas);
+          this.isFlashCanvas = true;
         }
         canvas.className = 'flotr-'+name;
         canvas.style.cssText = 'position:absolute;left:0px;top:0px;';
@@ -4293,7 +4304,6 @@ Flotr.addType('candles', {
           context.lineTo(x, y);
         } else {
           context.strokeRect(left, top2 + lineWidth, right - left, bottom2 - top2);
-
           context.moveTo(x, Math.floor(top2 + lineWidth));
           context.lineTo(x, Math.floor(top + lineWidth));
           context.moveTo(x, Math.floor(bottom2 + lineWidth));
@@ -4305,6 +4315,72 @@ Flotr.addType('candles', {
       }
     }
   },
+
+  hit : function (options) {
+    var
+      xScale = options.xScale,
+      yScale = options.yScale,
+      data = options.data,
+      args = options.args,
+      mouse = args[0],
+      width = options.candleWidth / 2,
+      n = args[1],
+      x = mouse.relX,
+      y = mouse.relY,
+      length = data.length,
+      i, datum,
+      high, low,
+      left, right, top, bottom;
+
+    for (i = 0; i < length; i++) {
+      datum   = data[i],
+      high    = datum[2];
+      low     = datum[3];
+      left    = xScale(datum[0] - width);
+      right   = xScale(datum[0] + width);
+      bottom  = yScale(low);
+      top     = yScale(high);
+
+      if (x > left && x < right && y > top && y < bottom) {
+        n.x = datum[0];
+        n.index = i;
+        n.seriesIndex = options.index;
+        return;
+      }
+    }
+  },
+
+  drawHit : function (options) {
+    var
+      context = options.context;
+    context.save();
+    this.plot(
+      _.defaults({
+        fill : !!options.fillColor,
+        upFillColor : options.color,
+        downFillColor : options.color,
+        data : [options.data[options.args.index]]
+      }, options)
+    );
+    context.restore();
+  },
+
+  clearHit : function (options) {
+    var
+      args = options.args,
+      context = options.context,
+      xScale = options.xScale,
+      yScale = options.yScale,
+      lineWidth = options.lineWidth,
+      width = options.candleWidth / 2,
+      bar = options.data[args.index],
+      left = xScale(bar[0] - width) - lineWidth,
+      right = xScale(bar[0] + width) + lineWidth,
+      top = yScale(bar[2]),
+      bottom = yScale(bar[3]) + lineWidth;
+    context.clearRect(left, top, right - left, bottom - top);
+  },
+
   extendXRange: function (axis, data, options) {
     if (axis.options.max === null) {
       axis.max = Math.max(axis.datamax + 0.5, axis.max);
@@ -5298,21 +5374,34 @@ var
   D = Flotr.DOM,
   _ = Flotr._;
 
-function getImage (type, canvas, width, height) {
+function getImage (type, canvas, context, width, height, background) {
 
   // TODO add scaling for w / h
   var
     mime = 'image/'+type,
-    data = canvas.toDataURL(mime),
+    data = context.getImageData(0, 0, width, height),
     image = new Image();
-  image.src = data;
+
+  context.save();
+  context.globalCompositeOperation = 'destination-over';
+  context.fillStyle = background;
+  context.fillRect(0, 0, width, height);
+  image.src = canvas.toDataURL(mime);
+  context.restore();
+
+  context.clearRect(0, 0, width, height);
+  context.putImageData(data, 0, 0);
+
   return image;
 }
 
 Flotr.addPlugin('download', {
 
   saveImage: function (type, width, height, replaceCanvas) {
-    var image = null;
+    var
+      grid = this.options.grid,
+      image;
+
     if (Flotr.isIE && Flotr.isIE < 9) {
       image = '<html><body>'+this.canvas.firstChild.innerHTML+'</body></html>';
       return window.open().document.write(image);
@@ -5320,7 +5409,11 @@ Flotr.addPlugin('download', {
 
     if (type !== 'jpeg' && type !== 'png') return;
 
-    image = getImage(type, this.canvas, width, height);
+    image = getImage(
+      type, this.canvas, this.ctx,
+      this.canvasWidth, this.canvasHeight,
+      grid && grid.backgroundColor || '#ffffff'
+    );
 
     if (_.isElement(image) && replaceCanvas) {
       this.download.restoreCanvas();
@@ -5569,7 +5662,7 @@ Flotr.addPlugin('hit', {
     'flotr:click': function(pos) {
       var
         hit = this.hit.track(pos);
-      _.defaults(pos, hit);
+      if (hit && !_.isUndefined(hit.index)) pos.hit = hit;
     },
     'flotr:mouseout': function(e) {
       if (e.relatedTarget !== this.mouseTrack) {
