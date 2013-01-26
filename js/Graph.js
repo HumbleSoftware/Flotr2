@@ -461,7 +461,17 @@ Graph.prototype = {
 
     ctx = ctx || this.ctx;
 
-    if (flotr.isIE && flotr.isIE < 9) {
+    if (
+      flotr.isIE && flotr.isIE < 9 && // IE w/o canvas
+      !flotr.isFlashCanvas // But not flash canvas
+    ) {
+
+      // Do not clip excanvas on overlay context
+      // Allow hits to overflow.
+      if (ctx === this.octx) {
+        return;
+      }
+
       // Clipping for excanvas :-(
       ctx.save();
       ctx.fillStyle = this.processColor(this.options.ieBackgroundColor);
@@ -609,6 +619,7 @@ Graph.prototype = {
         canvas = D.create('canvas');
         if (typeof FlashCanvas != "undefined" && typeof canvas.getContext === 'function') {
           FlashCanvas.initElement(canvas);
+          this.isFlashCanvas = true;
         }
         canvas.className = 'flotr-'+name;
         canvas.style.cssText = 'position:absolute;left:0px;top:0px;';
