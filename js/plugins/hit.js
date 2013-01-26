@@ -14,7 +14,7 @@ Flotr.addPlugin('hit', {
     'flotr:click': function(pos) {
       var
         hit = this.hit.track(pos);
-      _.defaults(pos, hit);
+      if (hit && !_.isUndefined(hit.index)) pos.hit = hit;
     },
     'flotr:mouseout': function(e) {
       if (e.relatedTarget !== this.mouseTrack) {
