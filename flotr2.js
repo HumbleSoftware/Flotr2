@@ -1355,6 +1355,9 @@ var
   Flotr;
 
 Flotr = {
+  el : "", 
+  data : "", 
+  options : "",	
   _: _,
   bean: bean,
   isIphone: /iphone/i.test(navigator.userAgent),
@@ -1402,6 +1405,9 @@ Flotr = {
    * @return {Object} returns a new graph object and of course draws the graph.
    */
   draw: function(el, data, options, GraphKlass){  
+	Flotr.el = el;
+	Flotr.data = data;
+	Flotr.options = options;
     GraphKlass = GraphKlass || Flotr.Graph;
     return new GraphKlass(el, data, options);
   },
@@ -1533,6 +1539,13 @@ Flotr = {
   },
   floorInBase: function(n, base) {
     return base * Math.floor(n / base);
+  },
+  legendClick: function(index){
+	  return "Flotr.toggleData(" + index + ");Flotr.draw(Flotr.el, Flotr.data, Flotr.options);";
+  },
+  toggleData: function(index){
+	  Flotr.data[index].hide = !Flotr.data[index].hide;
+	  return;
   },
   drawText: function(ctx, text, x, y, style) {
     if (!ctx.fillText) {
@@ -2090,7 +2103,6 @@ Flotr.DOM = {
     var div = Flotr.DOM.create('div'), n;
     div.innerHTML = html;
     n = div.children[0];
-    div.innerHTML = '';
     return n;
   },
   /**
@@ -4913,9 +4925,9 @@ Flotr.addType('pie', {
       r         = Math.sqrt(x * x + y * y),
       theta     = Math.atan(y / x),
       circle    = Math.PI * 2,
-      explode   = slice.explode || options.explode,
-      start     = slice.start % circle,
-      end       = slice.end % circle,
+      explode   = slice == null ? false : slice.explode || options.explode,
+      start     = slice == null ? 0 : slice.start % circle,
+      end       = slice == null ? 0 : slice.end % circle,
       epsilon   = options.epsilon;
 
     if (x < 0) {
@@ -4924,7 +4936,10 @@ Flotr.addType('pie', {
       theta += circle;
     }
 
-    if (r < slice.radius + explode && r > explode) {
+    var mySliceRadius = slice == null ? 0 : slice.radius;
+    var mySliceStart = slice == null ? 0 : slice.start;
+    var mySliceEnd = slice == null ? 0 : slice.end;
+    if (r < mySliceRadius + explode && r > explode) {
       if (
           (theta > start && theta < end) || // Normal Slice
           (start > end && (theta < end || theta > start)) || // First slice
@@ -6586,9 +6601,7 @@ Flotr.addPlugin('legend', {
       m             = legend.margin,
       opacity       = legend.backgroundOpacity,
       i, label, color;
-
-    if (itemCount) {
-
+    
       var lbw = legend.labelBoxWidth,
           lbh = legend.labelBoxHeight,
           lbm = legend.labelBoxMargin,
@@ -6651,7 +6664,7 @@ Flotr.addPlugin('legend', {
       }
       else {
         for(i = 0; i < series.length; ++i){
-          if(!series[i].label || series[i].hide) continue;
+          if(!series[i].label) continue;
           
           if(i % legend.noColumns === 0){
             fragments.push(rowStarted ? '</tr><tr>' : '<tr>');
@@ -6663,11 +6676,16 @@ Flotr.addPlugin('legend', {
             boxHeight = legend.labelBoxHeight;
 
           label = legend.labelFormatter(s.label);
-          color = 'background-color:' + ((s.bars && s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
+          if(series[i].hide){
+        	  color = 'background-color: #FFFFFF;';
+          }
+          else{
+        	  color = 'background-color:' + ((s.bars && s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
+          }
           
           fragments.push(
             '<td class="flotr-legend-color-box">',
-              '<div style="border:1px solid ', legend.labelBoxBorderColor, ';padding:1px">',
+              '<div style="border:1px solid ', legend.labelBoxBorderColor, ';padding:1px" onclick="', Flotr.legendClick(i), ';">',
                 '<div style="width:', (boxWidth-1), 'px;height:', (boxHeight-1), 'px;border:1px solid ', series[i].color, '">', // Border
                   '<div style="width:', boxWidth, 'px;height:', boxHeight, 'px;', color, '"></div>', // Background
                 '</div>',
@@ -6675,6 +6693,7 @@ Flotr.addPlugin('legend', {
             '</td>',
             '<td class="flotr-legend-label">', label, '</td>'
           );
+                    
         }
         if(rowStarted) fragments.push('</tr>');
           
@@ -6722,7 +6741,6 @@ Flotr.addPlugin('legend', {
           }
         }
       }
-    }
   }
 });
 })();
