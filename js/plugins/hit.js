@@ -296,7 +296,7 @@ Flotr.addPlugin('hit', {
       container   = options.mouse.container,
       oTop        = 0,
       oLeft       = 0,
-      offset, size;
+      offset, size, content;
 
     // Create
     if (!mouseTrack) {
@@ -309,7 +309,7 @@ Flotr.addPlugin('hit', {
     if (!decimals || decimals < 0) decimals = 0;
     if (x && x.toFixed) x = x.toFixed(decimals);
     if (y && y.toFixed) y = y.toFixed(decimals);
-    mouseTrack.innerHTML = n.mouse.trackFormatter({
+    content = n.mouse.trackFormatter({
       x: x,
       y: y,
       series: n.series,
@@ -317,7 +317,13 @@ Flotr.addPlugin('hit', {
       nearest: n,
       fraction: n.fraction
     });
-    D.show(mouseTrack);
+    if (_.isNull(content) || _.isUndefined(content)) {
+      D.hide(mouseTrack);
+      return;
+    } else {
+      mouseTrack.innerHTML = content;
+      D.show(mouseTrack);
+    }
 
     // Positioning
     size = D.size(mouseTrack);
