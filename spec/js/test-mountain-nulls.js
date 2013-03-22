@@ -5,7 +5,7 @@ Flotr.ExampleList.add({
   name : 'Mountain Nulls',
   callback : function (container) {
     var
-      d1 = [[0, 3], [4, 8], [5, 6], [6, null], [7, 7], [8, 5]], // First data series
+      d1 = [[0, 3], [4, 8], [5, 6], [6, null], [7, 7], [8, 0], [9, null], [10, 5], [11, 0]], // First data series
       d2 = [],                                // Second data series
       i, graph;
 
