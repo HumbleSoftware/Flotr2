@@ -23,7 +23,6 @@ Flotr.DOM = {
     var div = Flotr.DOM.create('div'), n;
     div.innerHTML = html;
     n = div.children[0];
-    div.innerHTML = '';
     return n;
   },
   /**

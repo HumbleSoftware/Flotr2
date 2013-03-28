@@ -13,6 +13,9 @@ var
   Flotr;
 
 Flotr = {
+  el : "",
+  data : "",
+  options : "",
   _: _,
   bean: bean,
   isIphone: /iphone/i.test(navigator.userAgent),
@@ -60,6 +63,9 @@ Flotr = {
    * @return {Object} returns a new graph object and of course draws the graph.
    */
   draw: function(el, data, options, GraphKlass){  
+    Flotr.el = el;
+    Flotr.data = data;
+    Flotr.options = options;
     GraphKlass = GraphKlass || Flotr.Graph;
     return new GraphKlass(el, data, options);
   },
@@ -191,6 +197,13 @@ Flotr = {
   },
   floorInBase: function(n, base) {
     return base * Math.floor(n / base);
+  },
+  legendClick: function(index){
+    return "Flotr.toggleData(" + index + ");Flotr.draw(Flotr.el, Flotr.data, Flotr.options);";
+  },
+  toggleData: function(index){
+    Flotr.data[index].hide = !Flotr.data[index].hide;
+    return;
   },
   drawText: function(ctx, text, x, y, style) {
     if (!ctx.fillText) {

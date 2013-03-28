@@ -151,9 +151,9 @@ Flotr.addType('pie', {
       r         = Math.sqrt(x * x + y * y),
       theta     = Math.atan(y / x),
       circle    = Math.PI * 2,
-      explode   = slice.explode || options.explode,
-      start     = slice.start % circle,
-      end       = slice.end % circle,
+      explode   = slice == null? false : slice.explode || options.explode,
+      start     = slice == null? 0 : slice.start % circle,
+      end       = slice == null? 0 : slice.end % circle,
       epsilon   = options.epsilon;
 
     if (x < 0) {
@@ -162,7 +162,8 @@ Flotr.addType('pie', {
       theta += circle;
     }
 
-    if (r < slice.radius + explode && r > explode) {
+    var mySliceRadius = slice == null ? 0 : slice.radius;
+    if (r < mySliceRadius + explode && r > explode) {
       if (
           (theta > start && theta < end) || // Normal Slice
           (start > end && (theta < end || theta > start)) || // First slice
