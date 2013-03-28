@@ -501,6 +501,7 @@
 
   return bean
 });
+
 //     Underscore.js 1.1.7
 //     (c) 2011 Jeremy Ashkenas, DocumentCloud Inc.
 //     Underscore is freely distributable under the MIT license.
@@ -1340,6 +1341,7 @@
   };
 
 })();
+
 /**
  * Flotr2 (c) 2012 Carl Sutherland
  * MIT License
@@ -1355,9 +1357,9 @@ var
   Flotr;
 
 Flotr = {
-  el : "", 
-  data : "", 
-  options : "",	
+  el : "",
+  data : "",
+  options : "",
   _: _,
   bean: bean,
   isIphone: /iphone/i.test(navigator.userAgent),
@@ -1405,9 +1407,9 @@ Flotr = {
    * @return {Object} returns a new graph object and of course draws the graph.
    */
   draw: function(el, data, options, GraphKlass){  
-	Flotr.el = el;
-	Flotr.data = data;
-	Flotr.options = options;
+    Flotr.el = el;
+    Flotr.data = data;
+    Flotr.options = options;
     GraphKlass = GraphKlass || Flotr.Graph;
     return new GraphKlass(el, data, options);
   },
@@ -1541,11 +1543,11 @@ Flotr = {
     return base * Math.floor(n / base);
   },
   legendClick: function(index){
-	  return "Flotr.toggleData(" + index + ");Flotr.draw(Flotr.el, Flotr.data, Flotr.options);";
+    return "Flotr.toggleData(" + index + ");Flotr.draw(Flotr.el, Flotr.data, Flotr.options);";
   },
   toggleData: function(index){
-	  Flotr.data[index].hide = !Flotr.data[index].hide;
-	  return;
+    Flotr.data[index].hide = !Flotr.data[index].hide;
+    return;
   },
   drawText: function(ctx, text, x, y, style) {
     if (!ctx.fillText) {
@@ -4925,9 +4927,9 @@ Flotr.addType('pie', {
       r         = Math.sqrt(x * x + y * y),
       theta     = Math.atan(y / x),
       circle    = Math.PI * 2,
-      explode   = slice == null ? false : slice.explode || options.explode,
-      start     = slice == null ? 0 : slice.start % circle,
-      end       = slice == null ? 0 : slice.end % circle,
+      explode   = slice == null? false : slice.explode || options.explode,
+      start     = slice == null? 0 : slice.start % circle,
+      end       = slice == null? 0 : slice.end % circle,
       epsilon   = options.epsilon;
 
     if (x < 0) {
@@ -4937,8 +4939,6 @@ Flotr.addType('pie', {
     }
 
     var mySliceRadius = slice == null ? 0 : slice.radius;
-    var mySliceStart = slice == null ? 0 : slice.start;
-    var mySliceEnd = slice == null ? 0 : slice.end;
     if (r < mySliceRadius + explode && r > explode) {
       if (
           (theta > start && theta < end) || // Normal Slice
@@ -6601,7 +6601,7 @@ Flotr.addPlugin('legend', {
       m             = legend.margin,
       opacity       = legend.backgroundOpacity,
       i, label, color;
-    
+
       var lbw = legend.labelBoxWidth,
           lbh = legend.labelBoxHeight,
           lbm = legend.labelBoxMargin,
@@ -6676,16 +6676,16 @@ Flotr.addPlugin('legend', {
             boxHeight = legend.labelBoxHeight;
 
           label = legend.labelFormatter(s.label);
-          if(series[i].hide){
-        	  color = 'background-color: #FFFFFF;';
+	  if(series[i].hide){
+	    color = 'background-color: #FFFFFF;';
           }
           else{
-        	  color = 'background-color:' + ((s.bars && s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
-          }
-          
+            color = 'background-color:' + ((s.bars && s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
+          }          
+
           fragments.push(
             '<td class="flotr-legend-color-box">',
-              '<div style="border:1px solid ', legend.labelBoxBorderColor, ';padding:1px" onclick="', Flotr.legendClick(i), ';">',
+              '<div style="border:1px solid ', legend.labelBoxBorderColor, ';padding:1px" onclick="', Flotr.legendClick(i), '">',
                 '<div style="width:', (boxWidth-1), 'px;height:', (boxHeight-1), 'px;border:1px solid ', series[i].color, '">', // Border
                   '<div style="width:', boxWidth, 'px;height:', boxHeight, 'px;', color, '"></div>', // Background
                 '</div>',
@@ -6693,7 +6693,6 @@ Flotr.addPlugin('legend', {
             '</td>',
             '<td class="flotr-legend-label">', label, '</td>'
           );
-                    
         }
         if(rowStarted) fragments.push('</tr>');
           
