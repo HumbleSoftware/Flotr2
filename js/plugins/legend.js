@@ -52,8 +52,6 @@ Flotr.addPlugin('legend', {
       opacity       = legend.backgroundOpacity,
       i, label, color;
 
-    if (itemCount) {
-
       var lbw = legend.labelBoxWidth,
           lbh = legend.labelBoxHeight,
           lbm = legend.labelBoxMargin,
@@ -116,7 +114,7 @@ Flotr.addPlugin('legend', {
       }
       else {
         for(i = 0; i < series.length; ++i){
-          if(!series[i].label || series[i].hide) continue;
+          if(!series[i].label) continue;
           
           if(i % legend.noColumns === 0){
             fragments.push(rowStarted ? '</tr><tr>' : '<tr>');
@@ -128,11 +126,16 @@ Flotr.addPlugin('legend', {
             boxHeight = legend.labelBoxHeight;
 
           label = legend.labelFormatter(s.label);
-          color = 'background-color:' + ((s.bars && s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
-          
+	  if(series[i].hide){
+	    color = 'background-color: #FFFFFF;';
+          }
+          else{
+            color = 'background-color:' + ((s.bars && s.bars.show && s.bars.fillColor && s.bars.fill) ? s.bars.fillColor : s.color) + ';';
+          }          
+
           fragments.push(
             '<td class="flotr-legend-color-box">',
-              '<div style="border:1px solid ', legend.labelBoxBorderColor, ';padding:1px">',
+              '<div style="border:1px solid ', legend.labelBoxBorderColor, ';padding:1px" onclick="', Flotr.legendClick(i), '">',
                 '<div style="width:', (boxWidth-1), 'px;height:', (boxHeight-1), 'px;border:1px solid ', series[i].color, '">', // Border
                   '<div style="width:', boxWidth, 'px;height:', boxHeight, 'px;', color, '"></div>', // Background
                 '</div>',
@@ -187,7 +190,6 @@ Flotr.addPlugin('legend', {
           }
         }
       }
-    }
   }
 });
 })();

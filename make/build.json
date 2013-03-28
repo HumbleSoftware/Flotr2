@@ -11,6 +11,7 @@
       { "src": "./lib/underscore.js", "jshint": false }
     ],
     "flotr2": [
+      "./build/lib.js",
       "./js/Flotr.js",
       "./js/DefaultOptions.js",
       "./js/Color.js",
