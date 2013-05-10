@@ -38,7 +38,7 @@ Flotr.addType('timeline', {
 
     Flotr._.each(data, function (timeline) {
 
-      var 
+      var
         x   = timeline[0],
         y   = timeline[1],
         w   = timeline[2],
@@ -56,6 +56,40 @@ Flotr.addType('timeline', {
       context.fillRect(x0, y0, wt, ht);
 
     });
+  },
+
+  hit : function (options) {
+      var
+        data   = options.data,
+        args   = options.args,
+        n      = args[1],
+        mouse  = args[0],
+        x      = options.xInverse(mouse.relX),
+        y      = options.yInverse(mouse.relY),
+        h      = options.barWidth,
+        x0, x1, y0, y1, i;
+
+      for (i = data.length; i--;) {
+	w = data[i][2];
+        x0 = data[i][0];
+        x1 = x0 + w;
+
+	y0 = data[i][1] + h;
+	y1 = data[i][1] - h;
+
+	if ((x >= x0) && (x <= x1) && (y <= y0) && (y >= y1)) {
+            n.x = x0;
+            n.y = y0 - h;
+            n.index = i;
+            n.seriesIndex = options.index;
+	}
+      }
+  },
+
+  drawHit : function(options) {
+  },
+
+  clearHit : function(options) {
   },
 
   extendRange : function (series) {
