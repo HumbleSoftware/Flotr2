@@ -127,7 +127,7 @@ Flotr.addType('markers', {
       context.strokeRect(left, top, dim.width, dim.height);
     
     if (isImage(label))
-      context.drawImage(label, left+margin, top+margin);
+      context.drawImage(label, parseInt(left+margin), parseInt(top+margin));
     else
       Flotr.drawText(context, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
   }
