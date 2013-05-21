@@ -79,7 +79,7 @@ Flotr.addPlugin('hit', {
       octx.save();
       octx.lineWidth = (s.points ? s.points.lineWidth : 1);
       octx.strokeStyle = s.mouse.lineColor;
-      octx.fillStyle = this.processColor(s.mouse.fillColor || '#ffffff', {opacity: s.mouse.fillOpacity});
+      octx.fillStyle = this.processColor(s.mouse.fillColor || s.color, {opacity: s.mouse.fillOpacity});
       octx.translate(this.plotOffset.left, this.plotOffset.top);
 
       if (!this.hit.executeOnType(s, 'drawHit', n)) {
