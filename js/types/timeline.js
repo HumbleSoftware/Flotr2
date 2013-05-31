@@ -70,7 +70,7 @@ Flotr.addType('timeline', {
         x0, x1, y0, y1, i;
 
       for (i = data.length; i--;) {
-	w = data[i][2];
+        w = data[i][2];
         x0 = data[i][0];
         x1 = x0 + w;
 
@@ -82,7 +82,7 @@ Flotr.addType('timeline', {
             n.y = y0 - h;
             n.index = i;
             n.seriesIndex = options.index;
-	}
+        }
       }
   },
 
