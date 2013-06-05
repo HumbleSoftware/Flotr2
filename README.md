@@ -49,10 +49,64 @@ The API consists of a primary draw method which accepts a configuration object, 
   );
 ```
 
-### Microlibs
+Usage
+-----
 
-* [underscore.js](http://documentcloud.github.com/underscore/)
-* [bean.js](https://github.com/fat/bean)
+Flotr2 requires [Underscore][] and [Bean][] libraries to run.
+
+If you just use scripts tags to manage your project grab the `flotr2.js` file.
+It will contain all the dependencies required use Flotr2.
+
+### Build systems
+
+Builds systems such as [Browserify][] and [RequireJS][] can get confused of the
+bundled 3rd party dependencies. So it is recommended to use the
+`flotr2.nolibs.js` build with them. It just expects to find Underscore and Bean
+as globals.
+
+For Browserify you can use following shim wrapper:
+
+`flotr2.shim.js`
+```javascript
+// Expose Underscore and Bean as globals from npm
+window._ = require("underscore");
+window.bean = require("bean");
+
+// Require Flotr2 expecting the globals
+require("./flotr2.nolibs");
+
+// Export it as a module for convenience
+module.exports = window.Flotr;
+```
+
+And for RequireJS you create shim config like this:
+
+`config.js`
+```javascript
+require.config({
+  shim: {
+    "flotr2": {
+      deps: ["underscore", "bean"],
+      exports: "Flotr"
+    },
+    "underscore": {
+      exports: "_"
+    }
+  },
+  paths: {
+    "flotr2": "path/to/flotr2.nolibs",
+    "underscore": "path/to/underscore",
+    "bean": "path/to/bean"
+  }
+});
+```
+Bean is a AMD module so there is no need to shim it like Underscore.
+
+[Underscore]: http://documentcloud.github.com/underscore/
+[Bean]: https://github.com/fat/bean
+[Browserify]: http://browserify.org/
+[RequireJS]: http://requirejs.org/
+
 
 Extending
 ---------
