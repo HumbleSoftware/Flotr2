@@ -22,6 +22,7 @@ flotr2: libraries ie
 	cat build/flotr2.min.js >> flotr2.min.js
 	echo ';' >> flotr2.min.js
 	cp build/ie.min.js flotr2.ie.min.js
+	cat build/flotr2.js > flotr2.nolibs.js
 
 flotr2-basic: libraries ie
 	smoosh make/basic.json
