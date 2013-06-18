@@ -326,6 +326,9 @@ Flotr.addPlugin('hit', {
     }
 
     // Positioning
+    if (!p) {
+      return;
+    }
     size = D.size(mouseTrack);
     if (container) {
       offset = D.position(this.el);
