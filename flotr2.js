@@ -1611,6 +1611,11 @@ Flotr.defaultOptions = {
   resolution: 1,           // => resolution of the graph, to have printer-friendly graphs !
   parseFloat: true,        // => whether to preprocess data for floats (ie. if input is string)
   preventDefault: true,    // => preventDefault by default for mobile events.  Turn off to enable scroll.
+  layers: [                // => layers in which chart types are drawn, top to bottom.
+    'markers',
+    'points',
+    'bars'
+  ],
   xaxis: {
     ticks: null,           // => format: either [1, 3] or [[1, 'a'], 3]
     minorTicks: null,      // => format: either [1, 3] or [[1, 'a'], 3]
@@ -1681,7 +1686,7 @@ Flotr.defaultOptions = {
   mouse: {
     track: false,          // => true to track the mouse, no tracking otherwise
     trackAll: false,
-    position: 'se',        // => position of the value box (default south-east)
+    position: 'se',        // => position of the value box (default south-east).  False disables.
     relative: false,       // => next to the mouse cursor
     trackFormatter: Flotr.defaultTrackFormatter, // => formats the values in the value box
     margin: 5,             // => margin in pixels of the valuebox
@@ -2544,34 +2549,11 @@ Graph.prototype = {
     y2.setScale();
   },
   /**
-   * Draws grid, labels, series and outline.
-   */
-  draw: function(after) {
-
-    var
-      context = this.ctx,
-      i;
-
-    E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
-
-    if (this.series.length) {
-
-      context.save();
-      context.translate(this.plotOffset.left, this.plotOffset.top);
-
-      for (i = 0; i < this.series.length; i++) {
-        if (!this.series[i].hide) this.drawSeries(this.series[i]);
-      }
-
-      context.restore();
-      this.clip();
-    }
-
-    E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
-    if (after) after();
-  },
-  /**
    * Actually draws the graph.
+   *
+   * Candidate for removal.  This is no longer called internally.
+   *
+   * @deprecated
    * @param {Object} series - series to draw
    */
   drawSeries: function(series){
@@ -2592,6 +2574,62 @@ Graph.prototype = {
     }, this);
 
     if (!drawn) drawChart.call(this, series, this.options.defaultType);
+  },
+
+  /**
+   * Draws grid, labels, series and outline.
+   */
+  draw : function (after) {
+    var
+      el = this.el,
+      context = this.ctx,
+      series = this.series,
+      length = series.length,
+      // Display markers first...
+      types = _.unique(this.options.layers.concat(_.keys(flotr.graphTypes))),
+      serie, i, drawn;
+
+    E.fire(el, 'flotr:beforedraw', [series, this]);
+
+    // Set up default chart types:
+    // Move this to graph set up.
+    for (i = 0; i < length; i++) {
+      serie = series[i];
+      drawn = false;
+      _.each(flotr.graphTypes, function (type, key) {
+        if (!serie.hide && serie[key] && serie[key].show) {
+          drawn = true;
+        }
+      });
+      if (!drawn) {
+        serie[this.options.defaultType].show = true;
+      }
+    }
+
+    // Loop through the graphs, loop through the series.
+    // This lets us order the drawing.
+    if (length) {
+      context.save();
+      context.translate(this.plotOffset.left, this.plotOffset.top);
+      _.each(types.reverse(), function (type) {
+        for (i = 0; i < length; i++) {
+          serie = series[i];
+          if (!serie.hide && serie[type] && serie[type].show) {
+            drawChart.call(this, serie, type);
+          }
+        }
+      }, this);
+      context.restore();
+      this.clip();
+    }
+
+    E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
+    if (after) after();
+
+    function drawChart (series, typeKey) {
+      var options = this.getOptions(series, typeKey);
+      this[typeKey].draw(options);
+    }
   },
 
   getOptions : function (series, typeKey) {
@@ -3557,7 +3595,7 @@ Flotr.addType('lines', {
       // To allow empty values
       if (data[i][1] === null || data[i+1][1] === null) {
         if (options.fill) {
-          if (i > 0 && data[i][1]) {
+          if (i > 0 && data[i][1] !== null) {
             context.stroke();
             fill();
             start = null;
@@ -3579,21 +3617,17 @@ Flotr.addType('lines', {
       if (start === null) start = data[i];
       
       if (stack) {
-
         stack1 = stack.values[data[i][0]] || 0;
         stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
-
         y1 = yScale(data[i][1] + stack1);
         y2 = yScale(data[i+1][1] + stack2);
-        
-        if(incStack){
-          stack.values[data[i][0]] = data[i][1]+stack1;
-            
-          if(i == length-1)
-            stack.values[data[i+1][0]] = data[i+1][1]+stack2;
+        if (incStack) {
+          stack.values[data[i][0]] = data[i][1] + stack1;
+          if (i == length-1) {
+            stack.values[data[i+1][0]] = data[i+1][1] + stack2;
+          }
         }
-      }
-      else{
+      } else {
         y1 = yScale(data[i][1]);
         y2 = yScale(data[i+1][1]);
       }
@@ -3605,8 +3639,9 @@ Flotr.addType('lines', {
         (x1 > width && x2 > width)
       ) continue;
 
-      if((prevx != x1) || (prevy != y1 + shadowOffset))
+      if ((prevx != x1) || (prevy != y1 + shadowOffset)) {
         context.moveTo(x1, y1 + shadowOffset);
+      }
       
       prevx = x2;
       prevy = y2 + shadowOffset;
@@ -4648,25 +4683,24 @@ Flotr.addType('markers', {
     stackingType: 'b',     // => define staching behavior, (b- bars like, a - area like) (see Issue 125 for details)
     horizontal: false      // => true if markers should be horizontal (For now only in a case on horizontal stacked bars, stacks should be calculated horizontaly)
   },
-
-  // TODO test stacked markers.
-  stack : {
-      positive : [],
-      negative : [],
-      values : []
-  },
-
+  stack : null,
   draw : function (options) {
-
     var
       data            = options.data,
       context         = options.context,
-      stack           = options.stacked ? options.stack : false,
+      stacked         = options.stacked,
       stackType       = options.stackingType,
+      stack           = this.stack || {
+        positive : [],
+        negative : [],
+        values : []
+      },
       stackOffsetNeg,
       stackOffsetPos,
       stackOffset,
       i, x, y, label;
+
+    this.stack = stack;
 
     context.save();
     context.lineJoin = 'round';
@@ -4675,15 +4709,9 @@ Flotr.addType('markers', {
     context.fillStyle = options.fillStyle;
 
     function stackPos (a, b) {
-      stackOffsetPos = stack.negative[a] || 0;
-      stackOffsetNeg = stack.positive[a] || 0;
-      if (b > 0) {
-        stack.positive[a] = stackOffsetPos + b;
-        return stackOffsetPos + b;
-      } else {
-        stack.negative[a] = stackOffsetNeg + b;
-        return stackOffsetNeg + b;
-      }
+      var
+        myStack = b > 0 ? stack.negative : stack.positive;
+      return myStack[a] = (myStack[a] || 0) + b;
     }
 
     for (i = 0; i < data.length; ++i) {
@@ -4691,10 +4719,10 @@ Flotr.addType('markers', {
       x = data[i][0];
       y = data[i][1];
         
-      if (stack) {
+      if (stacked) {
         if (stackType == 'b') {
-          if (options.horizontal) y = stackPos(y, x);
-          else x = stackPos(x, y);
+          if (options.horizontal) x = stackPos(y, x);
+          else y = stackPos(x, y);
         } else if (stackType == 'a') {
           stackOffset = stack.values[x] || 0;
           stack.values[x] = stackOffset + y;
@@ -4748,7 +4776,7 @@ Flotr.addType('markers', {
       context.strokeRect(left, top, dim.width, dim.height);
     
     if (isImage(label))
-      context.drawImage(label, left+margin, top+margin);
+      context.drawImage(label, parseInt(left+margin, 10), parseInt(top+margin, 10));
     else
       Flotr.drawText(context, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
   }
@@ -5944,7 +5972,7 @@ Flotr.addPlugin('hit', {
       container   = options.mouse.container,
       oTop        = 0,
       oLeft       = 0,
-      offset, size;
+      offset, size, content;
 
     // Create
     if (!mouseTrack) {
@@ -5957,7 +5985,7 @@ Flotr.addPlugin('hit', {
     if (!decimals || decimals < 0) decimals = 0;
     if (x && x.toFixed) x = x.toFixed(decimals);
     if (y && y.toFixed) y = y.toFixed(decimals);
-    mouseTrack.innerHTML = n.mouse.trackFormatter({
+    content = n.mouse.trackFormatter({
       x: x,
       y: y,
       series: n.series,
@@ -5965,9 +5993,18 @@ Flotr.addPlugin('hit', {
       nearest: n,
       fraction: n.fraction
     });
-    D.show(mouseTrack);
+    if (_.isNull(content) || _.isUndefined(content)) {
+      D.hide(mouseTrack);
+      return;
+    } else {
+      mouseTrack.innerHTML = content;
+      D.show(mouseTrack);
+    }
 
     // Positioning
+    if (!p) {
+      return;
+    }
     size = D.size(mouseTrack);
     if (container) {
       offset = D.position(this.el);
