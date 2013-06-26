@@ -228,34 +228,11 @@ Graph.prototype = {
     y2.setScale();
   },
   /**
-   * Draws grid, labels, series and outline.
-   */
-  draw: function(after) {
-
-    var
-      context = this.ctx,
-      i;
-
-    E.fire(this.el, 'flotr:beforedraw', [this.series, this]);
-
-    if (this.series.length) {
-
-      context.save();
-      context.translate(this.plotOffset.left, this.plotOffset.top);
-
-      for (i = 0; i < this.series.length; i++) {
-        if (!this.series[i].hide) this.drawSeries(this.series[i]);
-      }
-
-      context.restore();
-      this.clip();
-    }
-
-    E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
-    if (after) after();
-  },
-  /**
    * Actually draws the graph.
+   *
+   * Candidate for removal.  This is no longer called internally.
+   *
+   * @deprecated
    * @param {Object} series - series to draw
    */
   drawSeries: function(series){
@@ -276,6 +253,62 @@ Graph.prototype = {
     }, this);
 
     if (!drawn) drawChart.call(this, series, this.options.defaultType);
+  },
+
+  /**
+   * Draws grid, labels, series and outline.
+   */
+  draw : function (after) {
+    var
+      el = this.el,
+      context = this.ctx,
+      series = this.series,
+      length = series.length,
+      // Display markers first...
+      types = _.unique(this.options.layers.concat(_.keys(flotr.graphTypes))),
+      serie, i, drawn;
+
+    E.fire(el, 'flotr:beforedraw', [series, this]);
+
+    // Set up default chart types:
+    // Move this to graph set up.
+    for (i = 0; i < length; i++) {
+      serie = series[i];
+      drawn = false;
+      _.each(flotr.graphTypes, function (type, key) {
+        if (!serie.hide && serie[key] && serie[key].show) {
+          drawn = true;
+        }
+      });
+      if (!drawn) {
+        serie[this.options.defaultType].show = true;
+      }
+    }
+
+    // Loop through the graphs, loop through the series.
+    // This lets us order the drawing.
+    if (length) {
+      context.save();
+      context.translate(this.plotOffset.left, this.plotOffset.top);
+      _.each(types.reverse(), function (type) {
+        for (i = 0; i < length; i++) {
+          serie = series[i];
+          if (!serie.hide && serie[type] && serie[type].show) {
+            drawChart.call(this, serie, type);
+          }
+        }
+      }, this);
+      context.restore();
+      this.clip();
+    }
+
+    E.fire(this.el, 'flotr:afterdraw', [this.series, this]);
+    if (after) after();
+
+    function drawChart (series, typeKey) {
+      var options = this.getOptions(series, typeKey);
+      this[typeKey].draw(options);
+    }
   },
 
   getOptions : function (series, typeKey) {

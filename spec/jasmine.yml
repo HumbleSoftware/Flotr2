@@ -38,6 +38,7 @@ src_files:
   - "spec/js/test-background.js"
   - "spec/js/test-boundaries.js"
   - "spec/js/test-mountain-nulls.js"
+  - "spec/js/test-stacked-markers.js"
   - "spec/helpers/testFlotr.js"
 helpers:
 spec_files:

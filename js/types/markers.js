@@ -27,25 +27,24 @@ Flotr.addType('markers', {
     stackingType: 'b',     // => define staching behavior, (b- bars like, a - area like) (see Issue 125 for details)
     horizontal: false      // => true if markers should be horizontal (For now only in a case on horizontal stacked bars, stacks should be calculated horizontaly)
   },
-
-  // TODO test stacked markers.
-  stack : {
-      positive : [],
-      negative : [],
-      values : []
-  },
-
+  stack : null,
   draw : function (options) {
-
     var
       data            = options.data,
       context         = options.context,
-      stack           = options.stacked ? options.stack : false,
+      stacked         = options.stacked,
       stackType       = options.stackingType,
+      stack           = this.stack || {
+        positive : [],
+        negative : [],
+        values : []
+      },
       stackOffsetNeg,
       stackOffsetPos,
       stackOffset,
       i, x, y, label;
+
+    this.stack = stack;
 
     context.save();
     context.lineJoin = 'round';
@@ -54,15 +53,9 @@ Flotr.addType('markers', {
     context.fillStyle = options.fillStyle;
 
     function stackPos (a, b) {
-      stackOffsetPos = stack.negative[a] || 0;
-      stackOffsetNeg = stack.positive[a] || 0;
-      if (b > 0) {
-        stack.positive[a] = stackOffsetPos + b;
-        return stackOffsetPos + b;
-      } else {
-        stack.negative[a] = stackOffsetNeg + b;
-        return stackOffsetNeg + b;
-      }
+      var
+        myStack = b > 0 ? stack.negative : stack.positive;
+      return myStack[a] = (myStack[a] || 0) + b;
     }
 
     for (i = 0; i < data.length; ++i) {
@@ -70,10 +63,10 @@ Flotr.addType('markers', {
       x = data[i][0];
       y = data[i][1];
         
-      if (stack) {
+      if (stacked) {
         if (stackType == 'b') {
-          if (options.horizontal) y = stackPos(y, x);
-          else x = stackPos(x, y);
+          if (options.horizontal) x = stackPos(y, x);
+          else y = stackPos(x, y);
         } else if (stackType == 'a') {
           stackOffset = stack.values[x] || 0;
           stack.values[x] = stackOffset + y;
