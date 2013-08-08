@@ -49,7 +49,7 @@ Flotr.addPlugin('hit', {
 
     function e(s, index) {
       _.each(_.keys(flotr.graphTypes), function (type) {
-        if (s[type] && s[type].show && this[type][method]) {
+        if (s[type] && s[type].show && !s.hide && this[type][method]) {
           options = this.getOptions(s, type);
 
           options.fill = !!s.mouse.fillColor;
@@ -240,6 +240,8 @@ Flotr.addPlugin('hit', {
       data = serie.data;
       mouseX = serie.xaxis.p2d(relX);
       mouseY = serie.yaxis.p2d(relY);
+
+      if (serie.hide) continue;
 
       for (j = data.length; j--;) {
 
