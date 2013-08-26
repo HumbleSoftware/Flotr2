@@ -339,7 +339,7 @@ Flotr.addPlugin('hit', {
     }
 
     if (!n.mouse.relative) { // absolute to the canvas
-      pos += 'top:'
+      pos += 'top:';
       if      (p.charAt(0) == 'n') pos += (oTop + m + top);
       else if (p.charAt(0) == 's') pos += (oTop - m + top + this.plotHeight - size.height);
       pos += 'px;bottom:auto;left:';
@@ -361,7 +361,7 @@ Flotr.addPlugin('hit', {
 
     // Default
     } else {
-      pos += 'top:'
+      pos += 'top:';
       if (/n/.test(p)) pos += (oTop - m + top + n.yaxis.d2p(n.y) - size.height);
       else             pos += (oTop + m + top + n.yaxis.d2p(n.y));
       pos += 'px;bottom:auto;left:';
