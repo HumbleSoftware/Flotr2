@@ -1681,7 +1681,7 @@ Flotr.defaultOptions = {
   mouse: {
     track: false,          // => true to track the mouse, no tracking otherwise
     trackAll: false,
-    position: 'se',        // => position of the value box (default south-east)
+    position: 'se',        // => position of the value box (default south-east).  False disables.
     relative: false,       // => next to the mouse cursor
     trackFormatter: Flotr.defaultTrackFormatter, // => formats the values in the value box
     margin: 5,             // => margin in pixels of the valuebox
@@ -3557,7 +3557,7 @@ Flotr.addType('lines', {
       // To allow empty values
       if (data[i][1] === null || data[i+1][1] === null) {
         if (options.fill) {
-          if (i > 0 && data[i][1]) {
+          if (i > 0 && data[i][1] !== null) {
             context.stroke();
             fill();
             start = null;
@@ -3579,21 +3579,17 @@ Flotr.addType('lines', {
       if (start === null) start = data[i];
       
       if (stack) {
-
         stack1 = stack.values[data[i][0]] || 0;
         stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
-
         y1 = yScale(data[i][1] + stack1);
         y2 = yScale(data[i+1][1] + stack2);
-        
-        if(incStack){
-          stack.values[data[i][0]] = data[i][1]+stack1;
-            
-          if(i == length-1)
-            stack.values[data[i+1][0]] = data[i+1][1]+stack2;
+        if (incStack) {
+          stack.values[data[i][0]] = data[i][1] + stack1;
+          if (i == length-1) {
+            stack.values[data[i+1][0]] = data[i+1][1] + stack2;
+          }
         }
-      }
-      else{
+      } else {
         y1 = yScale(data[i][1]);
         y2 = yScale(data[i+1][1]);
       }
@@ -3605,8 +3601,9 @@ Flotr.addType('lines', {
         (x1 > width && x2 > width)
       ) continue;
 
-      if((prevx != x1) || (prevy != y1 + shadowOffset))
+      if ((prevx != x1) || (prevy != y1 + shadowOffset)) {
         context.moveTo(x1, y1 + shadowOffset);
+      }
       
       prevx = x2;
       prevy = y2 + shadowOffset;
@@ -4748,7 +4745,7 @@ Flotr.addType('markers', {
       context.strokeRect(left, top, dim.width, dim.height);
     
     if (isImage(label))
-      context.drawImage(label, left+margin, top+margin);
+      context.drawImage(label, parseInt(left+margin, 10), parseInt(top+margin, 10));
     else
       Flotr.drawText(context, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
   }
@@ -4796,11 +4793,9 @@ Flotr.addType('pie', {
   draw : function (options) {
 
     // TODO 3D charts what?
-
     var
       data          = options.data,
       context       = options.context,
-      canvas        = context.canvas,
       lineWidth     = options.lineWidth,
       shadowSize    = options.shadowSize,
       sizeRatio     = options.sizeRatio,
@@ -4810,7 +4805,7 @@ Flotr.addType('pie', {
       color         = options.color,
       fill          = options.fill,
       fillStyle     = options.fillStyle,
-      radius        = Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      radius        = Math.min(width, height) * sizeRatio / 2,
       value         = data[0][1],
       html          = [],
       vScale        = 1,//Math.cos(series.pie.viewAngle);
@@ -4884,7 +4879,7 @@ Flotr.addType('pie', {
     this.startAngle = endAngle;
     this.slices = this.slices || [];
     this.slices.push({
-      radius : Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      radius : radius,
       x : x,
       y : y,
       explode : explode,
@@ -5697,7 +5692,7 @@ Flotr.addPlugin('hit', {
 
     function e(s, index) {
       _.each(_.keys(flotr.graphTypes), function (type) {
-        if (s[type] && s[type].show && this[type][method]) {
+        if (s[type] && s[type].show && !s.hide && this[type][method]) {
           options = this.getOptions(s, type);
 
           options.fill = !!s.mouse.fillColor;
@@ -5889,6 +5884,8 @@ Flotr.addPlugin('hit', {
       mouseX = serie.xaxis.p2d(relX);
       mouseY = serie.yaxis.p2d(relY);
 
+      if (serie.hide) continue;
+
       for (j = data.length; j--;) {
 
         x = data[j][0];
@@ -5944,7 +5941,7 @@ Flotr.addPlugin('hit', {
       container   = options.mouse.container,
       oTop        = 0,
       oLeft       = 0,
-      offset, size;
+      offset, size, content;
 
     // Create
     if (!mouseTrack) {
@@ -5957,7 +5954,7 @@ Flotr.addPlugin('hit', {
     if (!decimals || decimals < 0) decimals = 0;
     if (x && x.toFixed) x = x.toFixed(decimals);
     if (y && y.toFixed) y = y.toFixed(decimals);
-    mouseTrack.innerHTML = n.mouse.trackFormatter({
+    content = n.mouse.trackFormatter({
       x: x,
       y: y,
       series: n.series,
@@ -5965,9 +5962,18 @@ Flotr.addPlugin('hit', {
       nearest: n,
       fraction: n.fraction
     });
-    D.show(mouseTrack);
+    if (_.isNull(content) || _.isUndefined(content)) {
+      D.hide(mouseTrack);
+      return;
+    } else {
+      mouseTrack.innerHTML = content;
+      D.show(mouseTrack);
+    }
 
     // Positioning
+    if (!p) {
+      return;
+    }
     size = D.size(mouseTrack);
     if (container) {
       offset = D.position(this.el);
@@ -5976,7 +5982,7 @@ Flotr.addPlugin('hit', {
     }
 
     if (!n.mouse.relative) { // absolute to the canvas
-      pos += 'top:'
+      pos += 'top:';
       if      (p.charAt(0) == 'n') pos += (oTop + m + top);
       else if (p.charAt(0) == 's') pos += (oTop - m + top + this.plotHeight - size.height);
       pos += 'px;bottom:auto;left:';
@@ -5998,7 +6004,7 @@ Flotr.addPlugin('hit', {
 
     // Default
     } else {
-      pos += 'top:'
+      pos += 'top:';
       if (/n/.test(p)) pos += (oTop - m + top + n.yaxis.d2p(n.y) - size.height);
       else             pos += (oTop + m + top + n.yaxis.d2p(n.y));
       pos += 'px;bottom:auto;left:';
