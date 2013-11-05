@@ -2,6 +2,7 @@
   "JAVASCRIPT": {
     "DIST_DIR": "./build",
     "flotr2-basic": [
+      "./js/amd/pre.js",
       "./js/Flotr.js",
       "./js/DefaultOptions.js",
       "./js/DOM.js",
@@ -19,7 +20,8 @@
       "./js/plugins/grid.js",
       "./js/plugins/labels.js",
       "./js/plugins/legend.js",
-      "./js/plugins/titles.js"
+      "./js/plugins/titles.js",
+      "./js/amd/post.js"
     ]
   }
 }
