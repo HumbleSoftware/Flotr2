@@ -46,31 +46,27 @@ function mouse_drag (container) {
 
   function initializeDrag (e) {
     start = graph.getEventPosition(e);
-    Flotr.EventAdapter.observe(document, 'mousemove', move);
-    Flotr.EventAdapter.observe(document, 'mouseup', stopDrag);
+    Flotr.EventAdapter.observe(container, 'flotr:mousemove', move);
+    Flotr.EventAdapter.observe(container, 'flotr:mouseup', stopDrag);
   }
 
-  function move (e) {
+  function move (e, o) {
     var
-      end     = graph.getEventPosition(e),
       xaxis   = graph.axes.x,
-      offset  = start.x - end.x;
-
+      offset  = start.x - o.x;
     graph = drawGraph({
       xaxis : {
         min : xaxis.min + offset,
         max : xaxis.max + offset
       }
     });
-    // @todo: refector initEvents in order not to remove other observed events
-    Flotr.EventAdapter.observe(graph.overlay, 'mousedown', initializeDrag);
   }
 
   function stopDrag () {
-    Flotr.EventAdapter.stopObserving(document, 'mousemove', move);
+    Flotr.EventAdapter.stopObserving(container, 'flotr:mousemove', move);
   }
 
-  Flotr.EventAdapter.observe(graph.overlay, 'mousedown', initializeDrag);
+  Flotr.EventAdapter.observe(container, 'flotr:mousedown', initializeDrag);
 
 };
 

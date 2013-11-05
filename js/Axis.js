@@ -44,17 +44,17 @@ Axis.prototype = {
     if (logarithmic) {
       this.d2p = function (dataValue) {
         return offset + orientation * (log(dataValue, options.base) - log(min, options.base)) * scale;
-      }
+      };
       this.p2d = function (pointValue) {
         return exp((offset + orientation * pointValue) / scale + log(min, options.base), options.base);
-      }
+      };
     } else {
       this.d2p = function (dataValue) {
         return offset + orientation * (dataValue - min) * scale;
-      }
+      };
       this.p2d = function (pointValue) {
         return (offset + orientation * pointValue) / scale + min;
-      }
+      };
     }
   },
 
