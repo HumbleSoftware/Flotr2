@@ -34,6 +34,7 @@ Flotr.addType('pie', {
   draw : function (options) {
 
     // TODO 3D charts what?
+    this.count = this.count || 0;
     var
       data          = options.data,
       context       = options.context,
@@ -54,7 +55,7 @@ Flotr.addType('pie', {
       startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
       endAngle      = startAngle + measure,
       bisection     = startAngle + measure / 2,
-      label         = options.labelFormatter(this.total, value),
+      label         = options.labelFormatter(this.total, value, this.count),
       //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
       explodeCoeff  = explode + radius + 4,
       distX         = Math.cos(bisection) * explodeCoeff,
@@ -127,6 +128,7 @@ Flotr.addType('pie', {
       start : startAngle,
       end : endAngle
     });
+    this.count += 1;
   },
   plotSlice : function (x, y, radius, startAngle, endAngle, context) {
     context.beginPath();
