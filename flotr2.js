@@ -4948,6 +4948,10 @@ Flotr.addType('pie', {
     context.save();
     context.translate(options.width / 2, options.height / 2);
     this.plotSlice(slice.x, slice.y, slice.radius, slice.start, slice.end, context);
+    if (options.fill) {
+      context.fillStyle = options.fillStyle;
+      context.fill();
+    }
     context.stroke();
     context.restore();
   },
