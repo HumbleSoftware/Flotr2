@@ -4784,6 +4784,8 @@ Flotr.addType('pie', {
     sizeRatio: 0.6,        // => the size ratio of the pie relative to the plot 
     startAngle: Math.PI/4, // => the first slice start angle
     labelFormatter: Flotr.defaultPieLabelFormatter,
+    labelDistance: 4,
+    radiateLabel: false,
     pie3D: false,          // => whether to draw the pie in 3 dimenstions or not (ineffective) 
     pie3DviewAngle: (Math.PI/2 * 0.8),
     pie3DspliceThickness: 20,
@@ -4793,6 +4795,7 @@ Flotr.addType('pie', {
   draw : function (options) {
 
     // TODO 3D charts what?
+    this.count = this.count || 0;
     var
       data          = options.data,
       context       = options.context,
@@ -4813,9 +4816,9 @@ Flotr.addType('pie', {
       startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
       endAngle      = startAngle + measure,
       bisection     = startAngle + measure / 2,
-      label         = options.labelFormatter(this.total, value),
+      label         = options.labelFormatter(this.total, value, this.count),
       //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
-      explodeCoeff  = explode + radius + 4,
+      explodeCoeff  = explode + radius + options.labelDistance,
       distX         = Math.cos(bisection) * explodeCoeff,
       distY         = Math.sin(bisection) * explodeCoeff,
       textAlign     = distX < 0 ? 'right' : 'left',
@@ -4850,8 +4853,7 @@ Flotr.addType('pie', {
 
     style = {
       size : options.fontSize * 1.2,
-      color : options.fontColor,
-      weight : 1.5
+      color : options.fontColor
     };
 
     if (label) {
@@ -4863,6 +4865,9 @@ Flotr.addType('pie', {
       else {
         style.textAlign = textAlign;
         style.textBaseline = textBaseline;
+        if (options.radiateLabel) {
+          style.angle = textAlign === 'left' ? bisection : bisection + Math.PI;
+        }
         Flotr.drawText(context, label, distX, distY, style);
       }
     }
@@ -4886,6 +4891,7 @@ Flotr.addType('pie', {
       start : startAngle,
       end : endAngle
     });
+    this.count += 1;
   },
   plotSlice : function (x, y, radius, startAngle, endAngle, context) {
     context.beginPath();
@@ -4946,6 +4952,10 @@ Flotr.addType('pie', {
     context.save();
     context.translate(options.width / 2, options.height / 2);
     this.plotSlice(slice.x, slice.y, slice.radius, slice.start, slice.end, context);
+    if (options.fill) {
+      context.fillStyle = options.fillStyle;
+      context.fill();
+    }
     context.stroke();
     context.restore();
   },
