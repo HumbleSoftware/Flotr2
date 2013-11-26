@@ -4784,6 +4784,8 @@ Flotr.addType('pie', {
     sizeRatio: 0.6,        // => the size ratio of the pie relative to the plot 
     startAngle: Math.PI/4, // => the first slice start angle
     labelFormatter: Flotr.defaultPieLabelFormatter,
+    labelDistance: 4,
+    radiateLabel: false,
     pie3D: false,          // => whether to draw the pie in 3 dimenstions or not (ineffective) 
     pie3DviewAngle: (Math.PI/2 * 0.8),
     pie3DspliceThickness: 20,
@@ -4816,7 +4818,7 @@ Flotr.addType('pie', {
       bisection     = startAngle + measure / 2,
       label         = options.labelFormatter(this.total, value, this.count),
       //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
-      explodeCoeff  = explode + radius + 4,
+      explodeCoeff  = explode + radius + options.labelDistance,
       distX         = Math.cos(bisection) * explodeCoeff,
       distY         = Math.sin(bisection) * explodeCoeff,
       textAlign     = distX < 0 ? 'right' : 'left',
@@ -4851,8 +4853,7 @@ Flotr.addType('pie', {
 
     style = {
       size : options.fontSize * 1.2,
-      color : options.fontColor,
-      weight : 1.5
+      color : options.fontColor
     };
 
     if (label) {
@@ -4864,6 +4865,9 @@ Flotr.addType('pie', {
       else {
         style.textAlign = textAlign;
         style.textBaseline = textBaseline;
+        if (options.radiateLabel) {
+          style.angle = textAlign === 'left' ? bisection : bisection + Math.PI;
+        }
         Flotr.drawText(context, label, distX, distY, style);
       }
     }
