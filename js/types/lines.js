@@ -104,12 +104,10 @@ Flotr.addType('lines', {
         y1 = yScale(data[i][1] + stack1);
         y2 = yScale(data[i+1][1] + stack2);
         if (incStack) {
-          //data[i].push(stack1);
-          data[i][2] = stack1;
+          data[i].y0 = stack1;
           stack.values[data[i][0]] = data[i][1] + stack1;
           if (i == length-1) {
-            //data[i+1].push(stack2);
-            data[i+1][2] = stack2;
+            data[i+1].y0 = stack2;
             stack.values[data[i+1][0]] = data[i+1][1] + stack2;
           }
         }
