@@ -247,6 +247,8 @@ Flotr.addPlugin('hit', {
 
         x = data[j][0];
         y = data[j][1];
+        // Add stack offset if exists
+        if (data[j].y0) y += data[j].y0;
 
         if (x === null || y === null) continue;
 
