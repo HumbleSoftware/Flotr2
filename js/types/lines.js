@@ -99,21 +99,17 @@ Flotr.addType('lines', {
       if (start === null) start = data[i];
       
       if (stack) {
-        stack1 = stack.values[data[i][0]] || 0;
-        stack2 = stack.values[data[i+1][0]] || stack.values[data[i][0]] || 0;
-        y1 = yScale(data[i][1] + stack1);
-        y2 = yScale(data[i+1][1] + stack2);
-        if (incStack) {
-          data[i].y0 = stack1;
-          stack.values[data[i][0]] = data[i][1] + stack1;
-          if (i == length-1) {
-            data[i+1].y0 = stack2;
-            stack.values[data[i+1][0]] = data[i+1][1] + stack2;
-          }
-        }
+          stack1 = stack.values[data[i][0]] || 0;
+          stack2 = stack.values[data[i + 1][0]] || 0; stack.values[data[i][0]] || 0;
+
+          stack.values[data[i][0]] = stack1;
+          stack.values[data[i + 1][0]] = stack2;
+
+          y1 = yScale(data[i][1] + stack1);
+          y2 = yScale(data[i + 1][1] + stack2);
       } else {
-        y1 = yScale(data[i][1]);
-        y2 = yScale(data[i+1][1]);
+          y1 = yScale(data[i][1]);
+          y2 = yScale(data[i + 1][1]);
       }
 
       if (
@@ -141,22 +137,43 @@ Flotr.addType('lines', {
 
     fill();
 
-    function fill () {
-      // TODO stacked lines
-      if(!shadowOffset && options.fill && start){
-        x1 = xScale(start[0]);
-        context.fillStyle = options.fillStyle;
-        context.lineTo(x2, zero);
-        context.lineTo(x1, zero);
-        context.lineTo(x1, yScale(start[1]));
-        context.fill();
-        if (options.fillBorder) {
-          context.stroke();
+    function fill() {
+        // TODO stacked lines
+        if (!shadowOffset && options.fill && start) {
+            if (stack) {
+                context.fillStyle = options.fillStyle;
+                for (var i = length; i >= 0; --i) {
+                    var stackY = stack.values[data[i][0]];
+                    var y = yScale(stackY);
+                    var x = xScale(data[i][0]);
+                    context.lineTo(x, y);
+                }
+                context.lineTo(xScale(start[0]), yScale(start[1]));
+                context.fill();
+                if (options.fillBorder) {
+                    context.stroke();
+                }
+            } else {
+                x1 = xScale(start[0]);
+                context.fillStyle = options.fillStyle;
+                context.lineTo(x2, zero);
+                context.lineTo(x1, zero);
+                context.lineTo(x1, yScale(start[1]));
+                context.fill();
+                if (options.fillBorder) {
+                    context.stroke();
+                }
+            }
         }
-      }
     }
 
     context.closePath();
+    if (stack && incStack) {
+        for (i = 0; i <= length; ++i) {
+            stack1 = stack.values[data[i][0]];
+            stack.values[data[i][0]] = data[i][1] + stack1;
+        }
+    }
   },
 
   // Perform any pre-render precalculations (this should be run on data first)
