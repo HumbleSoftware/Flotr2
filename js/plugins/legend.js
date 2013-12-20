@@ -146,9 +146,8 @@ Flotr.addPlugin('legend', {
         if(fragments.length > 0){
           var table = '<table style="font-size:smaller;color:' + options.grid.color + '">' + fragments.join('') + '</table>';
           if(legend.container){
-            table = D.node(table);
-            this.legend.markup = table;
-            D.insert(legend.container, table);
+              D.insert(legend.container, table);
+              this.legend.markup = legend.container.childNodes[0];
           }
           else {
             var styles = {position: 'absolute', 'zIndex': '2', 'border' : '1px solid ' + legend.labelBoxBorderColor};
