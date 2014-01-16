@@ -6049,7 +6049,7 @@ function isLeftClick (e, type) {
 }
 
 function boundX(x, graph) {
-  return Math.min(Math.max(0, x), graph.plotWidth - 1);
+  return Math.min(Math.max(0, x), graph.plotWidth);
 }
 
 function boundY(y, graph) {
