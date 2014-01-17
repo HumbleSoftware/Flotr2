@@ -93,11 +93,11 @@ Flotr.addType('candles', {
           context.moveTo(x, Math.floor(top + lineWidth));
           context.lineTo(x, Math.floor(bottom + lineWidth));
 
-          reverseLines = (open > close) ? 1 : -1;
-          context.moveTo(Math.floor(x - width * reverseLines), Math.floor(top2 + lineWidth));
+          reverseLines = open < close;
+          context.moveTo(reverseLines ? right : left, Math.floor(top2 + lineWidth));
           context.lineTo(x, Math.floor(top2 + lineWidth));
           context.moveTo(x, Math.floor(bottom2 + lineWidth));
-          context.lineTo(Math.floor(x + width * reverseLines), Math.floor(bottom2 + lineWidth));
+          context.lineTo(reverseLines ? left : right, Math.floor(bottom2 + lineWidth));
         } else {
           context.strokeRect(left, top2 + lineWidth, right - left, bottom2 - top2);
           context.moveTo(x, Math.floor(top2 + lineWidth));
