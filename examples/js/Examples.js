@@ -75,6 +75,7 @@ Examples.prototype = {
         "basic-radar",
         "basic-bubble",
         "basic-candle",
+        "basic-candle-barchart",
         "basic-legend",
         "mouse-tracking",
         "mouse-zoom",
