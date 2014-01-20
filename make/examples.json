@@ -19,6 +19,7 @@
       "./examples/js/examples/basic-radar.js",
       "./examples/js/examples/basic-bubble.js",
       "./examples/js/examples/basic-candle.js",
+      "./examples/js/examples/basic-candle-barchart.js",
       "./examples/js/examples/basic-legend.js",
       "./examples/js/examples/mouse-tracking.js",
       "./examples/js/examples/mouse-zoom.js",

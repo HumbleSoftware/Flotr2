@@ -63,6 +63,7 @@ yepnope([
   'js/examples/basic-radar.js',
   'js/examples/basic-bubble.js',
   'js/examples/basic-candle.js',
+  'js/examples/basic-candle-barchart.js',
   'js/examples/basic-legend.js',
   'js/examples/mouse-tracking.js',
   'js/examples/mouse-zoom.js',
