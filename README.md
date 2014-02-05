@@ -81,6 +81,14 @@ with [js-imagediff](https://github.com/HumbleSoftware/js-imagediff) to test.  Te
 `cd spec; jasmine-headless-webkit -j jasmine.yml -c` or by a browser by navigating to 
 `flotr2/spec/SpecRunner.html`.
 
+### Building a JAR file
+
+To use Flotr within a Java project, a JAR file can be created using the [gradle](http://gradle.org) build tool. From
+the project's root directory, call `./gradlew build`. This will generate the jar file in 
+`build/libs/flotr2-$VERSION.jar`. As well as when building with `make`, you will need smoosh and jasmine
+installed.
+
+
 Shoutouts
 ---------
 
