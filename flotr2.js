@@ -501,7 +501,6 @@
 
   return bean
 });
-
 //     Underscore.js 1.1.7
 //     (c) 2011 Jeremy Ashkenas, DocumentCloud Inc.
 //     Underscore is freely distributable under the MIT license.
@@ -3264,14 +3263,14 @@ Axis.prototype = {
 
     this.maxLabel = T.dimensions(
       maxLabel,
-      {size:options.fontSize, angle: Flotr.toRad(this.options.labelsAngle)},
+      {size:options.fontSize, fontFamily: options.fontFamily, angle: Flotr.toRad(this.options.labelsAngle)},
       'font-size:smaller;',
       'flotr-grid-label'
     );
 
     this.titleSize = T.dimensions(
       this.options.title, 
-      {size:options.fontSize*1.2, angle: Flotr.toRad(this.options.titleAngle)},
+      {size:options.fontSize*1.2, fontFamily: options.fontFamily, angle: Flotr.toRad(this.options.titleAngle)},
       'font-weight:bold;',
       'flotr-axis-title'
     );
