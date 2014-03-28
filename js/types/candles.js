@@ -9,7 +9,6 @@ Flotr.addType('candles', {
     upFillColor: '#00A8F0',// => up sticks fill color
     downFillColor: '#CB4B4B',// => down sticks fill color
     fillOpacity: 0.5,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
-    // TODO Test this barcharts option.
     barcharts: false       // => draw as barcharts (not standard bars but financial barcharts)
   },
 
@@ -44,7 +43,7 @@ Flotr.addType('candles', {
       color,
       datum, x, y,
       open, high, low, close,
-      left, right, bottom, top, bottom2, top2,
+      left, right, bottom, top, bottom2, top2, reverseLines,
       i;
 
     if (data.length < 1) return;
@@ -72,7 +71,6 @@ Flotr.addType('candles', {
       color = options[open > close ? 'downFillColor' : 'upFillColor'];
 
       // Fill the candle.
-      // TODO Test the barcharts option
       if (options.fill && !options.barcharts) {
         context.fillStyle = 'rgba(0,0,0,0.05)';
         context.fillRect(left + shadowSize, top2 + shadowSize, right - left, bottom2 - top2);
@@ -91,19 +89,15 @@ Flotr.addType('candles', {
         context.strokeStyle = color;
         context.beginPath();
 
-        // TODO Again with the bartcharts
         if (options.barcharts) {
-          
-          context.moveTo(x, Math.floor(top + width));
-          context.lineTo(x, Math.floor(bottom + width));
-          
-          y = Math.floor(open + width) + 0.5;
-          context.moveTo(Math.floor(left) + pixelOffset, y);
-          context.lineTo(x, y);
-          
-          y = Math.floor(close + width) + 0.5;
-          context.moveTo(Math.floor(right) + pixelOffset, y);
-          context.lineTo(x, y);
+          context.moveTo(x, Math.floor(top + lineWidth));
+          context.lineTo(x, Math.floor(bottom + lineWidth));
+
+          reverseLines = open < close;
+          context.moveTo(reverseLines ? right : left, Math.floor(top2 + lineWidth));
+          context.lineTo(x, Math.floor(top2 + lineWidth));
+          context.moveTo(x, Math.floor(bottom2 + lineWidth));
+          context.lineTo(reverseLines ? left : right, Math.floor(bottom2 + lineWidth));
         } else {
           context.strokeRect(left, top2 + lineWidth, right - left, bottom2 - top2);
           context.moveTo(x, Math.floor(top2 + lineWidth));
