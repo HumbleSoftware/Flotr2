@@ -22,7 +22,8 @@ Flotr.addPlugin('titles', {
       var style = {
         size: options.fontSize,
         color: options.grid.color,
-        textAlign: 'center'
+        textAlign: 'center',
+        fontFamily: options.fontFamily
       };
       
       // Add subtitle

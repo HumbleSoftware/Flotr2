@@ -92,7 +92,8 @@ Flotr.addType('pie', {
     style = {
       size : options.fontSize * 1.2,
       color : options.fontColor,
-      weight : 1.5
+      weight : 1.5,
+      fontFamily: options.fontFamily
     };
 
     if (label) {

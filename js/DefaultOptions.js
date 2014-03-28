@@ -11,6 +11,7 @@ Flotr.defaultOptions = {
   HtmlText: true,          // => wether to draw the text using HTML or on the canvas
   fontColor: '#545454',    // => default font color
   fontSize: 7.5,           // => canvas' text font size
+  fontFamily: "sans-serif", // => canvas text font family
   resolution: 1,           // => resolution of the graph, to have printer-friendly graphs !
   parseFloat: true,        // => whether to preprocess data for floats (ie. if input is string)
   preventDefault: true,    // => preventDefault by default for mobile events.  Turn off to enable scroll.

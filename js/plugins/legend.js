@@ -62,7 +62,8 @@ Flotr.addPlugin('legend', {
           labelMaxWidth = 0,
           style = {
             size: options.fontSize*1.1,
-            color: options.grid.color
+            color: options.grid.color,
+            fontFamily: options.fontFamily
           };
 
       // We calculate the labels' max width

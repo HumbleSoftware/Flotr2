@@ -87,7 +87,8 @@ Flotr.addPlugin('labels', {
       style = {
         color        : axis.options.color || options.grid.color,
         angle        : Flotr.toRad(axis.options.labelsAngle),
-        textBaseline : 'middle'
+        textBaseline : 'middle',
+        fontFamily: options.fontFamily
       };
 
       for (i = 0; i < ticks.length &&
@@ -120,7 +121,8 @@ Flotr.addPlugin('labels', {
         color        : axis.options.color || options.grid.color,
         textAlign    : textAlign,
         textBaseline : textBaseline,
-        angle : Flotr.toRad(axis.options.labelsAngle)
+        angle : Flotr.toRad(axis.options.labelsAngle),
+        fontFamily: options.fontFamily
       };
       style = Flotr.getBestTextAlign(style.angle, style);
 
