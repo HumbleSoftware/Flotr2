@@ -19,7 +19,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/HumbleSoftware/Flotr2.git"
-  }
+  },
 
   "devDependencies": {
     "smoosh": "0.4.1"
