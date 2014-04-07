@@ -122,7 +122,8 @@ Flotr.addPlugin('labels', {
         textAlign    : textAlign,
         textBaseline : textBaseline,
         angle : Flotr.toRad(axis.options.labelsAngle),
-        fontFamily: options.fontFamily
+        fontFamily: options.fontFamily,
+        size: options.fontSize
       };
       style = Flotr.getBestTextAlign(style.angle, style);
 
