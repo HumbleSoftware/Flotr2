@@ -71,11 +71,12 @@ Text.prototype = {
     style = _.extend({
       size: F.defaultOptions.fontSize,
       weight: 1,
-      angle: 0
+      angle: 0,
+      fontFamiliy: 'sans-serif'
     }, style);
 
     context.save();
-    context.font = (style.weight > 1 ? "bold " : "") + (style.size*1.3) + "px sans-serif";
+    context.font = (style.weight > 1 ? "bold " : "") + (style.size*1.3) + "px " + style.fontFamily;
     metrics = context.measureText(text);
     context.restore();
 
