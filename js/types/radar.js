@@ -1,4 +1,15 @@
 /** Radar **/
+
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr"], mod);
+  else // Plain browser env
+    mod(Flotr);
+})(function(Flotr) {
+"use strict";
+
 Flotr.addType('radar', {
   options: {
     show: false,           // => setting to true will show radar chart, false will hide
@@ -129,7 +140,7 @@ Flotr.addType('radar', {
 
     var
         s = options.args.series,
-        lw = (s.points ? s.points.lineWidth : 1);
+        lw = (s.points ? s.points.lineWidth : 1),
         offset = (s.points.hitRadius || s.points.radius || s.mouse.radius) + lw;
 
     context.translate(options.width / 2, options.height / 2);
@@ -143,4 +154,5 @@ Flotr.addType('radar', {
   extendYRange : function (axis, data) {
     this.max = Math.max(axis.max, this.max || -Number.MAX_VALUE);
   }
+});
 });

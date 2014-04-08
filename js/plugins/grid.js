@@ -1,7 +1,12 @@
-(function () {
-
-var E = Flotr.EventAdapter,
-    _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"), require("../../lib/underscore"), require("../DOM"), require("../EventAdapter"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr", "underscore", "../DOM", "../EventAdapter"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM, Flotr.EventAdapter);
+})(function(Flotr, _, D, E) {
+"use strict";
 
 Flotr.addPlugin('graphGrid', {
 
@@ -134,7 +139,7 @@ Flotr.addPlugin('graphGrid', {
       topOffset = plotOffset.top,
       plotWidth = that.plotWidth,
       plotHeight = that.plotHeight,
-      v, img, src, left, top, globalAlpha;
+      v, img, src, left, top, globalAlpha, i;
     
     if (!grid.outlineWidth) return;
     
@@ -205,4 +210,4 @@ Flotr.addPlugin('graphGrid', {
   }
 });
 
-})();
+});

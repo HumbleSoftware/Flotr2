@@ -1,11 +1,17 @@
 /**
  * Flotr Event Adapter
  */
-(function () {
-var
-  F = Flotr,
-  bean = F.bean;
-F.EventAdapter = {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../lib/bean"), require("../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../lib/bean", "underscore"], mod);
+  else // Plain browser env
+    Flotr.EventAdapter = mod(bean, _);
+})(function(bean, _) {
+"use strict";
+
+return {
   observe: function(object, name, callback) {
     bean.add(object, name, callback);
     return this;
@@ -22,12 +28,12 @@ F.EventAdapter = {
     return this;
   },
   eventPointer: function(e) {
-    if (!F._.isUndefined(e.touches) && e.touches.length > 0) {
+    if (!_.isUndefined(e.touches) && e.touches.length > 0) {
       return {
         x : e.touches[0].pageX,
         y : e.touches[0].pageY
       };
-    } else if (!F._.isUndefined(e.changedTouches) && e.changedTouches.length > 0) {
+    } else if (!_.isUndefined(e.changedTouches) && e.changedTouches.length > 0) {
       return {
         x : e.changedTouches[0].pageX,
         y : e.changedTouches[0].pageY
@@ -49,4 +55,4 @@ F.EventAdapter = {
     }
   }
 };
-})();
+});

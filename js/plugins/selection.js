@@ -7,7 +7,15 @@
  *  drag - Left and Right drag handles
  *  scroll - Scrolling handle
  */
-(function () {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"), require("../../lib/underscore"), require("../DOM"), require("../EventAdapter"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr", "underscore", "../DOM", "../EventAdapter"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM, Flotr.EventAdapter);
+})(function(Flotr, _, D, E) {
+"use strict";
 
 function isLeftClick (e, type) {
   return (e.which ? (e.which === 1) : (e.button === 0 || e.button === 1));
@@ -20,12 +28,6 @@ function boundX(x, graph) {
 function boundY(y, graph) {
   return Math.min(Math.max(0, y), graph.plotHeight);
 }
-
-var
-  D = Flotr.DOM,
-  E = Flotr.EventAdapter,
-  _ = Flotr._;
-
 
 Flotr.addPlugin('selection', {
 
@@ -274,4 +276,4 @@ Flotr.addPlugin('selection', {
 
 });
 
-})();
+});

@@ -1,4 +1,14 @@
 /** Candles **/
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr"], mod);
+  else // Plain browser env
+    mod(Flotr);
+})(function(Flotr) {
+"use strict";
+
 Flotr.addType('candles', {
   options: {
     show: false,           // => setting to true will show candle sticks, false will hide
@@ -183,4 +193,5 @@ Flotr.addType('candles', {
       axis.min = Math.min(axis.datamin - 0.5, axis.min);
     }
   }
+});
 });

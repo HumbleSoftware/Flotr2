@@ -1,7 +1,17 @@
 /**
  * Flotr Date
  */
-Flotr.Date = {
+
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    module.exports = mod();
+  else if (typeof define == "function" && define.amd) // AMD
+    return define([], mod);
+  else // Plain browser env
+    Flotr.Date = mod();
+})(function() {
+  "use strict";
+return {
 
   set : function (date, name, mode, value) {
     mode = mode || 'UTC';
@@ -203,3 +213,4 @@ Flotr.Date = {
   ],
   monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 };
+});

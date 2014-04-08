@@ -1,20 +1,23 @@
 /**
  * Flotr Graph class that plots a graph on creation.
  */
-(function () {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"), require("./DefaultOptions"), require("./DOM"), require("./EventAdapter"), require("./Series"), require("./Text"), require("./Color"), require("./Axis"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore", "./DefaultOptions", "./DOM", "./EventAdapter", "./Series", "./Text", "./Color", "./Axis"], mod);
+  else // Plain browser env
+    Flotr.Graph = mod(Flotr, _, Flotr.defaultOptions, Flotr.DOM, Flotr.EventAdapter, Flotr.Series, Flotr.Text, Flotr.Color, Flotr.Axis);
+})(function(flotr, _, defaultOptions, D, E, Series, Text, Color, Axis) {
+"use strict";
 
-var
-  D     = Flotr.DOM,
-  E     = Flotr.EventAdapter,
-  _     = Flotr._,
-  flotr = Flotr;
 /**
  * Flotr Graph constructor.
  * @param {Element} el - element to insert the graph into
  * @param {Object} data - an array or object of dataseries
  * @param {Object} options - an object containing options
  */
-Graph = function(el, data, options){
+var Graph = function(el, data, options){
 // Let's see if we can get away with out this [JS]
 //  try {
     this._setEl(el);
@@ -24,11 +27,11 @@ Graph = function(el, data, options){
     E.fire(this.el, 'flotr:beforeinit', [this]);
 
     this.data = data;
-    this.series = flotr.Series.getSeries(data);
+    this.series = Series.getSeries(data);
     this._initOptions(options);
     this._initGraphTypes();
     this._initCanvas();
-    this._text = new flotr.Text({
+    this._text = new Text({
       element : this.el,
       ctx : this.ctx,
       html : this.options.HtmlText,
@@ -79,7 +82,7 @@ Graph.prototype = {
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
-    return flotr.Color.processColor(color, o);
+    return Color.processColor(color, o);
   },
   /**
    * Function determines the min and max values for the xaxis and yaxis.
@@ -664,11 +667,10 @@ Graph.prototype = {
    * @param {Object} opts - options object
    */
   _initOptions: function(opts){
-    var options = flotr.clone(flotr.defaultOptions);
+    var options = flotr.clone(defaultOptions);
     options.x2axis = _.extend(_.clone(options.xaxis), options.x2axis);
     options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
     this.options = flotr.merge(opts || {}, options);
-
     if (this.options.grid.minorVerticalLines === null &&
       this.options.xaxis.scaling === 'logarithmic') {
       this.options.grid.minorVerticalLines = true;
@@ -680,7 +682,7 @@ Graph.prototype = {
 
     E.fire(this.el, 'flotr:afterinitoptions', [this]);
 
-    this.axes = flotr.Axis.getAxes(this.options);
+    this.axes = Axis.getAxes(this.options);
 
     // Initialize some variables used throughout this function.
     var assignedColors = [],
@@ -698,7 +700,7 @@ Graph.prototype = {
       if(c){
         --neededColors;
         if(_.isNumber(c)) assignedColors.push(c);
-        else usedColors.push(flotr.Color.parse(c));
+        else usedColors.push(Color.parse(c));
       }
     }
 
@@ -708,7 +710,7 @@ Graph.prototype = {
 
     // Generate needed number of colors.
     for(i = 0; colors.length < neededColors;){
-      c = (oc.length == i) ? new flotr.Color(100, 100, 100) : flotr.Color.parse(oc[i]);
+      c = (oc.length == i) ? new Color(100, 100, 100) : Color.parse(oc[i]);
 
       // Make sure each serie gets a different color.
       var sign = variation % 2 == 1 ? -1 : 1,
@@ -766,6 +768,6 @@ Graph.prototype = {
   }
 };
 
-Flotr.Graph = Graph;
+return Graph;
 
-})();
+});

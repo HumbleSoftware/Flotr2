@@ -1,12 +1,15 @@
 /**
  * Text Utilities
  */
-(function () {
-
-var
-  F = Flotr,
-  D = F.DOM,
-  _ = F._,
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"), require("./DOM"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore", "./DOM"], mod);
+  else // Plain browser env
+    Flotr.Text = mod(Flotr, _, Flotr.DOM);
+})(function(F, _, D) {
+"use strict";
 
 Text = function (o) {
   this.o = o;
@@ -83,6 +86,6 @@ Text.prototype = {
   }
 };
 
-Flotr.Text = Text;
+return Text;
 
-})();
+});

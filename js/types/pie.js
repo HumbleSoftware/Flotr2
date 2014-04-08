@@ -5,10 +5,15 @@
  * @param {Object} slice - Slice object
  * @return {String} Formatted pie label string
  */
-(function () {
-
-var
-  _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"), require("../../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr", "underscore"], mod);
+  else // Plain browser env
+    mod(Flotr, _);
+})(function(F, _) {
+"use strict";
 
 Flotr.defaultPieLabelFormatter = function (total, value) {
   return (100 * value / total).toFixed(2)+'%';
@@ -211,4 +216,4 @@ Flotr.addType('pie', {
     this.total = (this.total || 0) + data[0][1];
   }
 });
-})();
+});

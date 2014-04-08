@@ -1,8 +1,12 @@
-(function () {
-
-var
-  D = Flotr.DOM,
-  _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"), require("../../lib/underscore"), require("../DOM"), require("../EventAdapter"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr", "underscore", "../DOM", "../EventAdapter"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM, Flotr.EventAdapter);
+})(function(Flotr, _, D, E) {
+"use strict";
 
 Flotr.addPlugin('legend', {
   options: {
@@ -190,4 +194,4 @@ Flotr.addPlugin('legend', {
     }
   }
 });
-})();
+});

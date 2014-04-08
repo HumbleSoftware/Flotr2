@@ -5,16 +5,28 @@
  * Flotr: http://code.google.com/p/flotr/ (fork)
  * Flot: https://github.com/flot/flot (original fork)
  */
-(function () {
+
+(function(mod, global) {
+  var previousFlotr, flotrModule;
+
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    module.exports = mod(require("../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    return define(["underscore"], mod);
+  else // Plain browser env
+    previousFlotr = global.Flotr;
+    global.Flotr = flotrModule = mod(_);
+    global.Flotr.noConflict = function () {
+      global.Flotr = previousFlotr;
+      return flotrModule;
+    };
+})(function(_) {
+"use strict";
 
 var
-  global = this,
-  previousFlotr = this.Flotr,
   Flotr;
 
 Flotr = {
-  _: _,
-  bean: bean,
   isIphone: /iphone/i.test(navigator.userAgent),
   isIE: (navigator.appVersion.indexOf("MSIE") != -1 ? parseFloat(navigator.appVersion.split("MSIE")[1]) : false),
   
@@ -78,10 +90,10 @@ Flotr = {
       v = src[i];
       if (v && typeof(v) === 'object') {
         if (v.constructor === Array) {
-          result[i] = this._.clone(v);
+          result[i] = _.clone(v);
         } else if (
             v.constructor !== RegExp &&
-            !this._.isElement(v) &&
+            !_.isElement(v) &&
             !v.jquery
         ) {
           result[i] = Flotr.merge(v, (dest ? dest[i] : undefined));
@@ -198,7 +210,7 @@ Flotr = {
       return;
     }
     
-    style = this._.extend({
+    style = _.extend({
       size: Flotr.defaultOptions.fontSize,
       color: '#000000',
       textAlign: 'left',
@@ -242,13 +254,8 @@ Flotr = {
   },
   getTextAngleFromAlign: function(style) {
     return Flotr.alignTable[style.textAlign+' '+style.textBaseline] || 0;
-  },
-  noConflict : function () {
-    global.Flotr = previousFlotr;
-    return this;
   }
+
 };
-
-global.Flotr = Flotr;
-
-})();
+return Flotr;
+}, this);

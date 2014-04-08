@@ -1,7 +1,20 @@
 /**
  * Flotr Defaults
  */
-Flotr.defaultOptions = {
+
+(function(mod) {
+  var previousFlotr, flotrModule;
+
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    module.exports = mod(require("./Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    return define(["./Flotr"], mod);
+  else // Plain browser env
+    Flotr.defaultOptions = mod(Flotr);
+})(function(Flotr) {
+"use strict";
+
+return {
   colors: ['#00A8F0', '#C0D800', '#CB4B4B', '#4DA74D', '#9440ED'], //=> The default colorscheme. When there are > 5 series, additional colors are generated.
   ieBackgroundColor: '#FFFFFF', // Background color for excanvas clipping
   title: null,             // => The graph's title
@@ -97,3 +110,4 @@ Flotr.defaultOptions = {
     fillOpacity: 0.4       // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill 
   }
 };
+});

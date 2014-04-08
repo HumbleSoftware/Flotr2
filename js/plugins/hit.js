@@ -1,9 +1,14 @@
-(function () {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"), require("../../lib/underscore"), require("../DOM"), require("../EventAdapter"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr", "underscore", "../DOM", "../EventAdapter"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM, Flotr.EventAdapter);
+})(function(flotr, _, D, E) {
+"use strict";
 
 var
-  D = Flotr.DOM,
-  _ = Flotr._,
-  flotr = Flotr,
   S_MOUSETRACK = 'opacity:0.7;background-color:#000;color:#fff;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
 
 Flotr.addPlugin('hit', {
@@ -113,7 +118,7 @@ Flotr.addPlugin('hit', {
         // TODO fix this (points) should move to general testable graph mixin
         var
           s = prev.series,
-          lw = (s.points ? s.points.lineWidth : 1);
+          lw = (s.points ? s.points.lineWidth : 1),
           offset = (s.points.hitRadius || s.points.radius || s.mouse.radius) + lw;
         octx.clearRect(
           prev.xaxis.d2p(prev.x) - offset,
@@ -390,4 +395,4 @@ Flotr.addPlugin('hit', {
   }
 
 });
-})();
+});

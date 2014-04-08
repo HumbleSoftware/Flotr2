@@ -1,6 +1,12 @@
-(function () {
-
-var D = Flotr.DOM;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"), require("../DOM"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr", "../DOM"], mod);
+  else // Plain browser env
+    mod(Flotr, Flotr.DOM);
+})(function(Flotr, D) {
+"use strict";
 
 Flotr.addPlugin('labels', {
 
@@ -82,7 +88,7 @@ Flotr.addPlugin('labels', {
         ticks   = minorTicks ? axis.minorTicks : axis.ticks,
         isX     = axis.orientation === 1,
         isFirst = axis.n === 1,
-        style, offset;
+        style, offset, x, y;
 
       style = {
         color        : axis.options.color || options.grid.color,
@@ -224,4 +230,4 @@ Flotr.addPlugin('labels', {
   }
 
 });
-})();
+});

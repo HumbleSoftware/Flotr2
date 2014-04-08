@@ -1,8 +1,12 @@
-(function() {
-
-var
-  D = Flotr.DOM,
-  _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"), require("../../lib/underscore"), require("../DOM"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr", "underscore", "../DOM"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM);
+})(function(Flotr, _, D) {
+"use strict";
 
 function getImage (type, canvas, context, width, height, background) {
 
@@ -65,4 +69,4 @@ Flotr.addPlugin('download', {
   }
 });
 
-})();
+});

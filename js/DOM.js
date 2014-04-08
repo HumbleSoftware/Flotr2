@@ -1,12 +1,18 @@
-(function () {
-
-var _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["underscore"], mod);
+  else // Plain browser env
+    Flotr.DOM = mod(_);
+})(function(_) {
+"use strict";
 
 function getEl (el) {
   return (el && el.jquery) ? el[0] : el;
 }
 
-Flotr.DOM = {
+return {
   addClass: function(element, name){
     element = getEl(element);
     var classList = (element.className ? element.className : '');
@@ -20,7 +26,7 @@ Flotr.DOM = {
     return document.createElement(tag);
   },
   node: function(html) {
-    var div = Flotr.DOM.create('div'), n;
+    var div = this.create('div'), n;
     div.innerHTML = html;
     n = div.children[0];
     div.innerHTML = '';
@@ -90,7 +96,7 @@ Flotr.DOM = {
   },
   show: function(element){
     element = getEl(element);
-    Flotr.DOM.setStyles(element, {display:''});
+    this.setStyles(element, {display:''});
   },
   /**
    * Return element size.
@@ -103,4 +109,4 @@ Flotr.DOM = {
   }
 };
 
-})();
+});

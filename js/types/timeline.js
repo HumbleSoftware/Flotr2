@@ -1,3 +1,13 @@
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"), require("../../lib/underscore"), require("../DOM"), require("../EventAdapter"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr", "underscore", "../DOM", "../EventAdapter"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM, Flotr.EventAdapter);
+})(function(Flotr, _, D, E) {
+"use strict";
+
 Flotr.addType('timeline', {
   options: {
     show: false,
@@ -36,7 +46,7 @@ Flotr.addType('timeline', {
       lineWidth = options.lineWidth,
       i;
 
-    Flotr._.each(data, function (timeline) {
+    _.each(data, function (timeline) {
 
       var 
         x   = timeline[0],
@@ -74,7 +84,7 @@ Flotr.addType('timeline', {
       var
         max = xa.max;
 
-      Flotr._.each(data, function (timeline) {
+      _.each(data, function (timeline) {
         max = Math.max(max, timeline[0] + timeline[2]);
       }, this);
 
@@ -87,4 +97,5 @@ Flotr.addType('timeline', {
       ya.max = ya.datamax + w;
   }
 
+});
 });
