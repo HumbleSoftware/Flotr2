@@ -3,8 +3,6 @@
  */
 
 (function(mod) {
-  var previousFlotr, flotrModule;
-
   if (typeof exports == "object" && typeof module == "object") // CommonJS
     module.exports = mod(require("./Flotr"));
   else if (typeof define == "function" && define.amd) // AMD
