@@ -4,12 +4,12 @@
 
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") // CommonJS
-    module.exports = mod();
+    module.exports = mod(require("./DefaultOptions"));
   else if (typeof define == "function" && define.amd) // AMD
-    return define([], mod);
+    return define(["./DefaultOptions"], mod);
   else // Plain browser env
-    Flotr.Date = mod();
-})(function() {
+    Flotr.Date = mod(Flotr.defaultOptions);
+})(function(defaultOptions) {
   "use strict";
 return {
 
@@ -110,7 +110,7 @@ return {
       formatter, i;
 
     // Use custom formatter or time tick formatter
-    formatter = (options.tickFormatter === Flotr.defaultTickFormatter ?
+    formatter = (options.tickFormatter === defaultOptions.xaxis.tickFormatter ?
       this.formatter : options.tickFormatter
     );
 

@@ -10,17 +10,17 @@
   var previousFlotr, flotrModule;
 
   if (typeof exports == "object" && typeof module == "object") // CommonJS
-    module.exports = mod(require("../lib/underscore"));
+    module.exports = mod(require("../lib/underscore"), require("./DefaultOptions"));
   else if (typeof define == "function" && define.amd) // AMD
-    return define(["underscore"], mod);
+    return define(["underscore", "./DefaultOptions"], mod);
   else // Plain browser env
     previousFlotr = global.Flotr;
-    global.Flotr = flotrModule = mod(_);
+    global.Flotr = flotrModule = mod(_, undefined);
     global.Flotr.noConflict = function () {
       global.Flotr = previousFlotr;
       return flotrModule;
     };
-})(function(_) {
+})(function(_, defaultOptions) {
 "use strict";
 
 var
@@ -40,6 +40,8 @@ Flotr = {
    * The list of the registered plugins
    */
   plugins: {},
+  
+  defaultOptions : defaultOptions,
   
   /**
    * Can be used to add your own chart type. 
@@ -139,25 +141,6 @@ Flotr = {
     
     return tickSize * magn;
   },
-  
-  /**
-   * Default tick formatter.
-   * @param {String, Integer} val - tick value integer
-   * @param {Object} axisOpts - the axis' options
-   * @return {String} formatted tick string
-   */
-  defaultTickFormatter: function(val, axisOpts){
-    return val+'';
-  },
-  
-  /**
-   * Formats the mouse tracker values.
-   * @param {Object} obj - Track value Object {x:..,y:..}
-   * @return {String} Formatted track string
-   */
-  defaultTrackFormatter: function(obj){
-    return '('+obj.x+', '+obj.y+')';
-  }, 
   
   /**
    * Utility function to convert file size values in bytes to kB, MB, ...
