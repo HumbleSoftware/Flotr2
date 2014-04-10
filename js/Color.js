@@ -8,7 +8,7 @@
   else if (typeof define == "function" && define.amd) // AMD
     define(["./Flotr", "underscore"], mod);
   else // Plain browser env
-    mod(Flotr, _);
+    Flotr.Color = mod(Flotr, _);
 })(function(Flotr, _) {
 "use strict";
 
