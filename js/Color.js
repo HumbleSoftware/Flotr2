@@ -163,6 +163,6 @@ _.extend(Color, {
   }
 });
 
-Flotr.Color = Color;
+return Color;
 
 });
