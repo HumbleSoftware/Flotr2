@@ -5,5 +5,8 @@ build
 *.swo
 *.vim
 .jhw-cache
-node_modules
 dev
+
+# Node
+node_modules
+npm-debug.log
