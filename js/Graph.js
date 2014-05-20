@@ -293,6 +293,7 @@ Graph.prototype = {
         textEnabled : this.textEnabled,
         htmlText    : this.options.HtmlText,
         text        : this._text, // TODO Is this necessary?
+		labelText	: series.label,
         element     : this.el,
         data        : series.data,
         color       : series.color,
