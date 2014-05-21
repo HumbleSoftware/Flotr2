@@ -19,6 +19,7 @@
       "./js/types/gantt.js",
       "./js/types/markers.js",
       "./js/types/pie.js",
+	  "./js/types/donut.js",
       "./js/types/points.js",
       "./js/types/radar.js",
       "./js/types/timeline.js",
