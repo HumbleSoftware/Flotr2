@@ -11,7 +11,7 @@ var
   _ = Flotr._;
 
 Flotr.defaultPieLabelFormatter = function (total, value, labelText) {
-  return labelText+(100 * value / total).toFixed(2)+'%';
+  return (100 * value / total).toFixed(2)+'%';
 };
 
 Flotr.addType('pie', {
