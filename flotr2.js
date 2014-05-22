@@ -5068,14 +5068,16 @@ Flotr.addType('donut', {
       }
     }
 
-    this.plotSlice(x, y, radius, thickness, layer, startAngle[layer], endAngle[layer], context);
-    if (fill) {
-      context.fillStyle = fillStyle;
-      context.fill();
-    }
-    context.lineWidth = lineWidth;
-    context.strokeStyle = color;
-    context.stroke();
+	if (value > 0) {
+	    this.plotSlice(x, y, radius, thickness, layer, startAngle[layer], endAngle[layer], context);
+	    if (fill) {
+	      context.fillStyle = fillStyle;
+	      context.fill();
+	    }
+	    context.lineWidth = lineWidth;
+	    context.strokeStyle = color;
+	    context.stroke();
+	}
 
     style = {
       size : options.fontSize * 1.2,
