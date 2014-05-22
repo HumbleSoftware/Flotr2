@@ -3658,9 +3658,15 @@ Flotr.addType('donut', {
     epsilon: 0.1,          // => how close do you have to get to hit empty slice
 	sliceThickness: 20     // => thickness of each slice in the donut
   },
+  
+  startAngle: [],
+  total: [],
 
   draw : function (options) {
 
+	var startAngle = [];
+	var endAngle = [];
+	
     var
       data          = options.data,
       context       = options.context,
@@ -3676,13 +3682,15 @@ Flotr.addType('donut', {
       radius        = Math.min(width, height) * sizeRatio / 2,
 	  thickness		= options.sliceThickness,
       value         = data[0][1],
+	  layer			= data[0][0],
       html          = [],
       vScale        = 1,
-      measure       = Math.PI * 2 * value / this.total,
-      startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
-      endAngle      = startAngle + measure,
-      bisection     = startAngle + measure / 2,
-	  label         = options.labelFormatter(this.total, value, options.labelText),
+      measure       = Math.PI * 2 * value / this.total[layer];
+    startAngle[layer] = this.startAngle[layer] || (2 * Math.PI * options.startAngle); // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
+    endAngle[layer] = startAngle[layer] + measure;
+	var
+      bisection     = startAngle[layer] + measure / 2,
+	  label         = options.labelFormatter(this.total[layer], value, options.labelText),
       explodeCoeff  = explode + radius + 4,
       distX         = Math.cos(bisection) * explodeCoeff,
       distY         = Math.sin(bisection) * explodeCoeff,
@@ -3700,14 +3708,14 @@ Flotr.addType('donut', {
 
     // Shadows
     if (shadowSize > 0) {
-      this.plotSlice(x + shadowSize, y + shadowSize, radius, thickness, startAngle, endAngle, context);
+      this.plotSlice(x + shadowSize, y + shadowSize, radius, thickness, layer, startAngle[layer], endAngle[layer], context);
       if (fill) {
         context.fillStyle = 'rgba(0,0,0,0.1)';
         context.fill();
       }
     }
 
-    this.plotSlice(x, y, radius, thickness, startAngle, endAngle, context);
+    this.plotSlice(x, y, radius, thickness, layer, startAngle[layer], endAngle[layer], context);
     if (fill) {
       context.fillStyle = fillStyle;
       context.fill();
@@ -3744,30 +3752,32 @@ Flotr.addType('donut', {
     context.restore();
 
     // New start angle
-    this.startAngle = endAngle;
+    //startAngle[layer] = endAngle[layer];
+	//this.startAngle = endAngle[layer];
+	this.startAngle[layer] = endAngle[layer];
     this.slices = this.slices || [];
     this.slices.push({
       radius : radius,
       x : x,
       y : y,
       explode : explode,
-      start : startAngle,
-      end : endAngle
+      start : startAngle[layer],
+      end : endAngle[layer]
     });
   },
-  plotSlice : function (x, y, radius, thickness, startAngle, endAngle, context) {
+  plotSlice : function (x, y, radius, thickness, layer, startAngle, endAngle, context) {
 	// Start path
 	context.beginPath();
 	// Move to inside arc start pt
-	context.moveTo(x+Math.cos(startAngle)*(radius-thickness), y+Math.sin(startAngle)*(radius-thickness));
+	context.moveTo(x+Math.cos(startAngle)*(radius-thickness*(layer+1)), y+Math.sin(startAngle)*(radius-thickness*(layer+1)));
 	// Line to outside arc start pt
-	context.lineTo(x+Math.cos(startAngle)*(radius), y+Math.sin(startAngle)*(radius));
+	context.lineTo(x+Math.cos(startAngle)*(radius-thickness*(layer)), y+Math.sin(startAngle)*(radius-thickness*(layer)));
 	// Outside arc
-	context.arc(x, y, radius, startAngle, endAngle, false);
+	context.arc(x, y, radius-thickness*(layer), startAngle, endAngle, false);
 	// Line to inside arc end pt
-	context.lineTo(x+Math.cos(endAngle)*(radius-thickness), y+Math.sin(endAngle)*(radius-thickness));
+	context.lineTo(x+Math.cos(endAngle)*(radius-thickness*(layer+1)), y+Math.sin(endAngle)*(radius-thickness*(layer+1)));
 	// Inside arc
-	context.arc(x, y, radius-thickness, endAngle, startAngle, true);
+	context.arc(x, y, radius-thickness*(layer+1), endAngle, startAngle, true);
 	// Close
     context.closePath();
   },
@@ -3811,7 +3821,7 @@ Flotr.addType('donut', {
          n.eAngle = end;
          n.index = 0;
          n.seriesIndex = index;
-         n.fraction = data[1] / this.total;
+         n.fraction = data[1] / this.total[layer];
       }
     }
   },
@@ -3822,7 +3832,7 @@ Flotr.addType('donut', {
 
     context.save();
     context.translate(options.width / 2, options.height / 2);
-    this.plotSlice(slice.x, slice.y, slice.radius, thickness, slice.start, slice.end, context);
+    this.plotSlice(slice.x, slice.y, slice.radius, thickness, layer, slice.start, slice.end, context);
     context.stroke();
     context.restore();
   },
@@ -3844,7 +3854,8 @@ Flotr.addType('donut', {
     context.restore();
   },
   extendYRange : function (axis, data) {
-    this.total = (this.total || 0) + data[0][1];
+	var layer = data[0][0];
+    this.total[layer] = (this.total[layer] || 0) + data[0][1];
   }
 });
 })();
