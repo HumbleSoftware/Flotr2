@@ -307,10 +307,21 @@ Graph.prototype = {
     options = flotr.merge(type, options);
 
     // Fill
-    options.fillStyle = this.processColor(
-      type.fillColor || series.color,
-      {opacity: type.fillOpacity}
-    );
+	var color = type.fillColor || series.color;
+	var colorType = color.substring( 0, color.indexOf('('));
+	if (colorType == 'rgba') {
+		// Color already has alpha, use it
+		var colorAlpha = color.substring( color.lastIndexOf(',')+1, color.lastIndexOf(')')).replace(/ /g,''); // Get the alpha value (if it exists), and remove whitespace
+	    options.fillStyle = this.processColor(
+	      color,
+	      {opacity: colorAlpha}
+	    );
+	} else {
+		options.fillStyle = this.processColor(
+			color,
+			{opacity: type.fillOpacity}
+		);
+	}
 
     return options;
   },
