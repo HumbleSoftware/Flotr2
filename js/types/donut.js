@@ -124,8 +124,6 @@ Flotr.addType('donut', {
     context.restore();
 
     // New start angle
-    //startAngle[layer] = endAngle[layer];
-	//this.startAngle = endAngle[layer];
 	this.startAngle[layer] = endAngle[layer];
     this.slices = this.slices || [];
     this.slices.push({
