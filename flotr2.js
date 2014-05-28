@@ -5087,6 +5087,30 @@ Flotr.addType('donut', {
 
     if (label) {
       if (options.htmlText || !options.textEnabled) {
+		// iterate through slices and check for overlap
+		_.each(this.slices, function (slice){
+			// Get old bisection
+			sliceBisect = slice.start + (slice.end-slice.start) / 2;
+			// Check if close
+			if (sliceBisect-bisection < 0 && sliceBisect-bisection > -0.3) {
+				// Values close, move bisection up
+				bisection += 0.3;
+				adjustValues();
+			} else if (sliceBisect-bisection < 0.3 && sliceBisect-bisection >= 0) {
+				// Values close, move bisection down
+				bisection -= 0.3;
+				adjustValues();
+			}
+			
+			function adjustValues() {
+				// Adjust new values
+		        distX         = Math.cos(bisection) * explodeCoeff;
+		        distY         = Math.sin(bisection) * explodeCoeff;
+		        textAlign     = distX < 0 ? 'right' : 'left';
+		        textBaseline  = distY > 0 ? 'top' : 'bottom';
+			}
+		});
+		
         divStyle = 'position:absolute;' + textBaseline + ':' + (height / 2 + (textBaseline === 'top' ? distY : -distY)) + 'px;';
         divStyle += textAlign + ':' + (width / 2 + (textAlign === 'right' ? -distX : distX)) + 'px;';
         html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
@@ -5107,8 +5131,6 @@ Flotr.addType('donut', {
     context.restore();
 
     // New start angle
-    //startAngle[layer] = endAngle[layer];
-	//this.startAngle = endAngle[layer];
 	this.startAngle[layer] = endAngle[layer];
     this.slices = this.slices || [];
     this.slices.push({
