@@ -1681,7 +1681,7 @@ Flotr.defaultOptions = {
   mouse: {
     track: false,          // => true to track the mouse, no tracking otherwise
     trackAll: false,
-    position: 'se',        // => position of the value box (default south-east)
+    position: 'se',        // => position of the value box (default south-east).  False disables.
     relative: false,       // => next to the mouse cursor
     trackFormatter: Flotr.defaultTrackFormatter, // => formats the values in the value box
     margin: 5,             // => margin in pixels of the valuebox
@@ -3584,8 +3584,10 @@ Flotr.addType('lines', {
         y1 = yScale(data[i][1] + stack1);
         y2 = yScale(data[i+1][1] + stack2);
         if (incStack) {
+          data[i].y0 = stack1;
           stack.values[data[i][0]] = data[i][1] + stack1;
           if (i == length-1) {
+            data[i+1].y0 = stack2;
             stack.values[data[i+1][0]] = data[i+1][1] + stack2;
           }
         }
@@ -4204,7 +4206,6 @@ Flotr.addType('candles', {
     upFillColor: '#00A8F0',// => up sticks fill color
     downFillColor: '#CB4B4B',// => down sticks fill color
     fillOpacity: 0.5,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
-    // TODO Test this barcharts option.
     barcharts: false       // => draw as barcharts (not standard bars but financial barcharts)
   },
 
@@ -4239,7 +4240,7 @@ Flotr.addType('candles', {
       color,
       datum, x, y,
       open, high, low, close,
-      left, right, bottom, top, bottom2, top2,
+      left, right, bottom, top, bottom2, top2, reverseLines,
       i;
 
     if (data.length < 1) return;
@@ -4267,7 +4268,6 @@ Flotr.addType('candles', {
       color = options[open > close ? 'downFillColor' : 'upFillColor'];
 
       // Fill the candle.
-      // TODO Test the barcharts option
       if (options.fill && !options.barcharts) {
         context.fillStyle = 'rgba(0,0,0,0.05)';
         context.fillRect(left + shadowSize, top2 + shadowSize, right - left, bottom2 - top2);
@@ -4286,19 +4286,15 @@ Flotr.addType('candles', {
         context.strokeStyle = color;
         context.beginPath();
 
-        // TODO Again with the bartcharts
         if (options.barcharts) {
-          
-          context.moveTo(x, Math.floor(top + width));
-          context.lineTo(x, Math.floor(bottom + width));
-          
-          y = Math.floor(open + width) + 0.5;
-          context.moveTo(Math.floor(left) + pixelOffset, y);
-          context.lineTo(x, y);
-          
-          y = Math.floor(close + width) + 0.5;
-          context.moveTo(Math.floor(right) + pixelOffset, y);
-          context.lineTo(x, y);
+          context.moveTo(x, Math.floor(top + lineWidth));
+          context.lineTo(x, Math.floor(bottom + lineWidth));
+
+          reverseLines = open < close;
+          context.moveTo(reverseLines ? right : left, Math.floor(top2 + lineWidth));
+          context.lineTo(x, Math.floor(top2 + lineWidth));
+          context.moveTo(x, Math.floor(bottom2 + lineWidth));
+          context.lineTo(reverseLines ? left : right, Math.floor(bottom2 + lineWidth));
         } else {
           context.strokeRect(left, top2 + lineWidth, right - left, bottom2 - top2);
           context.moveTo(x, Math.floor(top2 + lineWidth));
@@ -4745,7 +4741,7 @@ Flotr.addType('markers', {
       context.strokeRect(left, top, dim.width, dim.height);
     
     if (isImage(label))
-      context.drawImage(label, left+margin, top+margin);
+      context.drawImage(label, parseInt(left+margin, 10), parseInt(top+margin, 10));
     else
       Flotr.drawText(context, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
   }
@@ -4793,11 +4789,9 @@ Flotr.addType('pie', {
   draw : function (options) {
 
     // TODO 3D charts what?
-
     var
       data          = options.data,
       context       = options.context,
-      canvas        = context.canvas,
       lineWidth     = options.lineWidth,
       shadowSize    = options.shadowSize,
       sizeRatio     = options.sizeRatio,
@@ -4807,7 +4801,7 @@ Flotr.addType('pie', {
       color         = options.color,
       fill          = options.fill,
       fillStyle     = options.fillStyle,
-      radius        = Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      radius        = Math.min(width, height) * sizeRatio / 2,
       value         = data[0][1],
       html          = [],
       vScale        = 1,//Math.cos(series.pie.viewAngle);
@@ -4881,7 +4875,7 @@ Flotr.addType('pie', {
     this.startAngle = endAngle;
     this.slices = this.slices || [];
     this.slices.push({
-      radius : Math.min(canvas.width, canvas.height) * sizeRatio / 2,
+      radius : radius,
       x : x,
       y : y,
       explode : explode,
@@ -5694,7 +5688,7 @@ Flotr.addPlugin('hit', {
 
     function e(s, index) {
       _.each(_.keys(flotr.graphTypes), function (type) {
-        if (s[type] && s[type].show && this[type][method]) {
+        if (s[type] && s[type].show && !s.hide && this[type][method]) {
           options = this.getOptions(s, type);
 
           options.fill = !!s.mouse.fillColor;
@@ -5886,10 +5880,14 @@ Flotr.addPlugin('hit', {
       mouseX = serie.xaxis.p2d(relX);
       mouseY = serie.yaxis.p2d(relY);
 
+      if (serie.hide) continue;
+
       for (j = data.length; j--;) {
 
         x = data[j][0];
         y = data[j][1];
+        // Add stack offset if exists
+        if (data[j].y0) y += data[j].y0;
 
         if (x === null || y === null) continue;
 
@@ -5941,7 +5939,7 @@ Flotr.addPlugin('hit', {
       container   = options.mouse.container,
       oTop        = 0,
       oLeft       = 0,
-      offset, size;
+      offset, size, content;
 
     // Create
     if (!mouseTrack) {
@@ -5954,7 +5952,7 @@ Flotr.addPlugin('hit', {
     if (!decimals || decimals < 0) decimals = 0;
     if (x && x.toFixed) x = x.toFixed(decimals);
     if (y && y.toFixed) y = y.toFixed(decimals);
-    mouseTrack.innerHTML = n.mouse.trackFormatter({
+    content = n.mouse.trackFormatter({
       x: x,
       y: y,
       series: n.series,
@@ -5962,9 +5960,18 @@ Flotr.addPlugin('hit', {
       nearest: n,
       fraction: n.fraction
     });
-    D.show(mouseTrack);
+    if (_.isNull(content) || _.isUndefined(content)) {
+      D.hide(mouseTrack);
+      return;
+    } else {
+      mouseTrack.innerHTML = content;
+      D.show(mouseTrack);
+    }
 
     // Positioning
+    if (!p) {
+      return;
+    }
     size = D.size(mouseTrack);
     if (container) {
       offset = D.position(this.el);
@@ -5973,7 +5980,7 @@ Flotr.addPlugin('hit', {
     }
 
     if (!n.mouse.relative) { // absolute to the canvas
-      pos += 'top:'
+      pos += 'top:';
       if      (p.charAt(0) == 'n') pos += (oTop + m + top);
       else if (p.charAt(0) == 's') pos += (oTop - m + top + this.plotHeight - size.height);
       pos += 'px;bottom:auto;left:';
@@ -5995,7 +6002,7 @@ Flotr.addPlugin('hit', {
 
     // Default
     } else {
-      pos += 'top:'
+      pos += 'top:';
       if (/n/.test(p)) pos += (oTop - m + top + n.yaxis.d2p(n.y) - size.height);
       else             pos += (oTop + m + top + n.yaxis.d2p(n.y));
       pos += 'px;bottom:auto;left:';

@@ -417,7 +417,8 @@ function basic_radar (container) {
     radar : { show : true}, 
     grid  : { circular : true, minorHorizontalLines : true}, 
     yaxis : { min : 0, max : 10, minorTickFreq : 2}, 
-    xaxis : { ticks : ticks}
+    xaxis : { ticks : ticks},
+    mouse : { track : true}
   });
 }
 
@@ -483,6 +484,46 @@ function basic_candle (container) {
   // Graph
   graph = Flotr.draw(container, [ d1 ], { 
     candles : { show : true, candleWidth : 0.6 },
+    xaxis   : { noTicks : 10 }
+  });
+}
+
+})();
+
+
+(function () {
+
+Flotr.ExampleList.add({
+  key : 'basic-candle-barchart',
+  name : 'Basic Candle Barchart',
+  callback : basic_candle
+});
+
+function basic_candle (container) {
+
+  var
+    d1 = [],
+    price = 3.206,
+    graph,
+    i, a, b, c;
+
+  for (i = 0; i < 50; i++) {
+      a = Math.random();
+      b = Math.random();
+      c = (Math.random() * (a + b)) - b;
+      d1.push([i, price, price + a, price - b, price + c]);
+      price = price + c;
+  }
+    
+  // Graph
+  graph = Flotr.draw(container, [ d1 ], { 
+    candles : { 
+      show : true, 
+      candleWidth : 0.6, 
+      barcharts: true, 
+      upFillColor: '#00A048', 
+      downFillColor: '#CB2020' 
+    },
     xaxis   : { noTicks : 10 }
   });
 }
@@ -703,31 +744,27 @@ function mouse_drag (container) {
 
   function initializeDrag (e) {
     start = graph.getEventPosition(e);
-    Flotr.EventAdapter.observe(document, 'mousemove', move);
-    Flotr.EventAdapter.observe(document, 'mouseup', stopDrag);
+    Flotr.EventAdapter.observe(container, 'flotr:mousemove', move);
+    Flotr.EventAdapter.observe(container, 'flotr:mouseup', stopDrag);
   }
 
-  function move (e) {
+  function move (e, o) {
     var
-      end     = graph.getEventPosition(e),
       xaxis   = graph.axes.x,
-      offset  = start.x - end.x;
-
+      offset  = start.x - o.x;
     graph = drawGraph({
       xaxis : {
         min : xaxis.min + offset,
         max : xaxis.max + offset
       }
     });
-    // @todo: refector initEvents in order not to remove other observed events
-    Flotr.EventAdapter.observe(graph.overlay, 'mousedown', initializeDrag);
   }
 
   function stopDrag () {
-    Flotr.EventAdapter.stopObserving(document, 'mousemove', move);
+    Flotr.EventAdapter.stopObserving(container, 'flotr:mousemove', move);
   }
 
-  Flotr.EventAdapter.observe(graph.overlay, 'mousedown', initializeDrag);
+  Flotr.EventAdapter.observe(container, 'flotr:mousedown', initializeDrag);
 
 };
 

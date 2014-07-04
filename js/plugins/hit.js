@@ -49,7 +49,7 @@ Flotr.addPlugin('hit', {
 
     function e(s, index) {
       _.each(_.keys(flotr.graphTypes), function (type) {
-        if (s[type] && s[type].show && this[type][method]) {
+        if (s[type] && s[type].show && !s.hide && this[type][method]) {
           options = this.getOptions(s, type);
 
           options.fill = !!s.mouse.fillColor;
@@ -241,10 +241,14 @@ Flotr.addPlugin('hit', {
       mouseX = serie.xaxis.p2d(relX);
       mouseY = serie.yaxis.p2d(relY);
 
+      if (serie.hide) continue;
+
       for (j = data.length; j--;) {
 
         x = data[j][0];
         y = data[j][1];
+        // Add stack offset if exists
+        if (data[j].y0) y += data[j].y0;
 
         if (x === null || y === null) continue;
 
@@ -326,6 +330,9 @@ Flotr.addPlugin('hit', {
     }
 
     // Positioning
+    if (!p) {
+      return;
+    }
     size = D.size(mouseTrack);
     if (container) {
       offset = D.position(this.el);
@@ -334,7 +341,7 @@ Flotr.addPlugin('hit', {
     }
 
     if (!n.mouse.relative) { // absolute to the canvas
-      pos += 'top:'
+      pos += 'top:';
       if      (p.charAt(0) == 'n') pos += (oTop + m + top);
       else if (p.charAt(0) == 's') pos += (oTop - m + top + this.plotHeight - size.height);
       pos += 'px;bottom:auto;left:';
@@ -356,7 +363,7 @@ Flotr.addPlugin('hit', {
 
     // Default
     } else {
-      pos += 'top:'
+      pos += 'top:';
       if (/n/.test(p)) pos += (oTop - m + top + n.yaxis.d2p(n.y) - size.height);
       else             pos += (oTop + m + top + n.yaxis.d2p(n.y));
       pos += 'px;bottom:auto;left:';
