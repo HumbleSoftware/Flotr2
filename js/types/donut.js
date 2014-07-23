@@ -1,20 +1,20 @@
 /**
- * Pie
+ * Donut
  *
- * Formats the pies labels.
+ * Formats the donuts labels.
  * @param {Object} slice - Slice object
- * @return {String} Formatted pie label string
+ * @return {String} Formatted donut label string
  */
 (function () {
 
 var
   _ = Flotr._;
 
-Flotr.defaultPieLabelFormatter = function (total, value, labelText) {
+Flotr.defaultDonutLabelFormatter = function (total, value, labelText) {
   return (100 * value / total).toFixed(2)+'%';
 };
 
-Flotr.addType('pie', {
+Flotr.addType('donut', {
   options: {
     show: false,           // => setting to true will show bars, false will hide
     lineWidth: 1,          // => in pixels
@@ -22,18 +22,21 @@ Flotr.addType('pie', {
     fillColor: null,       // => fill color
     fillOpacity: 0.6,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
     explode: 6,            // => the number of pixels the splices will be far from the center
-    sizeRatio: 0.6,        // => the size ratio of the pie relative to the plot 
+    sizeRatio: 0.6,        // => the size ratio of the donut relative to the plot 
     startAngle: Math.PI/4, // => the first slice start angle
-    labelFormatter: Flotr.defaultPieLabelFormatter,
-    pie3D: false,          // => whether to draw the pie in 3 dimenstions or not (ineffective) 
-    pie3DviewAngle: (Math.PI/2 * 0.8),
-    pie3DspliceThickness: 20,
-    epsilon: 0.1           // => how close do you have to get to hit empty slice
+    labelFormatter: Flotr.defaultDonutLabelFormatter,
+    epsilon: 0.1,          // => how close do you have to get to hit empty slice
+	sliceThickness: 20     // => thickness of each slice in the donut
   },
+  
+  startAngle: [],
+  total: [],
 
   draw : function (options) {
 
-    // TODO 3D charts what?
+	var startAngle = [];
+	var endAngle = [];
+	
     var
       data          = options.data,
       context       = options.context,
@@ -47,16 +50,17 @@ Flotr.addType('pie', {
       fill          = options.fill,
       fillStyle     = options.fillStyle,
       radius        = Math.min(width, height) * sizeRatio / 2,
+	  thickness		= options.sliceThickness,
       value         = data[0][1],
+	  layer			= data[0][0],
       html          = [],
-      vScale        = 1,//Math.cos(series.pie.viewAngle);
-      measure       = Math.PI * 2 * value / this.total,
-      startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
-      endAngle      = startAngle + measure,
-      bisection     = startAngle + measure / 2,
-      //label         = options.labelFormatter(this.total, value),
-	  label         = options.labelFormatter(this.total, value, options.labelText),
-      //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
+      vScale        = 1,
+      measure       = Math.PI * 2 * value / this.total[layer];
+    startAngle[layer] = this.startAngle[layer] || (2 * Math.PI * options.startAngle); // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
+    endAngle[layer] = startAngle[layer] + measure;
+	var
+      bisection     = startAngle[layer] + measure / 2,
+	  label         = options.labelFormatter(this.total[layer], value, options.labelText),
       explodeCoeff  = explode + radius + 4,
       distX         = Math.cos(bisection) * explodeCoeff,
       distY         = Math.sin(bisection) * explodeCoeff,
@@ -74,21 +78,23 @@ Flotr.addType('pie', {
 
     // Shadows
     if (shadowSize > 0) {
-      this.plotSlice(x + shadowSize, y + shadowSize, radius, startAngle, endAngle, context);
+      this.plotSlice(x + shadowSize, y + shadowSize, radius, thickness, layer, startAngle[layer], endAngle[layer], context);
       if (fill) {
         context.fillStyle = 'rgba(0,0,0,0.1)';
         context.fill();
       }
     }
 
-    this.plotSlice(x, y, radius, startAngle, endAngle, context);
-    if (fill) {
-      context.fillStyle = fillStyle;
-      context.fill();
-    }
-    context.lineWidth = lineWidth;
-    context.strokeStyle = color;
-    context.stroke();
+	if (value > 0) {
+	    this.plotSlice(x, y, radius, thickness, layer, startAngle[layer], endAngle[layer], context);
+	    if (fill) {
+	      context.fillStyle = fillStyle;
+	      context.fill();
+	    }
+	    context.lineWidth = lineWidth;
+	    context.strokeStyle = color;
+	    context.stroke();
+	}
 
     style = {
       size : options.fontSize * 1.2,
@@ -98,6 +104,30 @@ Flotr.addType('pie', {
 
     if (label) {
       if (options.htmlText || !options.textEnabled) {
+		// iterate through slices and check for overlap
+		_.each(this.slices, function (slice){
+			// Get old bisection
+			sliceBisect = slice.start + (slice.end-slice.start) / 2;
+			// Check if close
+			if (sliceBisect-bisection < 0 && sliceBisect-bisection > -0.3) {
+				// Values close, move bisection up
+				bisection += 0.3;
+				adjustValues();
+			} else if (sliceBisect-bisection < 0.3 && sliceBisect-bisection >= 0) {
+				// Values close, move bisection down
+				bisection -= 0.3;
+				adjustValues();
+			}
+			
+			function adjustValues() {
+				// Adjust new values
+		        distX         = Math.cos(bisection) * explodeCoeff;
+		        distY         = Math.sin(bisection) * explodeCoeff;
+		        textAlign     = distX < 0 ? 'right' : 'left';
+		        textBaseline  = distY > 0 ? 'top' : 'bottom';
+			}
+		});
+		
         divStyle = 'position:absolute;' + textBaseline + ':' + (height / 2 + (textBaseline === 'top' ? distY : -distY)) + 'px;';
         divStyle += textAlign + ':' + (width / 2 + (textAlign === 'right' ? -distX : distX)) + 'px;';
         html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
@@ -118,22 +148,31 @@ Flotr.addType('pie', {
     context.restore();
 
     // New start angle
-    this.startAngle = endAngle;
+	this.startAngle[layer] = endAngle[layer];
     this.slices = this.slices || [];
     this.slices.push({
       radius : radius,
       x : x,
       y : y,
       explode : explode,
-      start : startAngle,
-      end : endAngle
+      start : startAngle[layer],
+      end : endAngle[layer]
     });
   },
-  plotSlice : function (x, y, radius, startAngle, endAngle, context) {
-    context.beginPath();
-    context.moveTo(x, y);
-    context.arc(x, y, radius, startAngle, endAngle, false);
-    context.lineTo(x, y);
+  plotSlice : function (x, y, radius, thickness, layer, startAngle, endAngle, context) {
+	// Start path
+	context.beginPath();
+	// Move to inside arc start pt
+	context.moveTo(x+Math.cos(startAngle)*(radius-thickness*(layer+1)), y+Math.sin(startAngle)*(radius-thickness*(layer+1)));
+	// Line to outside arc start pt
+	context.lineTo(x+Math.cos(startAngle)*(radius-thickness*(layer)), y+Math.sin(startAngle)*(radius-thickness*(layer)));
+	// Outside arc
+	context.arc(x, y, radius-thickness*(layer), startAngle, endAngle, false);
+	// Line to inside arc end pt
+	context.lineTo(x+Math.cos(endAngle)*(radius-thickness*(layer+1)), y+Math.sin(endAngle)*(radius-thickness*(layer+1)));
+	// Inside arc
+	context.arc(x, y, radius-thickness*(layer+1), endAngle, startAngle, true);
+	// Close
     context.closePath();
   },
   hit : function (options) {
@@ -176,7 +215,7 @@ Flotr.addType('pie', {
          n.eAngle = end;
          n.index = 0;
          n.seriesIndex = index;
-         n.fraction = data[1] / this.total;
+         n.fraction = data[1] / this.total[layer];
       }
     }
   },
@@ -187,7 +226,7 @@ Flotr.addType('pie', {
 
     context.save();
     context.translate(options.width / 2, options.height / 2);
-    this.plotSlice(slice.x, slice.y, slice.radius, slice.start, slice.end, context);
+    this.plotSlice(slice.x, slice.y, slice.radius, thickness, layer, slice.start, slice.end, context);
     context.stroke();
     context.restore();
   },
@@ -209,7 +248,8 @@ Flotr.addType('pie', {
     context.restore();
   },
   extendYRange : function (axis, data) {
-    this.total = (this.total || 0) + data[0][1];
+	var layer = data[0][0];
+    this.total[layer] = (this.total[layer] || 0) + data[0][1];
   }
 });
 })();
