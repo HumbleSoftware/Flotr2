@@ -10,8 +10,8 @@
 var
   _ = Flotr._;
 
-Flotr.defaultPieLabelFormatter = function (total, value) {
-  return (100 * value / total).toFixed(2)+'%';
+Flotr.defaultPieLabelFormatter = function (total, value, labelText) {
+  return labelText+(100 * value / total).toFixed(2)+'%';
 };
 
 Flotr.addType('pie', {
@@ -54,7 +54,8 @@ Flotr.addType('pie', {
       startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
       endAngle      = startAngle + measure,
       bisection     = startAngle + measure / 2,
-      label         = options.labelFormatter(this.total, value),
+      //label         = options.labelFormatter(this.total, value),
+	  label         = options.labelFormatter(this.total, value, options.labelText),
       //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
       explodeCoeff  = explode + radius + 4,
       distX         = Math.cos(bisection) * explodeCoeff,
