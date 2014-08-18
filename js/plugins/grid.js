@@ -150,7 +150,7 @@ Flotr.addPlugin('graphGrid', {
       // Draw axis/grid border.
       ctx.beginPath();
       ctx.lineWidth = grid.outlineWidth;
-      ctx.strokeStyle = grid.color;
+      ctx.strokeStyle = grid.outlineColor;
       ctx.lineJoin = 'round';
       
       for(i = 0; i <= sides; ++i){
@@ -169,7 +169,7 @@ Flotr.addPlugin('graphGrid', {
           lineTo = 'lineTo',
           moveTo = 'moveTo';
       ctx.lineWidth = lw;
-      ctx.strokeStyle = grid.color;
+      ctx.strokeStyle = grid.outlineColor;
       ctx.lineJoin = 'miter';
       ctx.beginPath();
       ctx.moveTo(orig, orig);

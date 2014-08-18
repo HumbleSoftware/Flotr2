@@ -67,7 +67,7 @@ Flotr.defaultOptions = {
     titleAngle: 270
   },
   grid: {
-    color: '#545454',      // => primary color used for outline and labels
+    color: '#545454',      // => primary color used for labels
     backgroundColor: null, // => null for transparent, else color
     backgroundImage: null, // => background image. String or object with src, left and top
     watermarkAlpha: 0.4,   // => 
@@ -78,6 +78,7 @@ Flotr.defaultOptions = {
     horizontalLines: true, // => whether to show gridlines in horizontal direction
     minorHorizontalLines: null, // => whether to show gridlines for minor ticks in horizontal dir.
     outlineWidth: 1,       // => width of the grid outline/border in pixels
+    outlineColor: '#545454', // => primary color used for outline
     outline : 'nsew',      // => walls of the outline to display
     circular: false        // => if set to true, the grid will be circular, must be used when radars are drawn
   },
