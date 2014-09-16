@@ -5,16 +5,28 @@
  * Flotr: http://code.google.com/p/flotr/ (fork)
  * Flot: https://github.com/flot/flot (original fork)
  */
-(function () {
+
+(function(mod, global) {
+  var previousFlotr, flotrModule;
+
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    module.exports = mod(require("../lib/underscore"), require("./DefaultOptions"));
+  else if (typeof define == "function" && define.amd) // AMD
+    return define(["underscore", "./DefaultOptions"], mod);
+  else // Plain browser env
+    previousFlotr = global.Flotr;
+    global.Flotr = flotrModule = mod(_, undefined);
+    global.Flotr.noConflict = function () {
+      global.Flotr = previousFlotr;
+      return flotrModule;
+    };
+})(function(_, defaultOptions) {
+"use strict";
 
 var
-  global = this,
-  previousFlotr = this.Flotr,
   Flotr;
 
 Flotr = {
-  _: _,
-  bean: bean,
   isIphone: /iphone/i.test(navigator.userAgent),
   isIE: (navigator.appVersion.indexOf("MSIE") != -1 ? parseFloat(navigator.appVersion.split("MSIE")[1]) : false),
   
@@ -28,6 +40,8 @@ Flotr = {
    * The list of the registered plugins
    */
   plugins: {},
+  
+  defaultOptions : defaultOptions,
   
   /**
    * Can be used to add your own chart type. 
@@ -78,10 +92,10 @@ Flotr = {
       v = src[i];
       if (v && typeof(v) === 'object') {
         if (v.constructor === Array) {
-          result[i] = this._.clone(v);
+          result[i] = _.clone(v);
         } else if (
             v.constructor !== RegExp &&
-            !this._.isElement(v) &&
+            !_.isElement(v) &&
             !v.jquery
         ) {
           result[i] = Flotr.merge(v, (dest ? dest[i] : undefined));
@@ -127,25 +141,6 @@ Flotr = {
     
     return tickSize * magn;
   },
-  
-  /**
-   * Default tick formatter.
-   * @param {String, Integer} val - tick value integer
-   * @param {Object} axisOpts - the axis' options
-   * @return {String} formatted tick string
-   */
-  defaultTickFormatter: function(val, axisOpts){
-    return val+'';
-  },
-  
-  /**
-   * Formats the mouse tracker values.
-   * @param {Object} obj - Track value Object {x:..,y:..}
-   * @return {String} Formatted track string
-   */
-  defaultTrackFormatter: function(obj){
-    return '('+obj.x+', '+obj.y+')';
-  }, 
   
   /**
    * Utility function to convert file size values in bytes to kB, MB, ...
@@ -198,7 +193,7 @@ Flotr = {
       return;
     }
     
-    style = this._.extend({
+    style = _.extend({
       size: Flotr.defaultOptions.fontSize,
       color: '#000000',
       textAlign: 'left',
@@ -242,13 +237,8 @@ Flotr = {
   },
   getTextAngleFromAlign: function(style) {
     return Flotr.alignTable[style.textAlign+' '+style.textBaseline] || 0;
-  },
-  noConflict : function () {
-    global.Flotr = previousFlotr;
-    return this;
   }
+
 };
-
-global.Flotr = Flotr;
-
-})();
+return Flotr;
+}, this);

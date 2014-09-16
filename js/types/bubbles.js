@@ -1,4 +1,14 @@
 /** Bubbles **/
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr"], mod);
+  else // Plain browser env
+    mod(Flotr);
+})(function(Flotr) {
+"use strict";
+
 Flotr.addType('bubbles', {
   options: {
     show: false,      // => setting to true will show radar chart, false will hide
@@ -121,4 +131,5 @@ Flotr.addType('bubbles', {
     context.restore();
   }
   // TODO Add a hit calculation method (like pie)
+});
 });

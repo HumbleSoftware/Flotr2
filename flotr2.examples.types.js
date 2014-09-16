@@ -666,7 +666,7 @@ function mouse_zoom (container) {
   function drawGraph (opts) {
 
     // Clone the options, so the 'options' variable always keeps intact.
-    var o = Flotr._.extend(Flotr._.clone(options), opts || {});
+    var o = _.extend(_.clone(options), opts || {});
 
     // Return a new graph.
     return Flotr.draw(
@@ -730,7 +730,7 @@ function mouse_drag (container) {
   function drawGraph (opts) {
 
     // Clone the options, so the 'options' variable always keeps intact.
-    var o = Flotr._.extend(Flotr._.clone(options), opts || {});
+    var o = _.extend(_.clone(options), opts || {});
 
     // Return a new graph.
     return Flotr.draw(
@@ -809,7 +809,7 @@ function basic_time (container) {
   function drawGraph (opts) {
 
     // Clone the options, so the 'options' variable always keeps intact.
-    o = Flotr._.extend(Flotr._.clone(options), opts || {});
+    o = _.extend(_.clone(options), opts || {});
 
     // Return a new graph.
     return Flotr.draw(
@@ -1340,15 +1340,15 @@ function basic_timeline (container) {
     i, graph, point;
 
   // Timeline
-  Flotr._.each([d1, d2, d3, d4, d5], function (d) {
+  _.each([d1, d2, d3, d4, d5], function (d) {
     data.push({
       data : d,
-      timeline : Flotr._.clone(timeline)
+      timeline : _.clone(timeline)
     });
   });
 
   // Markers
-  Flotr._.each([d1, d2, d3, d4, d5], function (d) {
+  _.each([d1, d2, d3, d4, d5], function (d) {
     point = d[0];
     markers.push([point[0], point[1]]);
   });

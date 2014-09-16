@@ -2,10 +2,15 @@
  * Flotr Color
  */
 
-(function () {
-
-var
-  _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore"], mod);
+  else // Plain browser env
+    Flotr.Color = mod(Flotr, _);
+})(function(Flotr, _) {
+"use strict";
 
 // Constructor
 function Color (r, g, b, a) {
@@ -158,6 +163,6 @@ _.extend(Color, {
   }
 });
 
-Flotr.Color = Color;
+return Color;
 
-})();
+});

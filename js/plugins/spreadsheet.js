@@ -1,5 +1,13 @@
 /** Spreadsheet **/
-(function() {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"), require("../../lib/underscore"), require("../DOM"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr", "underscore", "../DOM"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM);
+})(function(F, _, D) {
+"use strict";
 
 function getRowLabel(value){
   if (this.options.spreadsheet.tickFormatter){
@@ -14,10 +22,6 @@ function getRowLabel(value){
     return value;
   }
 }
-
-var
-  D = Flotr.DOM,
-  _ = Flotr._;
 
 Flotr.addPlugin('spreadsheet', {
   options: {
@@ -293,4 +297,4 @@ Flotr.addPlugin('spreadsheet', {
     else window.open('data:text/csv,'+csv);
   }
 });
-})();
+});

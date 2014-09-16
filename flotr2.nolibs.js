@@ -5,16 +5,28 @@
  * Flotr: http://code.google.com/p/flotr/ (fork)
  * Flot: https://github.com/flot/flot (original fork)
  */
-(function () {
+
+(function(mod, global) {
+  var previousFlotr, flotrModule;
+
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    module.exports = mod(require("../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    return define(["underscore"], mod);
+  else // Plain browser env
+    previousFlotr = global.Flotr;
+    global.Flotr = flotrModule = mod(_);
+    global.Flotr.noConflict = function () {
+      global.Flotr = previousFlotr;
+      return flotrModule;
+    };
+})(function(_) {
+"use strict";
 
 var
-  global = this,
-  previousFlotr = this.Flotr,
   Flotr;
 
 Flotr = {
-  _: _,
-  bean: bean,
   isIphone: /iphone/i.test(navigator.userAgent),
   isIE: (navigator.appVersion.indexOf("MSIE") != -1 ? parseFloat(navigator.appVersion.split("MSIE")[1]) : false),
   
@@ -78,10 +90,10 @@ Flotr = {
       v = src[i];
       if (v && typeof(v) === 'object') {
         if (v.constructor === Array) {
-          result[i] = this._.clone(v);
+          result[i] = _.clone(v);
         } else if (
             v.constructor !== RegExp &&
-            !this._.isElement(v) &&
+            !_.isElement(v) &&
             !v.jquery
         ) {
           result[i] = Flotr.merge(v, (dest ? dest[i] : undefined));
@@ -198,7 +210,7 @@ Flotr = {
       return;
     }
     
-    style = this._.extend({
+    style = _.extend({
       size: Flotr.defaultOptions.fontSize,
       color: '#000000',
       textAlign: 'left',
@@ -242,21 +254,29 @@ Flotr = {
   },
   getTextAngleFromAlign: function(style) {
     return Flotr.alignTable[style.textAlign+' '+style.textBaseline] || 0;
-  },
-  noConflict : function () {
-    global.Flotr = previousFlotr;
-    return this;
   }
+
 };
-
-global.Flotr = Flotr;
-
-})();
+return Flotr;
+}, this);
 
 /**
  * Flotr Defaults
  */
-Flotr.defaultOptions = {
+
+(function(mod) {
+  var previousFlotr, flotrModule;
+
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    module.exports = mod();
+  else if (typeof define == "function" && define.amd) // AMD
+    return define([], mod);
+  else // Plain browser env
+    Flotr.defaultOptions = mod();
+})(function() {
+"use strict";
+
+return {
   colors: ['#00A8F0', '#C0D800', '#CB4B4B', '#4DA74D', '#9440ED'], //=> The default colorscheme. When there are > 5 series, additional colors are generated.
   ieBackgroundColor: '#FFFFFF', // Background color for excanvas clipping
   title: null,             // => The graph's title
@@ -352,15 +372,20 @@ Flotr.defaultOptions = {
     fillOpacity: 0.4       // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill 
   }
 };
-
+});
 /**
  * Flotr Color
  */
 
-(function () {
-
-var
-  _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore"], mod);
+  else // Plain browser env
+    mod(Flotr, _);
+})(function(Flotr, _) {
+"use strict";
 
 // Constructor
 function Color (r, g, b, a) {
@@ -515,12 +540,22 @@ _.extend(Color, {
 
 Flotr.Color = Color;
 
-})();
+});
 
 /**
  * Flotr Date
  */
-Flotr.Date = {
+
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    module.exports = mod();
+  else if (typeof define == "function" && define.amd) // AMD
+    return define([], mod);
+  else // Plain browser env
+    Flotr.Date = mod();
+})(function() {
+  "use strict";
+return {
 
   set : function (date, name, mode, value) {
     mode = mode || 'UTC';
@@ -722,16 +757,22 @@ Flotr.Date = {
   ],
   monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 };
-
-(function () {
-
-var _ = Flotr._;
+});
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["underscore"], mod);
+  else // Plain browser env
+    Flotr.DOM = mod(_);
+})(function(_) {
+"use strict";
 
 function getEl (el) {
   return (el && el.jquery) ? el[0] : el;
 }
 
-Flotr.DOM = {
+return {
   addClass: function(element, name){
     element = getEl(element);
     var classList = (element.className ? element.className : '');
@@ -745,7 +786,7 @@ Flotr.DOM = {
     return document.createElement(tag);
   },
   node: function(html) {
-    var div = Flotr.DOM.create('div'), n;
+    var div = this.create('div'), n;
     div.innerHTML = html;
     n = div.children[0];
     div.innerHTML = '';
@@ -815,7 +856,7 @@ Flotr.DOM = {
   },
   show: function(element){
     element = getEl(element);
-    Flotr.DOM.setStyles(element, {display:''});
+    this.setStyles(element, {display:''});
   },
   /**
    * Return element size.
@@ -828,16 +869,22 @@ Flotr.DOM = {
   }
 };
 
-})();
+});
 
 /**
  * Flotr Event Adapter
  */
-(function () {
-var
-  F = Flotr,
-  bean = F.bean;
-F.EventAdapter = {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../lib/bean"), require("../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../lib/bean", "underscore"], mod);
+  else // Plain browser env
+    Flotr.EventAdapter = mod(bean, _);
+})(function(bean, _) {
+"use strict";
+
+return {
   observe: function(object, name, callback) {
     bean.add(object, name, callback);
     return this;
@@ -854,12 +901,12 @@ F.EventAdapter = {
     return this;
   },
   eventPointer: function(e) {
-    if (!F._.isUndefined(e.touches) && e.touches.length > 0) {
+    if (!_.isUndefined(e.touches) && e.touches.length > 0) {
       return {
         x : e.touches[0].pageX,
         y : e.touches[0].pageY
       };
-    } else if (!F._.isUndefined(e.changedTouches) && e.changedTouches.length > 0) {
+    } else if (!_.isUndefined(e.changedTouches) && e.changedTouches.length > 0) {
       return {
         x : e.changedTouches[0].pageX,
         y : e.changedTouches[0].pageY
@@ -881,17 +928,20 @@ F.EventAdapter = {
     }
   }
 };
-})();
+});
 
 /**
  * Text Utilities
  */
-(function () {
-
-var
-  F = Flotr,
-  D = F.DOM,
-  _ = F._,
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"), require("./DOM"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore", "./DOM"], mod);
+  else // Plain browser env
+    Flotr.Text = mod(Flotr, _, Flotr.DOM);
+})(function(F, _, D) {
+"use strict";
 
 Text = function (o) {
   this.o = o;
@@ -968,27 +1018,30 @@ Text.prototype = {
   }
 };
 
-Flotr.Text = Text;
+return Text;
 
-})();
+});
 
 /**
  * Flotr Graph class that plots a graph on creation.
  */
-(function () {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"), require("./DOM"), require("./EventAdapter"), require("./Series"), require("./Text"), require("./Color"), require("./Axis"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore", "./DOM", "./EventAdapter", "./Series", "./Text", "./Color", "./Axis"], mod);
+  else // Plain browser env
+    Flotr.Graph = mod(Flotr, _, Flotr.DOM, Flotr.EventAdapter, Flotr.Series, Flotr.Text, Flotr.Color, Flotr.Axis);
+})(function(flotr, _, D, E, Series, Text, Color, Axis) {
+"use strict";
 
-var
-  D     = Flotr.DOM,
-  E     = Flotr.EventAdapter,
-  _     = Flotr._,
-  flotr = Flotr;
 /**
  * Flotr Graph constructor.
  * @param {Element} el - element to insert the graph into
  * @param {Object} data - an array or object of dataseries
  * @param {Object} options - an object containing options
  */
-Graph = function(el, data, options){
+var Graph = function(el, data, options){
 // Let's see if we can get away with out this [JS]
 //  try {
     this._setEl(el);
@@ -998,11 +1051,11 @@ Graph = function(el, data, options){
     E.fire(this.el, 'flotr:beforeinit', [this]);
 
     this.data = data;
-    this.series = flotr.Series.getSeries(data);
+    this.series = Series.getSeries(data);
     this._initOptions(options);
     this._initGraphTypes();
     this._initCanvas();
-    this._text = new flotr.Text({
+    this._text = new Text({
       element : this.el,
       ctx : this.ctx,
       html : this.options.HtmlText,
@@ -1053,7 +1106,7 @@ Graph.prototype = {
   processColor: function(color, options){
     var o = { x1: 0, y1: 0, x2: this.plotWidth, y2: this.plotHeight, opacity: 1, ctx: this.ctx };
     _.extend(o, options);
-    return flotr.Color.processColor(color, o);
+    return Color.processColor(color, o);
   },
   /**
    * Function determines the min and max values for the xaxis and yaxis.
@@ -1118,13 +1171,13 @@ Graph.prototype = {
     var a = this.axes,
         options = this.options,
         series = this.series,
-        margin = options.grid.labelMargin,
+        margin = (options.grid !== undefined ? options.grid.labelMargin : 0),
         T = this._text,
         x = a.x,
         x2 = a.x2,
         y = a.y,
         y2 = a.y2,
-        maxOutset = options.grid.outlineWidth,
+        maxOutset = (options.grid !== undefined ? options.grid.outlineWidth : 0),
         i, j, l, dim;
 
     // TODO post refactor, fix this
@@ -1642,19 +1695,20 @@ Graph.prototype = {
     options.x2axis = _.extend(_.clone(options.xaxis), options.x2axis);
     options.y2axis = _.extend(_.clone(options.yaxis), options.y2axis);
     this.options = flotr.merge(opts || {}, options);
-
-    if (this.options.grid.minorVerticalLines === null &&
-      this.options.xaxis.scaling === 'logarithmic') {
-      this.options.grid.minorVerticalLines = true;
-    }
-    if (this.options.grid.minorHorizontalLines === null &&
-      this.options.yaxis.scaling === 'logarithmic') {
-      this.options.grid.minorHorizontalLines = true;
+    if (this.options.grid !== undefined){
+      if (this.options.grid.minorVerticalLines === null &&
+        this.options.xaxis.scaling === 'logarithmic') {
+        this.options.grid.minorVerticalLines = true;
+      }
+      if (this.options.grid.minorHorizontalLines === null &&
+        this.options.yaxis.scaling === 'logarithmic') {
+        this.options.grid.minorHorizontalLines = true;
+      }
     }
 
     E.fire(this.el, 'flotr:afterinitoptions', [this]);
 
-    this.axes = flotr.Axis.getAxes(this.options);
+    this.axes = Axis.getAxes(this.options);
 
     // Initialize some variables used throughout this function.
     var assignedColors = [],
@@ -1672,7 +1726,7 @@ Graph.prototype = {
       if(c){
         --neededColors;
         if(_.isNumber(c)) assignedColors.push(c);
-        else usedColors.push(flotr.Color.parse(c));
+        else usedColors.push(Color.parse(c));
       }
     }
 
@@ -1682,7 +1736,7 @@ Graph.prototype = {
 
     // Generate needed number of colors.
     for(i = 0; colors.length < neededColors;){
-      c = (oc.length == i) ? new flotr.Color(100, 100, 100) : flotr.Color.parse(oc[i]);
+      c = (oc.length == i) ? new Color(100, 100, 100) : Color.parse(oc[i]);
 
       // Make sure each serie gets a different color.
       var sign = variation % 2 == 1 ? -1 : 1,
@@ -1740,18 +1794,25 @@ Graph.prototype = {
   }
 };
 
-Flotr.Graph = Graph;
+return Graph;
 
-})();
+});
 
 /**
  * Flotr Axis Library
  */
 
-(function () {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore"], mod);
+  else // Plain browser env
+    Flotr.Axis = mod(Flotr, _);
+})(function(Flotr, _) {
+"use strict";
 
 var
-  _ = Flotr._,
   LOGARITHMIC = 'logarithmic';
 
 function Axis (o) {
@@ -2053,18 +2114,23 @@ function exp (value, base) {
   return (base === Math.E) ? Math.exp(value) : Math.pow(base, value);
 }
 
-Flotr.Axis = Axis;
+return Axis;
 
-})();
+});
 
 /**
  * Flotr Series Library
  */
 
-(function () {
-
-var
-  _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    module.exports = mod(require("../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    return define(["underscore"], mod);
+  else // Plain browser env
+    Flotr.Series = mod(_);
+})(function(_) {
+"use strict";
 
 function Series (o) {
   _.extend(this, o);
@@ -2132,11 +2198,21 @@ _.extend(Series, {
   }
 });
 
-Flotr.Series = Series;
+return Series;
 
-})();
+});
 
 /** Lines **/
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr"], mod);
+  else // Plain browser env
+    mod(Flotr);
+})(function(Flotr) {
+"use strict";
+
 Flotr.addType('lines', {
   options: {
     show: false,           // => setting to true will show lines, false will hide
@@ -2428,8 +2504,18 @@ Flotr.addType('lines', {
   }
 
 });
-
+});
 /** Bars **/
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr"], mod);
+  else // Plain browser env
+    mod(Flotr);
+})(function(Flotr) {
+"use strict";
+
 Flotr.addType('bars', {
 
   options: {
@@ -2727,8 +2813,18 @@ Flotr.addType('bars', {
   }
 
 });
-
+});
 /** Bubbles **/
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr"], mod);
+  else // Plain browser env
+    mod(Flotr);
+})(function(Flotr) {
+"use strict";
+
 Flotr.addType('bubbles', {
   options: {
     show: false,      // => setting to true will show radar chart, false will hide
@@ -2852,8 +2948,18 @@ Flotr.addType('bubbles', {
   }
   // TODO Add a hit calculation method (like pie)
 });
-
+});
 /** Candles **/
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr"], mod);
+  else // Plain browser env
+    mod(Flotr);
+})(function(Flotr) {
+"use strict";
+
 Flotr.addType('candles', {
   options: {
     show: false,           // => setting to true will show candle sticks, false will hide
@@ -3039,13 +3145,23 @@ Flotr.addType('candles', {
     }
   }
 });
-
+});
 /** Gantt
  * Base on data in form [s,y,d] where:
  * y - executor or simply y value
  * s - task start value
  * d - task duration
  * **/
+
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr"], mod);
+  else // Plain browser env
+    mod(Flotr);
+})(function(Flotr) {
+"use strict";
 Flotr.addType('gantt', {
   options: {
     show: false,           // => setting to true will show gantt, false will hide
@@ -3269,14 +3385,22 @@ Flotr.addType('gantt', {
     }
   }
 });
-
+});
 /** Markers **/
 /**
  * Formats the marker labels.
  * @param {Object} obj - Marker value Object {x:..,y:..}
  * @return {String} Formatted marker string
  */
-(function () {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr"], mod);
+  else // Plain browser env
+    mod(Flotr);
+})(function(Flotr) {
+"use strict";
 
 Flotr.defaultMarkerFormatter = function(obj){
   return (Math.round(obj.y*100)/100)+'';
@@ -3409,7 +3533,7 @@ function isImage (i) {
   return typeof i === 'object' && i.constructor && (Image ? true : i.constructor === Image);
 }
 
-})();
+});
 
 /**
  * Pie
@@ -3418,10 +3542,15 @@ function isImage (i) {
  * @param {Object} slice - Slice object
  * @return {String} Formatted pie label string
  */
-(function () {
-
-var
-  _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore"], mod);
+  else // Plain browser env
+    mod(Flotr, _);
+})(function(F, _) {
+"use strict";
 
 Flotr.defaultPieLabelFormatter = function (total, value) {
   return (100 * value / total).toFixed(2)+'%';
@@ -3624,9 +3753,19 @@ Flotr.addType('pie', {
     this.total = (this.total || 0) + data[0][1];
   }
 });
-})();
+});
 
 /** Points **/
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr"], mod);
+  else // Plain browser env
+    mod(Flotr);
+})(function(Flotr) {
+"use strict";
+
 Flotr.addType('points', {
   options: {
     show: false,           // => setting to true will show points, false will hide
@@ -3693,8 +3832,19 @@ Flotr.addType('points', {
     }
   }
 });
-
+});
 /** Radar **/
+
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr"], mod);
+  else // Plain browser env
+    mod(Flotr);
+})(function(Flotr) {
+"use strict";
+
 Flotr.addType('radar', {
   options: {
     show: false,           // => setting to true will show radar chart, false will hide
@@ -3825,7 +3975,7 @@ Flotr.addType('radar', {
 
     var
         s = options.args.series,
-        lw = (s.points ? s.points.lineWidth : 1);
+        lw = (s.points ? s.points.lineWidth : 1),
         offset = (s.points.hitRadius || s.points.radius || s.mouse.radius) + lw;
 
     context.translate(options.width / 2, options.height / 2);
@@ -3840,6 +3990,16 @@ Flotr.addType('radar', {
     this.max = Math.max(axis.max, this.max || -Number.MAX_VALUE);
   }
 });
+});
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"), require("./DOM"), require("./EventAdapter"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore", "./DOM", "./EventAdapter"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM, Flotr.EventAdapter);
+})(function(Flotr, _, D, E) {
+"use strict";
 
 Flotr.addType('timeline', {
   options: {
@@ -3879,7 +4039,7 @@ Flotr.addType('timeline', {
       lineWidth = options.lineWidth,
       i;
 
-    Flotr._.each(data, function (timeline) {
+    _.each(data, function (timeline) {
 
       var 
         x   = timeline[0],
@@ -3917,7 +4077,7 @@ Flotr.addType('timeline', {
       var
         max = xa.max;
 
-      Flotr._.each(data, function (timeline) {
+      _.each(data, function (timeline) {
         max = Math.max(max, timeline[0] + timeline[2]);
       }, this);
 
@@ -3931,10 +4091,16 @@ Flotr.addType('timeline', {
   }
 
 });
-
-(function () {
-
-var D = Flotr.DOM;
+});
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("./DOM"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "./DOM"], mod);
+  else // Plain browser env
+    mod(Flotr, Flotr.DOM);
+})(function(Flotr, D) {
+"use strict";
 
 Flotr.addPlugin('crosshair', {
   options: {
@@ -4015,13 +4181,17 @@ Flotr.addPlugin('crosshair', {
     }
   }
 });
-})();
+});
 
-(function() {
-
-var
-  D = Flotr.DOM,
-  _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"), require("./DOM"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore", "./DOM"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM);
+})(function(Flotr, _, D) {
+"use strict";
 
 function getImage (type, canvas, context, width, height, background) {
 
@@ -4084,12 +4254,17 @@ Flotr.addPlugin('download', {
   }
 });
 
-})();
+});
 
-(function () {
-
-var E = Flotr.EventAdapter,
-    _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"), require("./DOM"), require("./EventAdapter"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore", "./DOM", "./EventAdapter"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM, Flotr.EventAdapter);
+})(function(Flotr, _, D, E) {
+"use strict";
 
 Flotr.addPlugin('graphGrid', {
 
@@ -4222,7 +4397,7 @@ Flotr.addPlugin('graphGrid', {
       topOffset = plotOffset.top,
       plotWidth = that.plotWidth,
       plotHeight = that.plotHeight,
-      v, img, src, left, top, globalAlpha;
+      v, img, src, left, top, globalAlpha, i;
     
     if (!grid.outlineWidth) return;
     
@@ -4293,14 +4468,19 @@ Flotr.addPlugin('graphGrid', {
   }
 });
 
-})();
+});
 
-(function () {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"), require("./DOM"), require("./EventAdapter"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore", "./DOM", "./EventAdapter"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM, Flotr.EventAdapter);
+})(function(flotr, _, D, E) {
+"use strict";
 
 var
-  D = Flotr.DOM,
-  _ = Flotr._,
-  flotr = Flotr,
   S_MOUSETRACK = 'opacity:0.7;background-color:#000;color:#fff;position:absolute;padding:2px 8px;-moz-border-radius:4px;border-radius:4px;white-space:nowrap;';
 
 Flotr.addPlugin('hit', {
@@ -4410,7 +4590,7 @@ Flotr.addPlugin('hit', {
         // TODO fix this (points) should move to general testable graph mixin
         var
           s = prev.series,
-          lw = (s.points ? s.points.lineWidth : 1);
+          lw = (s.points ? s.points.lineWidth : 1),
           offset = (s.points.hitRadius || s.points.radius || s.mouse.radius) + lw;
         octx.clearRect(
           prev.xaxis.d2p(prev.x) - offset,
@@ -4687,7 +4867,7 @@ Flotr.addPlugin('hit', {
   }
 
 });
-})();
+});
 
 /** 
  * Selection Handles Plugin
@@ -4698,7 +4878,15 @@ Flotr.addPlugin('hit', {
  *  drag - Left and Right drag handles
  *  scroll - Scrolling handle
  */
-(function () {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"), require("./DOM"), require("./EventAdapter"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore", "./DOM", "./EventAdapter"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM, Flotr.EventAdapter);
+})(function(Flotr, _, D, E) {
+"use strict";
 
 function isLeftClick (e, type) {
   return (e.which ? (e.which === 1) : (e.button === 0 || e.button === 1));
@@ -4711,12 +4899,6 @@ function boundX(x, graph) {
 function boundY(y, graph) {
   return Math.min(Math.max(0, y), graph.plotHeight);
 }
-
-var
-  D = Flotr.DOM,
-  E = Flotr.EventAdapter,
-  _ = Flotr._;
-
 
 Flotr.addPlugin('selection', {
 
@@ -4965,11 +5147,17 @@ Flotr.addPlugin('selection', {
 
 });
 
-})();
+});
 
-(function () {
-
-var D = Flotr.DOM;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("./DOM"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "./DOM"], mod);
+  else // Plain browser env
+    mod(Flotr, Flotr.DOM);
+})(function(Flotr, D) {
+"use strict";
 
 Flotr.addPlugin('labels', {
 
@@ -5051,7 +5239,7 @@ Flotr.addPlugin('labels', {
         ticks   = minorTicks ? axis.minorTicks : axis.ticks,
         isX     = axis.orientation === 1,
         isFirst = axis.n === 1,
-        style, offset;
+        style, offset, x, y;
 
       style = {
         color        : axis.options.color || options.grid.color,
@@ -5193,13 +5381,17 @@ Flotr.addPlugin('labels', {
   }
 
 });
-})();
+});
 
-(function () {
-
-var
-  D = Flotr.DOM,
-  _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"), require("./DOM"), require("./EventAdapter"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore", "./DOM", "./EventAdapter"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM, Flotr.EventAdapter);
+})(function(Flotr, _, D, E) {
+"use strict";
 
 Flotr.addPlugin('legend', {
   options: {
@@ -5387,10 +5579,18 @@ Flotr.addPlugin('legend', {
     }
   }
 });
-})();
+});
 
 /** Spreadsheet **/
-(function() {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("../lib/underscore"), require("./DOM"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "underscore", "./DOM"], mod);
+  else // Plain browser env
+    mod(Flotr, _, Flotr.DOM);
+})(function(F, _, D) {
+"use strict";
 
 function getRowLabel(value){
   if (this.options.spreadsheet.tickFormatter){
@@ -5405,10 +5605,6 @@ function getRowLabel(value){
     return value;
   }
 }
-
-var
-  D = Flotr.DOM,
-  _ = Flotr._;
 
 Flotr.addPlugin('spreadsheet', {
   options: {
@@ -5684,11 +5880,17 @@ Flotr.addPlugin('spreadsheet', {
     else window.open('data:text/csv,'+csv);
   }
 });
-})();
+});
 
-(function () {
-
-var D = Flotr.DOM;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("./Flotr"), require("./DOM"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["./Flotr", "./DOM"], mod);
+  else // Plain browser env
+    mod(Flotr, Flotr.DOM);
+})(function(Flotr, D) {
+"use strict";
 
 Flotr.addPlugin('titles', {
   callbacks: {
@@ -5862,4 +6064,4 @@ Flotr.addPlugin('titles', {
     }
   }
 });
-})();
+});

@@ -2,10 +2,15 @@
  * Flotr Series Library
  */
 
-(function () {
-
-var
-  _ = Flotr._;
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    module.exports = mod(require("../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    return define(["underscore"], mod);
+  else // Plain browser env
+    Flotr.Series = mod(_);
+})(function(_) {
+"use strict";
 
 function Series (o) {
   _.extend(this, o);
@@ -73,6 +78,6 @@ _.extend(Series, {
   }
 });
 
-Flotr.Series = Series;
+return Series;
 
-})();
+});

@@ -1,7 +1,6 @@
 (function () {
 
 var 
-  _             = Flotr._,
 
   DOT           = '.',
 

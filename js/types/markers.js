@@ -4,7 +4,15 @@
  * @param {Object} obj - Marker value Object {x:..,y:..}
  * @return {String} Formatted marker string
  */
-(function () {
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr"], mod);
+  else // Plain browser env
+    mod(Flotr);
+})(function(Flotr) {
+"use strict";
 
 Flotr.defaultMarkerFormatter = function(obj){
   return (Math.round(obj.y*100)/100)+'';
@@ -137,4 +145,4 @@ function isImage (i) {
   return typeof i === 'object' && i.constructor && (Image ? true : i.constructor === Image);
 }
 
-})();
+});

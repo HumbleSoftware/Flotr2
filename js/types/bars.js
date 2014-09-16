@@ -1,4 +1,14 @@
 /** Bars **/
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../Flotr"), require("../../lib/underscore"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../Flotr", "underscore"], mod);
+  else // Plain browser env
+    mod(Flotr, _);
+})(function(Flotr, _) {
+"use strict";
+
 Flotr.addType('bars', {
 
   options: {
@@ -295,4 +305,5 @@ Flotr.addType('bars', {
     axis.min = newmin;
   }
 
+});
 });

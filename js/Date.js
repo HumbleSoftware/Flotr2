@@ -1,7 +1,17 @@
 /**
  * Flotr Date
  */
-Flotr.Date = {
+
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    module.exports = mod(require("./DefaultOptions"));
+  else if (typeof define == "function" && define.amd) // AMD
+    return define(["./DefaultOptions"], mod);
+  else // Plain browser env
+    Flotr.Date = mod(Flotr.defaultOptions);
+})(function(defaultOptions) {
+  "use strict";
+return {
 
   set : function (date, name, mode, value) {
     mode = mode || 'UTC';
@@ -100,7 +110,7 @@ Flotr.Date = {
       formatter, i;
 
     // Use custom formatter or time tick formatter
-    formatter = (options.tickFormatter === Flotr.defaultTickFormatter ?
+    formatter = (options.tickFormatter === defaultOptions.xaxis.tickFormatter ?
       this.formatter : options.tickFormatter
     );
 
@@ -203,3 +213,4 @@ Flotr.Date = {
   ],
   monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 };
+});

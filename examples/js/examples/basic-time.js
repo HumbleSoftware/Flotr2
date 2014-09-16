@@ -37,7 +37,7 @@ function basic_time (container) {
   function drawGraph (opts) {
 
     // Clone the options, so the 'options' variable always keeps intact.
-    o = Flotr._.extend(Flotr._.clone(options), opts || {});
+    o = _.extend(_.clone(options), opts || {});
 
     // Return a new graph.
     return Flotr.draw(
