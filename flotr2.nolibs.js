@@ -1487,7 +1487,7 @@ Graph.prototype = {
       touchendHandler = _.bind(function (e) {
         touchend = true;
         E.stopObserving(document, 'touchend', touchendHandler);
-        E.fire(el, 'flotr:mouseup', [event, this]);
+        E.fire(el, 'flotr:mouseup', [e, this]);
         this.multitouches = null;
 
         if (!movement) {
@@ -1504,7 +1504,7 @@ Graph.prototype = {
           this.multitouches = e.touches;
         }
 
-        E.fire(el, 'flotr:mousedown', [event, this]);
+        E.fire(el, 'flotr:mousedown', [e, this]);
         this.observe(document, 'touchend', touchendHandler);
       }, this));
 
@@ -1522,7 +1522,7 @@ Graph.prototype = {
           this.multitouches = e.touches;
         } else {
           if (!touchend) {
-            E.fire(el, 'flotr:mousemove', [event, pos, this]);
+            E.fire(el, 'flotr:mousemove', [e, pos, this]);
           }
         }
         this.lastMousePos = pos;
@@ -3441,44 +3441,49 @@ Flotr.addType('pie', {
     pie3D: false,          // => whether to draw the pie in 3 dimenstions or not (ineffective) 
     pie3DviewAngle: (Math.PI/2 * 0.8),
     pie3DspliceThickness: 20,
-    epsilon: 0.1           // => how close do you have to get to hit empty slice
+    epsilon: 0.1,          // => how close do you have to get to hit empty slice
+    verticalShift: 0,      // => how far to shift the center of the pie, up or down, in px, or in percent
+    horizontalShift: 0     // => how far to shift the center of the pie, left or right, in px, or in percent
   },
 
   draw : function (options) {
 
     // TODO 3D charts what?
     var
-      data          = options.data,
-      context       = options.context,
-      lineWidth     = options.lineWidth,
-      shadowSize    = options.shadowSize,
-      sizeRatio     = options.sizeRatio,
-      height        = options.height,
-      width         = options.width,
-      explode       = options.explode,
-      color         = options.color,
-      fill          = options.fill,
-      fillStyle     = options.fillStyle,
-      radius        = Math.min(width, height) * sizeRatio / 2,
-      value         = data[0][1],
-      html          = [],
-      vScale        = 1,//Math.cos(series.pie.viewAngle);
-      measure       = Math.PI * 2 * value / this.total,
-      startAngle    = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
-      endAngle      = startAngle + measure,
-      bisection     = startAngle + measure / 2,
-      label         = options.labelFormatter(this.total, value),
+      data            = options.data,
+      context         = options.context,
+      lineWidth       = options.lineWidth,
+      shadowSize      = options.shadowSize,
+      sizeRatio       = options.sizeRatio,
+      height          = options.height,
+      width           = options.width,
+      verticalShift   = this.parseShift(options.verticalShift, height),
+      horizontalShift = this.parseShift(options.horizontalShift, width),
+      explode         = options.explode,
+      color           = options.color,
+      fill            = options.fill,
+      fillStyle       = options.fillStyle,
+      radius          = this.calculateRadius(width, height, sizeRatio,
+                                            horizontalShift, verticalShift),
+      value           = data[0][1],
+      html            = [],
+      vScale          = 1,//Math.cos(series.pie.viewAngle);
+      measure         = Math.PI * 2 * value / this.total,
+      startAngle      = this.startAngle || (2 * Math.PI * options.startAngle), // TODO: this initial startAngle is already in radians (fixing will be test-unstable)
+      endAngle        = startAngle + measure,
+      bisection       = startAngle + measure / 2,
+      label           = options.labelFormatter(this.total, value),
       //plotTickness  = Math.sin(series.pie.viewAngle)*series.pie.spliceThickness / vScale;
-      explodeCoeff  = explode + radius + 4,
-      distX         = Math.cos(bisection) * explodeCoeff,
-      distY         = Math.sin(bisection) * explodeCoeff,
-      textAlign     = distX < 0 ? 'right' : 'left',
-      textBaseline  = distY > 0 ? 'top' : 'bottom',
+      explodeCoeff    = explode + radius + 4,
+      distX           = Math.cos(bisection) * explodeCoeff,
+      distY           = Math.sin(bisection) * explodeCoeff,
+      textAlign       = distX < 0 ? 'right' : 'left',
+      textBaseline    = distY > 0 ? 'top' : 'bottom',
       style,
       x, y;
     
     context.save();
-    context.translate(width / 2, height / 2);
+    context.translate((width / 2) + horizontalShift, (height / 2) + verticalShift);
     context.scale(1, vScale);
 
     x = Math.cos(bisection) * explode;
@@ -3510,8 +3515,8 @@ Flotr.addType('pie', {
 
     if (label) {
       if (options.htmlText || !options.textEnabled) {
-        divStyle = 'position:absolute;' + textBaseline + ':' + (height / 2 + (textBaseline === 'top' ? distY : -distY)) + 'px;';
-        divStyle += textAlign + ':' + (width / 2 + (textAlign === 'right' ? -distX : distX)) + 'px;';
+        divStyle = 'position:absolute;' + textBaseline + ':' + ((height / 2) + verticalShift + (textBaseline === 'top' ? distY : -distY)) + 'px;';
+        divStyle += textAlign + ':' + ((width / 2) + horizontalShift + (textAlign === 'right' ? -distX : distX)) + 'px;';
         html.push('<div style="', divStyle, '" class="flotr-grid-label">', label, '</div>');
       }
       else {
@@ -3541,6 +3546,41 @@ Flotr.addType('pie', {
       end : endAngle
     });
   },
+
+  parseShift: function (shift, size) {
+    // if shift is number, use that (px), else if ends in %, calculate as % of size
+    if (typeof shift === 'number') {
+      // if shift is a number, just use that
+      return shift;
+    } else {
+      // otherwise, make sure we have a string
+      shift = shift.toString().trim();
+      if (shift.slice(-1) === '%') {
+        // if the string is like 12.3%, calculate the size
+        return +(shift.slice(0, -1).trim()) / 100.0 * size ;
+      } else if (shift.slice(-2) === 'px') {
+        // if the shift is like 12.3px, extract the value
+        return +(shift.slice(0, -2).trim());
+      } else {
+        // otherwise, attempt to just cast to a number
+        return +shift;
+      }
+    }
+  },
+
+  calculateRadius: function (width, height, sizeRatio, horizontalShift, verticalShift) {
+    // Calculate maximum radii that won't extend beyond
+    // the borders defined by width and height
+    var leftMax = (width / 2) + horizontalShift ;
+    var rightMax = width - leftMax ;
+
+    var topMax = (height / 2) + verticalShift ;
+    var bottomMax = height - topMax ;
+
+    // Find the minimum radius, that won't extend beyond the borders, then scale it
+    return Math.min(leftMax, rightMax, topMax, bottomMax) * sizeRatio ;
+  },
+
   plotSlice : function (x, y, radius, startAngle, endAngle, context) {
     context.beginPath();
     context.moveTo(x, y);
@@ -3557,8 +3597,8 @@ Flotr.addType('pie', {
       mouse     = args[0],
       n         = args[1],
       slice     = this.slices[index],
-      x         = mouse.relX - options.width / 2,
-      y         = mouse.relY - options.height / 2,
+      x         = mouse.relX - ((options.width / 2) + this.parseShift(options.horizontalShift, options.width)),
+      y         = mouse.relY - ((options.height / 2) + this.parseShift(options.verticalShift, options.height)),
       r         = Math.sqrt(x * x + y * y),
       theta     = Math.atan(y / x),
       circle    = Math.PI * 2,
@@ -3598,7 +3638,7 @@ Flotr.addType('pie', {
       slice = this.slices[options.args.seriesIndex];
 
     context.save();
-    context.translate(options.width / 2, options.height / 2);
+    context.translate((options.width / 2) + this.parseShift(options.horizontalShift, options.width), (options.height / 2) + this.parseShift(options.verticalShift, options.height));
     this.plotSlice(slice.x, slice.y, slice.radius, slice.start, slice.end, context);
     context.stroke();
     context.restore();
@@ -3611,7 +3651,7 @@ Flotr.addType('pie', {
       radius = slice.radius + padding;
 
     context.save();
-    context.translate(options.width / 2, options.height / 2);
+    context.translate((options.width / 2) + this.parseShift(options.horizontalShift, options.width), (options.height / 2) + this.parseShift(options.verticalShift, options.height));
     context.clearRect(
       slice.x - radius,
       slice.y - radius,
