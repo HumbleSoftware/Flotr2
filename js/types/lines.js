@@ -61,6 +61,7 @@ Flotr.addType('lines', {
       yScale    = options.yScale,
       data      = options.data, 
       stack     = options.stacked ? this.stack : false,
+      dashes    = options.dashes,
       length    = data.length - 1,
       prevx     = null,
       prevy     = null,
@@ -69,6 +70,10 @@ Flotr.addType('lines', {
       x1, x2, y1, y2, stack1, stack2, i;
       
     if (length < 1) return;
+
+    if (dashes && (dashes instanceof Array) && (dashes.length >=2)) {
+      context.setLineDash(dashes);
+    }
 
     context.beginPath();
 
