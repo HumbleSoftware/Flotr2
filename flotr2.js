@@ -2613,6 +2613,7 @@ Graph.prototype = {
         data        : series.data,
         color       : series.color,
         shadowSize  : series.shadowSize,
+        dashes      : series.dashes,
         xScale      : xaxis.d2p,
         yScale      : yaxis.d2p,
         xInverse    : xaxis.p2d,
@@ -2829,7 +2830,7 @@ Graph.prototype = {
       touchendHandler = _.bind(function (e) {
         touchend = true;
         E.stopObserving(document, 'touchend', touchendHandler);
-        E.fire(el, 'flotr:mouseup', [event, this]);
+        E.fire(el, 'flotr:mouseup', [e, this]);
         this.multitouches = null;
 
         if (!movement) {
@@ -2846,7 +2847,7 @@ Graph.prototype = {
           this.multitouches = e.touches;
         }
 
-        E.fire(el, 'flotr:mousedown', [event, this]);
+        E.fire(el, 'flotr:mousedown', [e, this]);
         this.observe(document, 'touchend', touchendHandler);
       }, this));
 
@@ -2864,7 +2865,7 @@ Graph.prototype = {
           this.multitouches = e.touches;
         } else {
           if (!touchend) {
-            E.fire(el, 'flotr:mousemove', [event, pos, this]);
+            E.fire(el, 'flotr:mousemove', [e, pos, this]);
           }
         }
         this.lastMousePos = pos;
@@ -3541,6 +3542,7 @@ Flotr.addType('lines', {
       yScale    = options.yScale,
       data      = options.data, 
       stack     = options.stacked ? this.stack : false,
+      dashes    = options.dashes,
       length    = data.length - 1,
       prevx     = null,
       prevy     = null,
@@ -3549,6 +3551,10 @@ Flotr.addType('lines', {
       x1, x2, y1, y2, stack1, stack2, i;
       
     if (length < 1) return;
+
+    if (dashes && (dashes instanceof Array) && (dashes.length >=2)) {
+      context.setLineDash(dashes);
+    }
 
     context.beginPath();
 

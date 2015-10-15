@@ -39,8 +39,11 @@ Flotr.ExampleList.add({
 function basic (container) {
 
   var
-    d1 = [[0, 3], [4, 8], [8, 5], [9, 13]], // First data series
-    d2 = [],                                // Second data series
+    d1 = {
+      data: [[0, 3], [4, 8], [8, 5], [9, 13]], // First data series
+      dashes: [10, 10]                         // 10px line, 10px empty space
+    },
+    d2 = [],                                   // Second data series
     i, graph;
 
   // Generate first data set

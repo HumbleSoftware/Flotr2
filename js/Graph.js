@@ -297,6 +297,7 @@ Graph.prototype = {
         data        : series.data,
         color       : series.color,
         shadowSize  : series.shadowSize,
+        dashes      : series.dashes,
         xScale      : xaxis.d2p,
         yScale      : yaxis.d2p,
         xInverse    : xaxis.p2d,
