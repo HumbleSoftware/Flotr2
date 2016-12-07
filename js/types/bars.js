@@ -15,7 +15,7 @@ Flotr.addType('bars', {
     grouped: false         // => groups bars together which share x value, hit not supported.
   },
 
-  stack : { 
+  stack : {
     positive : [],
     negative : [],
     _positive : [], // Shadow
@@ -34,7 +34,7 @@ Flotr.addType('bars', {
     context.lineWidth = options.lineWidth;
     context.strokeStyle = options.color;
     if (options.fill) context.fillStyle = options.fillStyle;
-    
+
     this.plot(options);
 
     context.restore();
@@ -152,7 +152,7 @@ Flotr.addType('bars', {
 
     for (i = data.length; i--;) {
       geometry = this.getBarGeometry(data[i][0], data[i][1], options);
-      if (
+      if (geometry !== null &&
         // Height:
         (
           // Positive Bars:
@@ -239,7 +239,7 @@ Flotr.addType('bars', {
     var
       max = axis.options.max;
 
-    if (_.isNumber(max) || _.isString(max)) return; 
+    if (_.isNumber(max) || _.isString(max)) return;
 
     var
       newmin = axis.min,
@@ -258,7 +258,7 @@ Flotr.addType('bars', {
       }
     }
 
-    if (options.stacked && 
+    if (options.stacked &&
         ((orientation == 1 && horizontal) || (orientation == -1 && !horizontal))){
 
       for (j = data.length; j--;) {
