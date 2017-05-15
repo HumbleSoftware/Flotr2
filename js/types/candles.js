@@ -8,6 +8,8 @@ Flotr.addType('candles', {
     fill: true,            // => true to fill the area from the line to the x axis, false for (transparent) no fill
     upFillColor: '#00A8F0',// => up sticks fill color
     downFillColor: '#CB4B4B',// => down sticks fill color
+    upLineColor: false, // => up sticks line color, false to be equal upFillColor
+    downLineColor: false, // => down sticks line color, false to be equal downFillColor
     fillOpacity: 0.5,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
     barcharts: false       // => draw as barcharts (not standard bars but financial barcharts)
   },
@@ -68,7 +70,14 @@ Flotr.addType('candles', {
         continue;
       */
 
-      color = options[open > close ? 'downFillColor' : 'upFillColor'];
+      if(open > close){
+          color = options['downFillColor'];
+          lineColor = options['downLineColor'] ? options['downLineColor'] : color;
+      }
+      else {
+          color = options['upFillColor'];
+          lineColor = options['upLineColor'] ? options['upLineColor'] : color;
+      }
 
       // Fill the candle.
       if (options.fill && !options.barcharts) {
@@ -86,7 +95,7 @@ Flotr.addType('candles', {
 
         x = Math.floor((left + right) / 2) + pixelOffset;
 
-        context.strokeStyle = color;
+        context.strokeStyle = lineColor;
         context.beginPath();
 
         if (options.barcharts) {

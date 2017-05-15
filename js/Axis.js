@@ -202,7 +202,7 @@ Axis.prototype = {
         v = tick;
         label = options.tickFormatter(v, {min : this.min, max : this.max});
       }
-      axisTicks[i] = { v: v, label: label };
+      axisTicks[i] = { v: v, label: label, options: tick[2] };
     }
   },
 
