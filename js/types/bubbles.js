@@ -5,22 +5,27 @@ Flotr.addType('bubbles', {
     lineWidth: 2,     // => line width in pixels
     fill: true,       // => true to fill the area from the line to the x axis, false for (transparent) no fill
     fillOpacity: 0.4, // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
-    baseRadius: 2     // => ratio of the radar, against the plot size
+    baseRadius: 2,    // => ratio of the radar, against the plot size
+    fast: false       // => draws faster without shaddows and strokes. in order to have a plot like a heat map.
   },
   draw : function (options) {
     var
       context     = options.context,
-      shadowSize  = options.shadowSize;
+      shadowSize  = options.shadowSize,
+      notfast     = !options.fast;
 
     context.save();
     context.lineWidth = options.lineWidth;
     
     // Shadows
-    context.fillStyle = 'rgba(0,0,0,0.05)';
-    context.strokeStyle = 'rgba(0,0,0,0.05)';
-    this.plot(options, shadowSize / 2);
-    context.strokeStyle = 'rgba(0,0,0,0.1)';
-    this.plot(options, shadowSize / 4);
+    if(notfast)
+    {
+      context.fillStyle = 'rgba(0,0,0,0.05)';
+      context.strokeStyle = 'rgba(0,0,0,0.05)';
+      this.plot(options, shadowSize / 2);
+      context.strokeStyle = 'rgba(0,0,0,0.1)';
+      this.plot(options, shadowSize / 4);
+    }
 
     // Chart
     context.strokeStyle = options.color;
@@ -35,7 +40,9 @@ Flotr.addType('bubbles', {
       data    = options.data,
       context = options.context,
       geometry,
-      i, x, y, z;
+      i, x, y, z,
+      notfast = !options.fast,
+      fill    = options.fill;
 
     offset = offset || 0;
     
@@ -45,8 +52,8 @@ Flotr.addType('bubbles', {
 
       context.beginPath();
       context.arc(geometry.x + offset, geometry.y + offset, geometry.z, 0, 2 * Math.PI, true);
-      context.stroke();
-      if (options.fill) context.fill();
+      if (notfast) context.stroke();
+      if (fill) context.fill();
       context.closePath();
     }
   },
@@ -96,7 +103,7 @@ Flotr.addType('bubbles', {
     context.save();
     context.lineWidth = options.lineWidth;
     context.fillStyle = options.fillStyle;
-    context.strokeStyle = options.color;
+    ontext.strokeStyle = options.color;
     context.beginPath();
     context.arc(geometry.x, geometry.y, geometry.z, 0, 2 * Math.PI, true);
     context.fill();
