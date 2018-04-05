@@ -22,7 +22,7 @@ Flotr.addPlugin('hit', {
       }
     },
     'flotr:destroy': function() {
-      if (this.options.mouse.container) {
+      if (this.options.mouse.container&&this.mouseTrack) {
         D.remove(this.mouseTrack);
       }
       this.mouseTrack = null;
