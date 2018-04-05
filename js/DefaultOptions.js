@@ -84,7 +84,7 @@ Flotr.defaultOptions = {
   mouse: {
     track: false,          // => true to track the mouse, no tracking otherwise
     trackAll: false,
-    position: 'se',        // => position of the value box (default south-east)
+    position: 'se',        // => position of the value box (default south-east).  False disables.
     relative: false,       // => next to the mouse cursor
     trackFormatter: Flotr.defaultTrackFormatter, // => formats the values in the value box
     margin: 5,             // => margin in pixels of the valuebox

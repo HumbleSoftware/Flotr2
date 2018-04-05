@@ -9,7 +9,6 @@ Flotr.addType('candles', {
     upFillColor: '#00A8F0',// => up sticks fill color
     downFillColor: '#CB4B4B',// => down sticks fill color
     fillOpacity: 0.5,      // => opacity of the fill color, set to 1 for a solid fill, 0 hides the fill
-    // TODO Test this barcharts option.
     barcharts: false       // => draw as barcharts (not standard bars but financial barcharts)
   },
 
@@ -44,7 +43,7 @@ Flotr.addType('candles', {
       color,
       datum, x, y,
       open, high, low, close,
-      left, right, bottom, top, bottom2, top2,
+      left, right, bottom, top, bottom2, top2, reverseLines,
       i;
 
     if (data.length < 1) return;
@@ -72,7 +71,6 @@ Flotr.addType('candles', {
       color = options[open > close ? 'downFillColor' : 'upFillColor'];
 
       // Fill the candle.
-      // TODO Test the barcharts option
       if (options.fill && !options.barcharts) {
         context.fillStyle = 'rgba(0,0,0,0.05)';
         context.fillRect(left + shadowSize, top2 + shadowSize, right - left, bottom2 - top2);
@@ -91,22 +89,17 @@ Flotr.addType('candles', {
         context.strokeStyle = color;
         context.beginPath();
 
-        // TODO Again with the bartcharts
         if (options.barcharts) {
-          
-          context.moveTo(x, Math.floor(top + width));
-          context.lineTo(x, Math.floor(bottom + width));
-          
-          y = Math.floor(open + width) + 0.5;
-          context.moveTo(Math.floor(left) + pixelOffset, y);
-          context.lineTo(x, y);
-          
-          y = Math.floor(close + width) + 0.5;
-          context.moveTo(Math.floor(right) + pixelOffset, y);
-          context.lineTo(x, y);
+          context.moveTo(x, Math.floor(top + lineWidth));
+          context.lineTo(x, Math.floor(bottom + lineWidth));
+
+          reverseLines = open < close;
+          context.moveTo(reverseLines ? right : left, Math.floor(top2 + lineWidth));
+          context.lineTo(x, Math.floor(top2 + lineWidth));
+          context.moveTo(x, Math.floor(bottom2 + lineWidth));
+          context.lineTo(reverseLines ? left : right, Math.floor(bottom2 + lineWidth));
         } else {
           context.strokeRect(left, top2 + lineWidth, right - left, bottom2 - top2);
-
           context.moveTo(x, Math.floor(top2 + lineWidth));
           context.lineTo(x, Math.floor(top + lineWidth));
           context.moveTo(x, Math.floor(bottom2 + lineWidth));
@@ -118,6 +111,72 @@ Flotr.addType('candles', {
       }
     }
   },
+
+  hit : function (options) {
+    var
+      xScale = options.xScale,
+      yScale = options.yScale,
+      data = options.data,
+      args = options.args,
+      mouse = args[0],
+      width = options.candleWidth / 2,
+      n = args[1],
+      x = mouse.relX,
+      y = mouse.relY,
+      length = data.length,
+      i, datum,
+      high, low,
+      left, right, top, bottom;
+
+    for (i = 0; i < length; i++) {
+      datum   = data[i],
+      high    = datum[2];
+      low     = datum[3];
+      left    = xScale(datum[0] - width);
+      right   = xScale(datum[0] + width);
+      bottom  = yScale(low);
+      top     = yScale(high);
+
+      if (x > left && x < right && y > top && y < bottom) {
+        n.x = datum[0];
+        n.index = i;
+        n.seriesIndex = options.index;
+        return;
+      }
+    }
+  },
+
+  drawHit : function (options) {
+    var
+      context = options.context;
+    context.save();
+    this.plot(
+      _.defaults({
+        fill : !!options.fillColor,
+        upFillColor : options.color,
+        downFillColor : options.color,
+        data : [options.data[options.args.index]]
+      }, options)
+    );
+    context.restore();
+  },
+
+  clearHit : function (options) {
+    var
+      args = options.args,
+      context = options.context,
+      xScale = options.xScale,
+      yScale = options.yScale,
+      lineWidth = options.lineWidth,
+      width = options.candleWidth / 2,
+      bar = options.data[args.index],
+      left = xScale(bar[0] - width) - lineWidth,
+      right = xScale(bar[0] + width) + lineWidth,
+      top = yScale(bar[2]),
+      bottom = yScale(bar[3]) + lineWidth;
+    context.clearRect(left, top, right - left, bottom - top);
+  },
+
   extendXRange: function (axis, data, options) {
     if (axis.options.max === null) {
       axis.max = Math.max(axis.datamax + 0.5, axis.max);

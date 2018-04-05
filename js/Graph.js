@@ -187,22 +187,30 @@ Graph.prototype = {
     if (x.options.margin === false) {
       p.bottom = 0;
       p.top    = 0;
-    } else {
+    } else
+    if (x.options.margin === true) {
       p.bottom += (options.grid.circular ? 0 : (x.used && x.options.showLabels ?  (x.maxLabel.height + margin) : 0)) +
                   (x.used && x.options.title ? (x.titleSize.height + margin) : 0) + maxOutset;
 
       p.top    += (options.grid.circular ? 0 : (x2.used && x2.options.showLabels ? (x2.maxLabel.height + margin) : 0)) +
                   (x2.used && x2.options.title ? (x2.titleSize.height + margin) : 0) + this.subtitleHeight + this.titleHeight + maxOutset;
+    } else {
+      p.bottom = x.options.margin;
+      p.top = x.options.margin;
     }
     if (y.options.margin === false) {
       p.left  = 0;
       p.right = 0;
-    } else {
+    } else
+    if (y.options.margin === true) {
       p.left   += (options.grid.circular ? 0 : (y.used && y.options.showLabels ?  (y.maxLabel.width + margin) : 0)) +
                   (y.used && y.options.title ? (y.titleSize.width + margin) : 0) + maxOutset;
 
       p.right  += (options.grid.circular ? 0 : (y2.used && y2.options.showLabels ? (y2.maxLabel.width + margin) : 0)) +
                   (y2.used && y2.options.title ? (y2.titleSize.width + margin) : 0) + maxOutset;
+    } else {
+      p.left = y.options.margin;
+      p.right = y.options.margin;
     }
 
     p.top = Math.floor(p.top); // In order the outline not to be blured
@@ -453,7 +461,17 @@ Graph.prototype = {
 
     ctx = ctx || this.ctx;
 
-    if (flotr.isIE && flotr.isIE < 9) {
+    if (
+      flotr.isIE && flotr.isIE < 9 && // IE w/o canvas
+      !flotr.isFlashCanvas // But not flash canvas
+    ) {
+
+      // Do not clip excanvas on overlay context
+      // Allow hits to overflow.
+      if (ctx === this.octx) {
+        return;
+      }
+
       // Clipping for excanvas :-(
       ctx.save();
       ctx.fillStyle = this.processColor(this.options.ieBackgroundColor);
@@ -495,7 +513,7 @@ Graph.prototype = {
       touchendHandler = _.bind(function (e) {
         touchend = true;
         E.stopObserving(document, 'touchend', touchendHandler);
-        E.fire(el, 'flotr:mouseup', [event, this]);
+        E.fire(el, 'flotr:mouseup', [e, this]);
         this.multitouches = null;
 
         if (!movement) {
@@ -512,7 +530,7 @@ Graph.prototype = {
           this.multitouches = e.touches;
         }
 
-        E.fire(el, 'flotr:mousedown', [event, this]);
+        E.fire(el, 'flotr:mousedown', [e, this]);
         this.observe(document, 'touchend', touchendHandler);
       }, this));
 
@@ -530,21 +548,22 @@ Graph.prototype = {
           this.multitouches = e.touches;
         } else {
           if (!touchend) {
-            E.fire(el, 'flotr:mousemove', [event, pos, this]);
+            E.fire(el, 'flotr:mousemove', [e, pos, this]);
           }
         }
         this.lastMousePos = pos;
       }, this));
-
-    } else {
-      this.
-        observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
-        observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
-        observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
-        observe(el, 'mouseout', function () {
-          E.fire(el, 'flotr:mouseout');
-        });
     }
+
+    // We should do this both for mouse-driven and touch devices.
+    // The user can use a mouse even if her device has touch capabilities.
+    this.
+      observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
+      observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+      observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
+      observe(el, 'mouseout', function (e) {
+        E.fire(el, 'flotr:mouseout', e);
+      });
   },
 
   /**
@@ -601,6 +620,7 @@ Graph.prototype = {
         canvas = D.create('canvas');
         if (typeof FlashCanvas != "undefined" && typeof canvas.getContext === 'function') {
           FlashCanvas.initElement(canvas);
+          this.isFlashCanvas = true;
         }
         canvas.className = 'flotr-'+name;
         canvas.style.cssText = 'position:absolute;left:0px;top:0px;';

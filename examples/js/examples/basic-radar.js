@@ -29,7 +29,8 @@ function basic_radar (container) {
     radar : { show : true}, 
     grid  : { circular : true, minorHorizontalLines : true}, 
     yaxis : { min : 0, max : 10, minorTickFreq : 2}, 
-    xaxis : { ticks : ticks}
+    xaxis : { ticks : ticks},
+    mouse : { track : true}
   });
 }
 
