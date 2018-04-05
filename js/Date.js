@@ -127,7 +127,7 @@ Flotr.Date = {
     axis.tickSize = tickSize;
 
     var step = tickSize * timeUnits[tickUnit];
-    d = new Date(min);
+    var d = new Date(min);
 
     function setTick (name) {
       set(d, name, mode, Flotr.floorInBase(
