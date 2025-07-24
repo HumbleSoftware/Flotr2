@@ -75,11 +75,58 @@ The plugins included are found in `js/plugins/`.
 Development
 -----------
 
+### Build System
+
 This project uses [smoosh](https://github.com/fat/smoosh) to build and [jasmine](http://pivotal.github.com/jasmine/) 
-with [js-imagediff](https://github.com/HumbleSoftware/js-imagediff) to test.  Tests may be executed by 
-[jasmine-headless-webkit](http://johnbintz.github.com/jasmine-headless-webkit/) with 
+with [js-imagediff](https://github.com/HumbleSoftware/js-imagediff) to test.
+
+**Commands:**
+- `make` or `make all` - Run tests and build the complete library
+- `make flotr2` - Build the main flotr2 library files
+- `make test` - Run jasmine tests via jasmine-headless-webkit
+- `npm install` - Install smoosh build dependency
+
+**Testing:**
+Tests may be executed by [jasmine-headless-webkit](http://johnbintz.github.com/jasmine-headless-webkit/) with 
 `cd spec; jasmine-headless-webkit -j jasmine.yml -c` or by a browser by navigating to 
 `flotr2/spec/SpecRunner.html`.
+
+**Build Outputs:**
+- `flotr2.js` - Full library with dependencies
+- `flotr2.min.js` - Minified version
+- `flotr2.nolibs.js` - Library without dependencies
+- `flotr2.ie.min.js` - IE-specific build
+
+### Architecture
+
+Flotr2 is a Canvas-based JavaScript charting library with a modular plugin-based architecture.
+
+**Core Components (`js/`):**
+- `Flotr.js` - Main namespace, plugin/type registration
+- `Graph.js` - Primary graph constructor and rendering orchestrator
+- `Series.js` - Data series processing and normalization
+- `Axis.js` - Axis calculations and rendering
+- `Color.js`, `Date.js`, `DOM.js`, `Text.js` - Utility modules
+
+**Chart Types (`js/types/`):**
+Chart types define rendering behavior for different visualizations:
+- `lines.js`, `bars.js`, `pie.js`, `points.js` - Basic charts
+- `bubbles.js`, `candles.js`, `radar.js` - Advanced charts
+- `gantt.js`, `timeline.js` - Timeline visualizations
+
+**Plugins (`js/plugins/`):**
+Plugins extend functionality through event hooks:
+- `grid.js`, `legend.js`, `labels.js`, `titles.js` - Visual elements
+- `selection.js`, `crosshair.js`, `hit.js` - Interactions
+- `download.js`, `spreadsheet.js` - Data export
+
+**Extension Pattern:**
+- Add chart types: `Flotr.addType(name, implementation)`
+- Add plugins: `Flotr.addPlugin(name, implementation)`
+- Plugins use lifecycle hooks (beforedraw, afterdraw, etc.)
+
+**Build Configuration:**
+Build configurations are in `make/*.json` files defining file concatenation order.
 
 Shoutouts
 ---------
