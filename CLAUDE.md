@@ -34,3 +34,7 @@ For comprehensive project information including build commands, architecture det
 - This is a mature library - avoid breaking changes to public API
 - Maintain backward compatibility with existing chart configurations
 - IE8+ support required (hence excanvas dependency)
+
+**Limitations:**
+- Visual bugs may be misdiagnosed due to artifacts stacking, and transparency (eg. https://github.com/HumbleSoftware/Flotr2/issues/330#issuecomment-3111663059).
+- Visual bugs may not always be recognized from the code; request screenshots
