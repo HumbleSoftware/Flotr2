@@ -21,7 +21,7 @@ Flotr.addPlugin('titles', {
     if (!options.HtmlText && this.textEnabled) {
       var style = {
         size: options.fontSize,
-        color: options.grid.color,
+        color: options.fontColor,
         textAlign: 'center'
       };
       
@@ -165,8 +165,8 @@ Flotr.addPlugin('titles', {
       html = html.join('');
 
       var div = D.create('div');
-      D.setStyles({
-        color: options.grid.color 
+      D.setStyles(div, {
+        color: options.fontColor 
       });
       div.className = 'flotr-titles';
       D.insert(this.el, div);
