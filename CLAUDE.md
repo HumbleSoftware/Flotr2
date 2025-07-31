@@ -16,8 +16,9 @@ For comprehensive project information including build commands, architecture det
 
 **Testing Requirements:**
 - Run `make test` before submitting changes
-- Visual regression tests use js-imagediff - ensure chart rendering is pixel-perfect
-- Test in both jasmine-headless-webkit and browser environments
+- Uses Playwright for visual regression testing - ensure chart rendering is pixel-perfect
+- Tests run in headless Chrome for consistent results across environments
+- Focus on testing the public API (`Flotr.draw()`) rather than internal implementation
 
 **Architecture Constraints:**
 - New chart types must use the `Flotr.addType(name, implementation)` pattern

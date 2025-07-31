@@ -1,1 +1,0 @@
-var StableFlotr = Flotr.noConflict();
