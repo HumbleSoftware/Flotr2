@@ -1,7 +1,7 @@
 (function () {
 
 Flotr.ExampleList.add({
-  key : 'basic-bar-stacked',
+  key : 'basic-bars-stacked',
   name : 'Stacked Bars',
   callback : bars_stacked
 });
