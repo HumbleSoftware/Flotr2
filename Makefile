@@ -6,7 +6,7 @@ $(SMOOSH):
 	npm install
 
 test:
-	cd spec; jasmine-headless-webkit -j jasmine.yml -c
+	npm test
 
 libraries: $(SMOOSH)
 	$(SMOOSH) make/lib.json

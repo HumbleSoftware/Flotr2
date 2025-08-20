@@ -77,19 +77,21 @@ Development
 
 ### Build System
 
-This project uses [smoosh](https://github.com/fat/smoosh) to build and [jasmine](http://pivotal.github.com/jasmine/) 
-with [js-imagediff](https://github.com/HumbleSoftware/js-imagediff) to test.
+This project uses [smoosh](https://github.com/fat/smoosh) to build and [Playwright](https://playwright.dev/) for testing.
 
 **Commands:**
 - `make` or `make all` - Run tests and build the complete library
 - `make flotr2` - Build the main flotr2 library files
-- `make test` - Run jasmine tests via jasmine-headless-webkit
-- `npm install` - Install smoosh build dependency
+- `make test` - Run Playwright tests
+- `npm install` - Install build and test dependencies
 
 **Testing:**
-Tests may be executed by [jasmine-headless-webkit](http://johnbintz.github.com/jasmine-headless-webkit/) with 
-`cd spec; jasmine-headless-webkit -j jasmine.yml -c` or by a browser by navigating to 
-`flotr2/spec/SpecRunner.html`.
+Tests are executed using Playwright with `npm test`. The test suite includes:
+- Unit tests for core functionality (Color, Graph options)
+- Visual regression tests using example charts
+- Chart type rendering tests
+
+All tests run in headless Chrome for consistent, pixel-perfect rendering.
 
 **Build Outputs:**
 - `flotr2.js` - Full library with dependencies

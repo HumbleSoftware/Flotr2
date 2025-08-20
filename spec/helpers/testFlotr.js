@@ -1,1 +1,0 @@
-var TestFlotr = Flotr.noConflict();

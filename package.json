@@ -1,29 +1,32 @@
 {
-  "name": "flotr2", 
+  "name": "flotr2",
   "version": "0.1.0",
   "description": "A library for drawing HTML5 charts and graphs.",
   "homepage": "http://www.humblesoftware.com/flotr2",
-
   "bugs": {
     "url": "https://github.com/HumbleSoftware/Flotr2/issues"
   },
-
   "license": "MIT",
-
-  "author": {
-    "name": "Carl Sutherland",
-    "email": "carl@humblesoftware.com",
-    "url": "https://github.com/cesutherland"
-  },
-
+  "author": "Carl Sutherland <carl@humblesoftware.com> (https://github.com/cesutherland)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/HumbleSoftware/Flotr2.git"
+    "url": "git+https://github.com/HumbleSoftware/Flotr2.git"
   },
-
+  "main": "flotr2.amd.js",
+  "directories": {
+    "example": "examples",
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug"
+  },
   "devDependencies": {
+    "@playwright/test": "^1.40.0",
     "smoosh": "0.4.1"
   },
-
-  "private": true
+  "dependencies": {},
+  "private": true,
+  "keywords": []
 }
