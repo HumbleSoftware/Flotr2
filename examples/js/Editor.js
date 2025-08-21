@@ -225,8 +225,8 @@
 
       // Resources
       resources = [
-        'https://raw.github.com/HumbleSoftware/Flotr2/master/flotr2.min.js',
-        'https://raw.github.com/HumbleSoftware/Flotr2/master/examples/examples.css'
+        'https://raw.github.com/HumbleSoftware/Flotr2/main/flotr2.min.js',
+        'https://raw.github.com/HumbleSoftware/Flotr2/main/examples/examples.css'
       ];
       input = $('<input type="hidden" name="resources">')
         .attr('value', resources.join(','));

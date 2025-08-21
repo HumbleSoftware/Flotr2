@@ -24,9 +24,9 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
+    "serve": "^14.2.4",
     "smoosh": "0.4.1"
   },
-  "dependencies": {},
   "private": true,
   "keywords": []
 }

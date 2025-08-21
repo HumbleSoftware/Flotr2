@@ -43,3 +43,11 @@ flotr-amd: flotr2
 	cat js/amd/pre.js > flotr2.amd.js
 	cat build/flotr2.js >> flotr2.amd.js
 	cat js/amd/post.js >> flotr2.amd.js
+
+release:
+	@echo "Usage: make release VERSION=v1.2.3"
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION is required"; \
+		exit 1; \
+	fi
+	@./scripts/release.sh $(VERSION)
