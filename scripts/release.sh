@@ -16,15 +16,31 @@ if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     exit 1
 fi
 
+echo "Updating CHANGELOG.md..."
+# Create new changelog with current version at top
+{
+    echo "# Changelog"
+    echo ""
+    ./scripts/changelog.sh "$VERSION"
+    
+    # Append existing changelog if it exists
+    if [ -f "CHANGELOG.md" ] && grep -q "^## " CHANGELOG.md; then
+        tail -n +3 CHANGELOG.md  # Skip "# Changelog" and empty line
+    fi
+} > CHANGELOG_NEW.md
+
+mv CHANGELOG_NEW.md CHANGELOG.md
+
+echo ""
 echo "Building assets..."
 make flotr2
 
-echo "Committing built assets..."
-git add flotr2*.js
+echo "Committing built assets and changelog..."
+git add flotr2*.js CHANGELOG.md
 if git diff --staged --quiet; then
-    echo "Warning: No changes to built assets"
+    echo "Warning: No changes to commit"
 else
-    git commit -m "build: assets for $VERSION"
+    git commit -m "build: assets and changelog for $VERSION"
 fi
 
 echo "Creating and pushing tag..."
