@@ -1487,7 +1487,7 @@ Graph.prototype = {
       touchendHandler = _.bind(function (e) {
         touchend = true;
         E.stopObserving(document, 'touchend', touchendHandler);
-        E.fire(el, 'flotr:mouseup', [event, this]);
+        E.fire(el, 'flotr:mouseup', [e, this]);
         this.multitouches = null;
 
         if (!movement) {
@@ -1504,7 +1504,7 @@ Graph.prototype = {
           this.multitouches = e.touches;
         }
 
-        E.fire(el, 'flotr:mousedown', [event, this]);
+        E.fire(el, 'flotr:mousedown', [e, this]);
         this.observe(document, 'touchend', touchendHandler);
       }, this));
 
@@ -1522,7 +1522,7 @@ Graph.prototype = {
           this.multitouches = e.touches;
         } else {
           if (!touchend) {
-            E.fire(el, 'flotr:mousemove', [event, pos, this]);
+            E.fire(el, 'flotr:mousemove', [e, pos, this]);
           }
         }
         this.lastMousePos = pos;
@@ -5709,7 +5709,7 @@ Flotr.addPlugin('titles', {
     if (!options.HtmlText && this.textEnabled) {
       var style = {
         size: options.fontSize,
-        color: options.grid.color,
+        color: options.fontColor,
         textAlign: 'center'
       };
       
@@ -5853,8 +5853,8 @@ Flotr.addPlugin('titles', {
       html = html.join('');
 
       var div = D.create('div');
-      D.setStyles({
-        color: options.grid.color 
+      D.setStyles(div, {
+        color: options.fontColor 
       });
       div.className = 'flotr-titles';
       D.insert(this.el, div);
