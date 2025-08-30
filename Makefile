@@ -34,7 +34,7 @@ flotr2-basic: libraries ie $(SMOOSH)
 	cat build/lib.min.js > flotr2-basic.min.js
 	cat build/flotr2-basic.min.js >> flotr2-basic.min.js
 
-flotr-examples: $(SMOOSH)
+flotr2-examples: $(SMOOSH)
 	$(SMOOSH) make/examples.json
 	cp build/examples.min.js flotr2.examples.min.js
 	cp build/examples-types.js flotr2.examples.types.js
