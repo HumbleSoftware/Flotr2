@@ -18,9 +18,10 @@
     "lib": "lib"
   },
   "scripts": {
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug"
+    "build": "make build",
+    "test": "npm run build && playwright test",
+    "test:headed": "npm run build && playwright test --headed",
+    "test:debug": "npm run build && playwright test --debug"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",

@@ -69,7 +69,7 @@ Examples.prototype = {
         "basic-axis",
         "basic-bars",
         "basic-bars-horizontal",
-        "basic-bar-stacked",
+        "basic-bars-stacked",
         "basic-stacked-horizontal",
         "basic-pie",
         "basic-radar",

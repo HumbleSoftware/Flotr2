@@ -32,6 +32,9 @@ echo "Updating CHANGELOG.md..."
 mv CHANGELOG_NEW.md CHANGELOG.md
 
 echo ""
+echo "Running tests..."
+make test
+
 echo "Building assets..."
 make flotr2
 
