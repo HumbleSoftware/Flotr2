@@ -4,6 +4,11 @@ body {
   margin: 0px;
 }
 
+.CodeMirror {
+  font-family: 'Courier New', monospace !important;
+  font-size: 12px;
+}
+
 /* Example */
 
 .flotr-example {

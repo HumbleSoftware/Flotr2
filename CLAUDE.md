@@ -20,6 +20,10 @@ For comprehensive project information including build commands, architecture det
 - Tests run in headless Chrome for consistent results across environments
 - Focus on testing the public API (`Flotr.draw()`) rather than internal implementation
 
+**File Creation Guidelines:**
+- CRITICAL: Always create files with Unix line endings (LF), never Windows (CRLF)
+- This prevents "required file not found" errors when executing scripts
+
 **Architecture Constraints:**
 - New chart types must use the `Flotr.addType(name, implementation)` pattern
 - New plugins must use the `Flotr.addPlugin(name, implementation)` pattern  
