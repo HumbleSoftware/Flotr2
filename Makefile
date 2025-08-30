@@ -20,8 +20,10 @@ libraries: $(SMOOSH)
 ie: $(SMOOSH)
 	$(SMOOSH) make/ie.json
 
-flotr2: libraries ie $(SMOOSH)
+build: libraries ie $(SMOOSH)
 	$(SMOOSH) make/flotr2.json
+
+flotr2: build
 	cat build/lib.js build/flotr2.js > flotr2.js
 	cat build/lib.min.js > flotr2.min.js
 	cat build/flotr2.min.js >> flotr2.min.js
