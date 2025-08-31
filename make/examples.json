@@ -14,6 +14,7 @@
       "./examples/js/examples/basic-stepped.js",
       "./examples/js/examples/basic-axis.js",
       "./examples/js/examples/basic-bars.js",
+      "./examples/js/examples/basic-bars-custom-colors.js",
       "./examples/js/examples/basic-bars-stacked.js",
       "./examples/js/examples/basic-pie.js",
       "./examples/js/examples/basic-radar.js",

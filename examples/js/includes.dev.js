@@ -59,6 +59,7 @@ yepnope([
   'js/examples/basic-axis.js',
   'js/examples/basic-bars.js',
   'js/examples/basic-bars-stacked.js',
+  'js/examples/basic-bars-custom-colors.js',
   'js/examples/basic-pie.js',
   'js/examples/basic-radar.js',
   'js/examples/basic-bubble.js',

@@ -19,6 +19,7 @@ test.describe('Visual Regression Tests - Examples', () => {
     'basic',
     'basic-axis', 
     'basic-bars',
+    'basic-bars-custom-colors',
     'basic-bars-stacked',
     'basic-bubble',
     'basic-candle',
