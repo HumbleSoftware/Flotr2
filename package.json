@@ -21,7 +21,8 @@
     "build": "make build",
     "test": "npm run build && playwright test",
     "test:headed": "npm run build && playwright test --headed",
-    "test:debug": "npm run build && playwright test --debug"
+    "test:debug": "npm run build && playwright test --debug",
+    "test:update-snapshots": "npm run build && playwright test --update-snapshots"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",

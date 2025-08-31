@@ -71,6 +71,7 @@ Examples.prototype = {
         "basic-bars-horizontal",
         "basic-bars-stacked",
         "basic-stacked-horizontal",
+        "basic-bars-custom-colors",
         "basic-pie",
         "basic-radar",
         "basic-bubble",
