@@ -4072,7 +4072,13 @@ Flotr.addPlugin('download', {
       D.insert(this.el, image);
       this.saveImageElement = image;
     } else {
-      return window.open(image.src);
+      // Modern browser download using data URL with hidden link
+      var link = document.createElement('a');
+      link.download = 'chart.' + type;
+      link.href = image.src;  // image.src is the data URL from canvas.toDataURL()
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   },
 
