@@ -22,6 +22,7 @@ echo "Updating CHANGELOG.md..."
     echo "# Changelog"
     echo ""
     ./scripts/changelog.sh "$VERSION"
+    echo ""
     
     # Append existing changelog if it exists
     if [ -f "CHANGELOG.md" ] && grep -q "^## " CHANGELOG.md; then
