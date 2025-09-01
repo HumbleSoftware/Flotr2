@@ -553,16 +553,17 @@ Graph.prototype = {
         }
         this.lastMousePos = pos;
       }, this));
-
-    } else {
-      this.
-        observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
-        observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
-        observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
-        observe(el, 'mouseout', function (e) {
-          E.fire(el, 'flotr:mouseout', e);
-        });
     }
+
+    // We should do this both for mouse-driven and touch devices.
+    // The user can use a mouse even if her device has touch capabilities.
+    this.
+      observe(this.overlay, 'mousedown', _.bind(this.mouseDownHandler, this)).
+      observe(el, 'mousemove', _.bind(this.mouseMoveHandler, this)).
+      observe(this.overlay, 'click', _.bind(this.clickHandler, this)).
+      observe(el, 'mouseout', function (e) {
+        E.fire(el, 'flotr:mouseout', e);
+      });
   },
 
   /**
