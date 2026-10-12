@@ -11,11 +11,14 @@ test:
 libraries: $(SMOOSH)
 	$(SMOOSH) make/lib.json
 	cat ./build/bean.js > build/lib.js
+	# Hide AMD from underscore so it always sets the global `_` (#338).
+	echo "(function (define) {" >> build/lib.js
 	cat ./build/underscore.js >> build/lib.js
+	echo "})();" >> build/lib.js
 	cat ./build/bean.min.js > build/lib.min.js
-	echo ";" >> build/lib.min.js
+	echo ";(function(define){" >> build/lib.min.js
 	cat ./build/underscore.min.js >> build/lib.min.js
-	echo ";" >> build/lib.min.js
+	echo "})();" >> build/lib.min.js
 
 ie: $(SMOOSH)
 	$(SMOOSH) make/ie.json
