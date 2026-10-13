@@ -221,6 +221,9 @@ Axis.prototype = {
     if (o.base != Math.E) max /= Math.log(o.base);
     max = Math.ceil(max);
 
+    if (axis.min < 1)
+      axis.min = 1;
+
     var min = Math.log(axis.min);
     if (o.base != Math.E) min /= Math.log(o.base);
     min = Math.ceil(min);
