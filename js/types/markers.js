@@ -45,7 +45,9 @@ Flotr.addType('markers', {
       stackOffsetNeg,
       stackOffsetPos,
       stackOffset,
-      i, x, y, label;
+      i, x, y, label,
+      html            = [],
+      divStyle, div;
 
     context.save();
     context.lineJoin = 'round';
@@ -82,20 +84,27 @@ Flotr.addType('markers', {
       }
 
       label = options.labelFormatter({x: x, y: y, index: i, data : data});
-      this.plot(options.xScale(x), options.yScale(y), label, options);
+      this.plot(options.xScale(x), options.yScale(y), label, options, html);
     }
+
+    if (options.htmlText || !options.textEnabled) {
+      div = Flotr.DOM.node('<div style="color:' + options.color + '" class="flotr-labels"></div>');
+      Flotr.DOM.insert(div, html.join(''));
+      Flotr.DOM.insert(options.element, div);
+    }
+
     context.restore();
   },
-  plot: function(x, y, label, options) {
+  plot: function(x, y, label, options, html) {
     var context = options.context;
     if (isImage(label) && !label.complete) {
       throw 'Marker image not loaded.';
     } else {
-      this._plot(x, y, label, options);
+      this._plot(x, y, label, options, html);
     }
   },
 
-  _plot: function(x, y, label, options) {
+  _plot: function(x, y, label, options, html) {
     var context = options.context,
         margin = 2,
         left = x,
@@ -103,8 +112,10 @@ Flotr.addType('markers', {
         dim;
 
     if (isImage(label))
-      dim = {height : label.height, width: label.width};
-    else
+        dim = {height : label.height, width: label.width};
+    else if (options.htmlText || !options.textEnabled) {
+      dim = options.text.dimensions(label, {size: options.fontSize}, '', 'flotr-grid-label');
+    } else
       dim = options.text.canvas(label);
 
     dim.width = Math.floor(dim.width+margin*2);
@@ -128,7 +139,9 @@ Flotr.addType('markers', {
     
     if (isImage(label))
       context.drawImage(label, parseInt(left+margin, 10), parseInt(top+margin, 10));
-    else
+    else if (options.htmlText || !options.textEnabled) {
+      html.push('<div style="position:absolute;left:' + (left + margin) + 'px;top:' + (top + margin) + 'px;" class="flotr-grid-label">' + label + '</div>');
+    } else
       Flotr.drawText(context, label, left+margin, top+margin, {textBaseline: 'top', textAlign: 'left', size: options.fontSize, color: options.color});
   }
 });
