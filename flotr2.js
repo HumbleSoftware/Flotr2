@@ -2281,8 +2281,10 @@ Text.prototype = {
     D.setStyles(div, { 'position' : 'absolute', 'top' : '-10000px' });
     D.insert(div, '<div style="'+style+'" class="'+className+' flotr-dummy-div">' + text + '</div>');
     D.insert(this.o.element, div);
+    var dim = D.size(div);
+    D.hide(div);
 
-    return D.size(div);
+    return dim;
   },
 
   measureText : function (text, style) {
